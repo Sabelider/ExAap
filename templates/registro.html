@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de Entradas e Saídas</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { text-align: center; }
+    .center { text-align: center; margin-bottom: 20px; }
+    .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .tab-btn { padding: 10px 20px; cursor: pointer; background: #007bff; color: #fff; border: none; border-radius: 6px; }
+    .tab-btn.active { background: #0056b3; }
+    .section { display: none; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .section.active { display: block; }
+    .input-group { margin-bottom: 10px; }
+    .input-group input, .input-group textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    .add-field { cursor: pointer; color: green; font-size: 20px; margin-left: 10px; }
+    .add-btn { margin-top: 10px; padding: 8px 16px; background: green; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .flex { display: flex; gap: 10px; align-items: center; }
+    .total { font-weight: bold; font-size: 18px; color: green; text-align: center; }
+    @media (max-width: 768px) {
+      .tabs { flex-direction: column; gap: 5px; }
+      .flex { flex-direction: column; align-items: stretch; }
+      .input-group input, .input-group textarea { font-size: 16px; }
+      .tab-btn { width: 100%; font-size: 16px; }
+      .add-btn { width: 100%; margin-top: 10px; }
+      .add-field { display: inline-block; font-size: 24px; margin-top: 10px; }
+      h1 { font-size: 22px; }
+      .total { font-size: 20px; }
+      body { margin: 10px; }
+      .section { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Controle de Entradas e Saídas</h1>
+
+  <div class="total" id="lucro-display">Lucro: 0 Kz</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="mostrarSecao('entrada')">Entrada</button>
+    <button class="tab-btn" onclick="mostrarSecao('saida')">Saída</button>
+    <button class="tab-btn" onclick="mostrarSecao('vendas')">Vendas</button>
+  </div>
+
+  <div id="entrada" class="section active">
+    <div class="input-group">
+      <label>Descrição do Produto Comprado:</label>
+      <input type="text" id="nome-produto-compra" placeholder="Nome do produto" />
+      <div class="flex">
+        <input type="number" id="preco-produto" placeholder="Preço unitário (Kz)" />
+        <input type="number" id="quantidade-produto" placeholder="Quantidade" />
+      </div>
+      <input type="number" id="preco-venda-produto" placeholder="Preço de venda (Kz)" />
+      <div class="input-group">
+        <strong>Custo Total: <span id="total-produto">0</span> Kz</strong><br/>
+        <strong>Previsão de Faturamento: <span id="previsao-faturamento">0</span> Kz</strong>
+      </div>
+    </div>
+    <button class="add-btn" onclick="registrarProdutoFirebase()">Registrar</button>
+    <span class="add-field" onclick="adicionarEntradaExtra()">➕</span>
+    <div id="entradas-extra"></div>
+  </div>
+
+  <div id="saida" class="section">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="mostrarSubSecao('custos')">Custos</button>
+      <button class="tab-btn" onclick="mostrarSubSecao('vendas')">Vendas</button>
+    </div>
+    <div id="custos" class="section active">
+      <span class="add-field" onclick="adicionarCusto()">➕</span>
+      <div id="custos-container"></div>
+    </div>
+    <div id="vendas" class="section">
+      <span class="add-field" onclick="adicionarVenda()">➕</span>
+      <div id="vendas-container"></div>
+    </div>
+  </div>
+
+  <script>
+    let entradas = [], custos = [], vendas = [];
+
+    function mostrarSecao(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="mostrarSecao('${id}')"]`).classList.add('active');
+    }
+
+    function mostrarSubSecao(id) {
+      document.querySelectorAll('#saida .section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function adicionarEntradaExtra() {
+      const id = Date.now();
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div class="input-group">
+          <input type="text" placeholder="Nome" id="nome-${id}" />
+          <input type="number" placeholder="Valor" id="valor-${id}" />
+          <input type="number" placeholder="Quantidade" id="qtd-${id}" />
+          <button class="add-btn" onclick="salvarEntrada('${id}')">Adicionar</button>
+        </div>
+      `;
+      document.getElementById('entradas-extra').appendChild(div);
+    }
+
+    function salvarEntrada(id) {
+      const nome = document.getElementById(`nome-${id}`).value;
+      const valor = parseFloat(document.getElementById(`valor-${id}`).value || 0);
+      const qtd = parseInt(document.getElementById(`qtd-${id}`).value || 1);
+      const total = valor * qtd;
+      entradas.push({ nome, valor, qtd, total });
+      atualizarLucro();
+    }
+
+    function adicionarCusto() {
+      const id = Date.now();
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div class="input-group">
+          <input type="text" placeholder="Nome" id="custo-nome-${id}" />
+          <input type="number" placeholder="Valor" id="custo-valor-${id}" />
+          <button class="add-btn" onclick="salvarCusto('${id}')">Adicionar</button>
+        </div>
+      `;
+      document.getElementById('custos-container').appendChild(div);
+    }
+
+    function salvarCusto(id) {
+      const nome = document.getElementById(`custo-nome-${id}`).value;
+      const valor = parseFloat(document.getElementById(`custo-valor-${id}`).value || 0);
+      custos.push({ nome, valor });
+      atualizarLucro();
+    }
+
+    function adicionarVenda() {
+      const id = Date.now();
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div class="input-group">
+          <input type="text" placeholder="Produto" id="venda-produto-${id}" />
+          <input type="number" placeholder="Qtd vendida" id="venda-qtd-${id}" />
+          <input type="number" placeholder="Preço venda" id="venda-preco-${id}" />
+          <button class="add-btn" onclick="salvarVenda('${id}')">Adicionar</button>
+        </div>
+      `;
+      document.getElementById('vendas-container').appendChild(div);
+    }
+
+    function salvarVenda(id) {
+      const nome = document.getElementById(`venda-produto-${id}`).value;
+      const qtd = parseInt(document.getElementById(`venda-qtd-${id}`).value || 0);
+      const preco = parseFloat(document.getElementById(`venda-preco-${id}`).value || 0);
+      const total = qtd * preco;
+      for (let i = 0; i < qtd; i++) {
+        vendas.push({ nome, qtd: 1, preco, total: preco });
+      }
+      const entrada = entradas.find(e => e.nome === nome);
+      if (entrada) entrada.qtd -= qtd;
+      atualizarLucro();
+    }
+
+    function atualizarLucro() {
+      const totalVendas = vendas.reduce((s, v) => s + v.total, 0);
+      const custoProdutosVendidos = vendas.reduce((s, v) => {
+        const entrada = entradas.find(e => e.nome === v.nome);
+        return entrada ? s + entrada.valor : s;
+      }, 0);
+      const lucro = totalVendas - custoProdutosVendidos;
+      document.getElementById("lucro-display").textContent = `Lucro: ${lucro.toFixed(2)} Kz`;
+    }
+
+    function atualizarTotais() {
+      const preco = parseFloat(document.getElementById("preco-produto").value || 0);
+      const venda = parseFloat(document.getElementById("preco-venda-produto").value || 0);
+      const qtd = parseInt(document.getElementById("quantidade-produto").value || 0);
+      document.getElementById("total-produto").textContent = (preco * qtd).toFixed(2);
+      document.getElementById("previsao-faturamento").textContent = (venda * qtd).toFixed(2);
+    }
+
+    async function registrarProdutoFirebase() {
+      const nome = document.getElementById("nome-produto-compra").value;
+      const preco = parseFloat(document.getElementById("preco-produto").value);
+      const venda = parseFloat(document.getElementById("preco-venda-produto").value);
+      const quantidade = parseInt(document.getElementById("quantidade-produto").value);
+      if (!nome || isNaN(preco) || isNaN(quantidade) || isNaN(venda)) return alert("Preencha todos os campos.");
+      const resposta = await fetch("/registrar-entrada", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([{ nome, preco, preco_venda: venda, quantidade }])
+      });
+      const dados = await resposta.json();
+      alert("Produto registrado com sucesso! Total: " + dados.total_entrada + " Kz");
+      atualizarLucroFirebase();
+    }
+
+    async function atualizarLucroFirebase() {
+      const res = await fetch("/calcular-lucro");
+      const data = await res.json();
+      document.getElementById("lucro-display").textContent = `Lucro: ${data.lucro.toFixed(2)} Kz`;
+    }
+
+    document.getElementById("preco-produto").addEventListener("input", atualizarTotais);
+    document.getElementById("quantidade-produto").addEventListener("input", atualizarTotais);
+    document.getElementById("preco-venda-produto").addEventListener("input", atualizarTotais);
+  </script>
+</body>
+</html>

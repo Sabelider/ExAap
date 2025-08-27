@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <title>SabApp - Página Inicial</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap CSS e Ícones -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f8;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      padding: 15px 20px;
+    }
+
+    .navbar-brand h2 {
+      font-size: 28px;
+      color: #000;
+      font-weight: 700;
+    }
+
+    .navbar-nav .nav-link {
+      color: #000 !important;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+
+    .hero-section {
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .carousel-inner img {
+      height: 100vh;
+      object-fit: cover;
+    }
+
+    .hero-buttons {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hero-buttons .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      border: none;
+      color: #000;
+    }
+
+    .hero-buttons .btn:hover {
+      background: linear-gradient(135deg, #00a0c9, #7cd77b);
+    }
+
+    .modal-content .btn-option {
+      margin: 10px 0;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      color: #000;
+      font-weight: bold;
+    }
+
+    .modal-content .btn-option:hover {
+      background: linear-gradient(135deg, #00a0c9, #7cd77b);
+    }
+
+    .footer {
+      background: #181d38;
+      color: #fff;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      position: relative;
+      z-index: 10;
+    }
+
+    @media (max-width: 576px) {
+      .hero-buttons .btn {
+        width: 45%;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm">
+    <a class="navbar-brand" href="#">
+      <h2><i class="bi bi-mortarboard-fill me-2"></i>SabApp</h2>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a href="/criar-conta" class="nav-link">Criar Conta</a></li>
+        <li class="nav-item"><a href="/quero-aulas" class="nav-link">Aula Online</a></li>
+        <li class="nav-item"><a href="/cadastro-aluno" class="nav-link">Registrar Aluno</a></li>
+        <li class="nav-item"><a href="/professores_online" class="nav-link">Registrar Professor</a></li>
+        <li class="nav-item"><a href="/login_prof" class="nav-link">Login Professor</a></li>
+        <li class="nav-item"><a href="/login" class="nav-link">Login Aluno</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero com Carrossel -->
+  <div class="hero-section">
+    <div id="carouselHero" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <img src="static/carousel-1.jpg" class="d-block w-100" alt="Imagem 1">
+        </div>
+        <div class="carousel-item">
+          <img src="static/carousel-2.jpg" class="d-block w-100" alt="Imagem 2">
+        </div>
+      </div>
+    </div>
+
+    <!-- Botões Inferiores -->
+    <div class="hero-buttons">
+      <button class="btn" data-bs-toggle="modal" data-bs-target="#modalEntrar">Entrar</button>
+      <button class="btn" data-bs-toggle="modal" data-bs-target="#modalRegistrar">Registrar</button>
+    </div>
+  </div>
+
+  <!-- Modal Entrar -->
+  <div class="modal fade" id="modalEntrar" tabindex="-1" aria-labelledby="modalEntrarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <h5 class="modal-title mb-3" id="modalEntrarLabel">Entrar como</h5>
+        <a href="/login" class="btn btn-option w-100">Aluno</a>
+        <a href="/login_prof" class="btn btn-option w-100">Professor</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar -->
+  <div class="modal fade" id="modalRegistrar" tabindex="-1" aria-labelledby="modalRegistrarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <h5 class="modal-title mb-3" id="modalRegistrarLabel">Registrar como</h5>
+        <a href="/cadastro-aluno" class="btn btn-option w-100">Aluno</a>
+        <a href="/professores_online" class="btn btn-option w-100">Professor</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <div class="footer">
+    &copy; 2025 SabApp - Todos os direitos reservados.
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

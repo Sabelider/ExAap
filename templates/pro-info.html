@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Informações dos Professores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f8;
+      padding: 40px;
+    }
+
+    .search-bar {
+      max-width: 800px;
+      margin: auto;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-bar input {
+      width: 70%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .download-btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      margin-bottom: 40px;
+    }
+
+    .info-item {
+      margin-bottom: 15px;
+    }
+
+    .info-label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      background-color: #eee;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .doc-image {
+      width: 100%;
+      max-width: 350px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+
+    .disciplinas-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .disciplinas-list li {
+      background-color: #ddd;
+      display: inline-block;
+      margin: 5px 5px 0 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .action-buttons {
+      margin-top: 20px;
+    }
+
+    .action-buttons form {
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .action-buttons button {
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="search-bar">
+    <input type="text" id="filtro" placeholder="Buscar por nome ou número de BI...">
+    <a href="/gerar-pdf" class="download-btn" target="_blank">📄 Baixar PDF</a>
+  </div>
+
+  <div id="professores"></div>
+
+  <script>
+    async function carregarProfessores() {
+      const res = await fetch('/api/professores');
+      const professores = await res.json();
+      const container = document.getElementById('professores');
+      container.innerHTML = '';
+
+      professores.forEach(prof => {
+        const div = document.createElement('div');
+        div.classList.add('container');
+        div.dataset.nome = prof.nome.toLowerCase();
+        div.dataset.bi = prof.bi.toLowerCase();
+
+        div.innerHTML = `
+          <h2>Informações do Professor</h2>
+
+          <div class="info-item">
+            <span class="info-label">Nome:</span>
+            <div class="info-value">${prof.nome}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Nº do B.I:</span>
+            <div class="info-value">${prof.bi}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Habilitações Literárias:</span>
+            <div class="info-value">${prof.habilitacao}</div>
+          </div>
+
+          ${prof.licenciatura_area ? `  
+          <div class="info-item">
+            <span class="info-label">Área da Licenciatura:</span>
+            <div class="info-value">${prof.licenciatura_area}</div>
+          </div>` : ""}
+
+          <div class="info-item">
+            <span class="info-label">Disciplinas:</span>
+            <ul class="disciplinas-list">
+              ${prof.disciplinas.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Outras Disciplinas:</span>
+            <div class="info-value">${prof.outras_disciplinas}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Telefone:</span>
+            <div class="info-value">${prof.telefone}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">E-mail:</span>
+            <div class="info-value">${prof.email}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Localização (GPS):</span>
+            <div class="info-value">${prof.localizacao}</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Documento de Identificação (Imagem):</span>
+            <img src="${prof.doc_foto}" alt="Foto do Documento" class="doc-image">
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Documento em PDF:</span>
+            <div class="info-value"><a href="${prof.doc_pdf}" target="_blank">Ver documento</a></div>
+          </div>
+
+          <div class="action-buttons">
+            <form method="get" action="/editar-professor/${prof.bi}">
+              <button type="submit" class="edit-btn">Editar</button>
+            </form>
+
+            <form method="post" action="/excluir-professor/${prof.bi}">
+              <button type="submit" class="delete-btn" onclick="return confirm('Tem certeza que deseja excluir este professor?');">Excluir</button>
+            </form>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function filtrarProfessores() {
+      const termo = document.getElementById('filtro').value.toLowerCase();
+      const profs = document.querySelectorAll('.container');
+
+      profs.forEach(div => {
+        const nome = div.dataset.nome;
+        const bi = div.dataset.bi;
+        div.style.display = (nome.includes(termo) || bi.includes(termo)) ? 'block' : 'none';
+      });
+    }
+
+    document.getElementById('filtro').addEventListener('input', filtrarProfessores);
+
+    carregarProfessores();
+  </script>
+</body>
+</html>

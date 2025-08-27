@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Inserir Pergunta de Inglês</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            background: #f0f4f8;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 12px;
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #mensagem {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Inserir Nova Pergunta</h2>
+    <label for="nivel">Nível:</label>
+    <select id="nivel">
+        <option value="iniciante">Iniciante</option>
+        <option value="intermediario">Intermediário</option>
+        <option value="avancado">Avançado</option>
+        <option value="fluente">Fluente</option>
+    </select>
+
+    <label for="pergunta">Pergunta:</label>
+    <input type="text" id="pergunta" placeholder="Ex: You ___ a student.">
+
+    <label for="resposta">Resposta:</label>
+    <input type="text" id="resposta" placeholder="Ex: are">
+
+    <button onclick="enviarPergunta()">Enviar</button>
+
+    <div id="mensagem"></div>
+
+    <script>
+        async function enviarPergunta() {
+            const nivel = document.getElementById("nivel").value;
+            const pergunta = document.getElementById("pergunta").value;
+            const resposta = document.getElementById("resposta").value;
+
+            const respostaDiv = document.getElementById("mensagem");
+            respostaDiv.innerText = "Enviando...";
+
+            const response = await fetch("http://127.0.0.1:8000/adicionar-pergunta", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nivel, pergunta, resposta })
+            });
+
+            const resultado = await response.json();
+            respostaDiv.innerText = resultado.mensagem || resultado.erro;
+
+            // Limpar campos
+            if (response.ok) {
+                document.getElementById("pergunta").value = "";
+                document.getElementById("resposta").value = "";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico de Pagamentos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      margin-top: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .status-pago {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-pendente {
+      color: red;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        padding: 10px;
+      }
+      th {
+        display: none;
+      }
+      td {
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+      }
+      td::before {
+        position: absolute;
+        left: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+      td:nth-of-type(1)::before { content: "Mês"; }
+      td:nth-of-type(2)::before { content: "Ano"; }
+      td:nth-of-type(3)::before { content: "Valor"; }
+      td:nth-of-type(4)::before { content: "Status"; }
+    }
+  </style>
+</head>
+<body>
+  <h2>Histórico de Pagamentos</h2>
+
+  <table id="tabelaPagamentos">
+    <thead>
+      <tr>
+        <th>Mês</th>
+        <th>Ano</th>
+        <th>Valor</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // Pega o nome do aluno pela URL (?aluno=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const aluno = urlParams.get("aluno");
+
+    if (!aluno) {
+      alert("❌ Nome do aluno não informado na URL!");
+    } else {
+      fetch(`/ver-pagamentos/${aluno}`)
+        .then(res => {
+          if (!res.ok) throw new Error("Erro ao buscar pagamentos");
+          return res.json();
+        })
+        .then(data => {
+          const tbody = document.querySelector("#tabelaPagamentos tbody");
+          tbody.innerHTML = "";
+
+          const historico = data.historico_pagamentos || [];
+
+          if (historico.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento registrado.</td></tr>`;
+            return;
+          }
+
+          historico.forEach(p => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${p.mes || "-"}</td>
+              <td>${p.ano || "-"}</td>
+              <td>Kz ${p.valor?.toLocaleString("pt-PT") || "-"}</td>
+              <td class="${p.status?.toLowerCase() === 'pago' ? 'status-pago' : 'status-pendente'}">
+                ${p.status || "-"}
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          alert("⚠️ Erro ao carregar histórico de pagamentos.");
+        });
+    }
+  </script>
+</body>
+</html>

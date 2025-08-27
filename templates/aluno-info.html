@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Aluno Registrado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+      margin: 0;
+    }
+
+    .date {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .info-group {
+      margin-bottom: 15px;
+    }
+
+    .info-group label {
+      font-weight: bold;
+      color: #444;
+      display: block;
+    }
+
+    .info-group p {
+      margin: 5px 0 0 0;
+      color: #222;
+    }
+
+    .disciplinas {
+      margin-top: 20px;
+    }
+
+    .disciplinas ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .disciplinas li {
+      background-color: #f0f0f0;
+      margin-bottom: 5px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Aluno Registrado</h1>
+      <div class="date">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
+    </div>
+
+    <div class="info-group">
+      <label>Nome:</label>
+      <p>{{ dados.nome }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>BI:</label>
+      <p>{{ dados.bi }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>Idade:</label>
+      <p>{{ dados.idade }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>Classe:</label>
+      <p>{{ dados.classe }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>Nome do Pai:</label>
+      <p>{{ dados.pai }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>Nome da Mãe:</label>
+      <p>{{ dados.mae }}</p>
+    </div>
+
+    <div class="info-group">
+      <label>Localização:</label>
+      <p>{{ dados.localizacao }}</p>
+    </div>
+
+    <div class="disciplinas">
+      <label>Disciplinas:</label>
+      <ul>
+        {% for disciplina in dados.disciplinas %}
+          <li>{{ disciplina }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

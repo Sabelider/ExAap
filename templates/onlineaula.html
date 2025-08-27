@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aulas online</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      height: 100vh;
+    }
+
+    .video-container {
+      position: relative;
+      scroll-snap-align: start;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+
+    .sidebar {
+      position: absolute;
+      right: 10px;
+      top: 40%;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 10;
+    }
+
+    .sidebar button {
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .sidebar button.liked,
+    .sidebar button.disliked {
+      background-color: yellow;
+      color: black;
+    }
+
+    .search-bar {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .search-bar input {
+      padding: 8px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 20px;
+      border: none;
+    }
+
+    #login-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      color: black;
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 30;
+      width: 300px;
+      text-align: center;
+    }
+
+    #login-modal input {
+      margin: 5px 0;
+      padding: 8px;
+      width: 90%;
+    }
+
+    #login-modal button {
+      margin-top: 10px;
+      padding: 8px;
+      width: 100%;
+    }
+
+    #solicitar-btn {
+      background-color: orange;
+      border: none;
+      padding: 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #mensagem-erro {
+      color: red;
+      margin-top: 10px;
+    }
+
+    /* Responsividade para dispositivos menores */
+    @media (max-width: 600px) {
+      .sidebar {
+        right: 5px;
+        gap: 10px;
+      }
+
+      .sidebar button {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+
+      #login-modal {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="search-bar">
+    <input type="text" id="pesquisa" placeholder="Buscar professor ou disciplina">
+  </div>
+
+  <div id="videos-scroll">
+    <!-- Vídeos serão inseridos dinamicamente -->
+  </div>
+
+  <div id="login-modal">
+    <p>Digite seu nome e senha:</p>
+    <input type="text" id="username" placeholder="Nome do aluno">
+    <input type="password" id="password" placeholder="Senha">
+    <button onclick="verificarAcesso()">Entrar</button>
+    <div id="mensagem-erro"></div>
+    <button id="solicitar-btn" onclick="solicitarExplicacao()">Solicitar explicação ao professor</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script>
+    // 🔧 Firebase Configuração
+    const firebaseConfig = {
+      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
+      authDomain: "exap-8a935.firebaseapp.com",
+      projectId: "exap-8a935",
+      storageBucket: "exap-8a935.appspot.com",
+      messagingSenderId: "664710895978",
+      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 🎥 Dados simulados
+    const videoData = [
+      { id: 'vid1', src: 'video1.mp4', professor: 'Carlos', disciplina: 'Matemática' },
+      { id: 'vid2', src: 'video2.mp4', professor: 'Joana', disciplina: 'Física' },
+      { id: 'vid3', src: 'video3.mp4', professor: 'Mario', disciplina: 'Inglês' }
+    ];
+
+    const container = document.getElementById('videos-scroll');
+
+    videoData.forEach(data => {
+      const div = document.createElement('div');
+      div.className = 'video-container';
+      div.dataset.professor = data.professor.toLowerCase();
+      div.dataset.disciplina = data.disciplina.toLowerCase();
+
+      div.innerHTML = `
+        <video src="${data.src}" autoplay muted loop></video>
+        <div class="sidebar">
+          <button onclick="curtir(this)">❤️</button>
+          <button onclick="descurtir(this)">👎</button>
+          <button onclick="abrirLogin('${data.professor}')">🎓</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    function curtir(btn) {
+      btn.classList.toggle('liked');
+    }
+
+    function descurtir(btn) {
+      btn.classList.toggle('disliked');
+    }
+
+    let professorSelecionado = null;
+
+    function abrirLogin(professor) {
+      professorSelecionado = professor;
+      document.getElementById('login-modal').style.display = 'block';
+      document.getElementById('mensagem-erro').innerText = '';
+    }
+
+    async function verificarAcesso() {
+      const nome = document.getElementById('username').value.trim();
+      const senha = document.getElementById('password').value.trim();
+
+      if (!nome || !senha) {
+        document.getElementById('mensagem-erro').innerText = 'Preencha todos os campos.';
+        return;
+      }
+
+      try {
+        const docRef = db.collection("professores").doc(professorSelecionado);
+        const alunoListaRef = docRef.collection("alunos");
+
+        const snapshot = await alunoListaRef.where("nome", "==", nome).get();
+
+        if (!snapshot.empty) {
+          alert("✅ Acesso liberado para aula!");
+          document.getElementById('login-modal').style.display = 'none';
+        } else {
+          document.getElementById('mensagem-erro').innerText = '⚠️ Faça a sua solicitação ao professor';
+        }
+      } catch (error) {
+        console.error("Erro na verificação:", error);
+        document.getElementById('mensagem-erro').innerText = 'Erro ao verificar acesso.';
+      }
+    }
+
+    async function solicitarExplicacao() {
+      const nome = document.getElementById('username').value.trim();
+
+      if (!nome) {
+        alert("Digite seu nome para solicitar.");
+        return;
+      }
+
+      try {
+        await db.collection("solicitacoes").add({
+          aluno: nome,
+          professor: professorSelecionado,
+          data: new Date()
+        });
+        alert("📩 Solicitação enviada ao professor.");
+      } catch (error) {
+        console.error("Erro ao solicitar:", error);
+        alert("Erro ao enviar solicitação.");
+      }
+    }
+
+    // 🔍 Filtro de pesquisa
+    document.getElementById('pesquisa').addEventListener('input', function() {
+      const termo = this.value.toLowerCase();
+      document.querySelectorAll('.video-container').forEach(container => {
+        const prof = container.dataset.professor;
+        const disc = container.dataset.disciplina;
+        container.style.display = (prof.includes(termo) || disc.includes(termo)) ? 'block' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

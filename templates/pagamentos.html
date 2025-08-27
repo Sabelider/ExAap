@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Pagamentos</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    max-width: 480px;
+    margin: auto;
+    padding-bottom: 20px;
+  }
+
+  .top-bar {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    color: white;
+  }
+
+  .pagamento-card {
+    background: white;
+    margin: 10px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .mes-ano {
+    font-weight: bold;
+  }
+
+  .status {
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+
+  .status.pago {
+    background: #2ecc71;
+  }
+
+  .status.nao-pago {
+    background: #e74c3c;
+  }
+
+  @media (max-width: 400px) {
+    .pagamento-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h2>💳 Controle de Pagamentos</h2>
+</div>
+
+<div id="lista-pagamentos"></div>
+
+<script>
+const alunoNome = "joao silva"; // aqui será dinâmico no seu sistema
+
+async function carregarPagamentos() {
+  try {
+    const res = await fetch(`/historico-pagamentos/${encodeURIComponent(alunoNome)}`);
+    const pagamentos = await res.json();
+
+    const lista = document.getElementById("lista-pagamentos");
+    lista.innerHTML = "";
+
+    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    pagamentos.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "pagamento-card";
+
+      const mesAno = document.createElement("div");
+      mesAno.className = "mes-ano";
+      mesAno.textContent = `${meses[p.mes - 1]} / ${p.ano} - Kz ${p.valor.toLocaleString()}`;
+
+      const status = document.createElement("div");
+      status.className = "status " + (p.pago ? "pago" : "nao-pago");
+      status.textContent = p.pago ? "PAGO" : "NÃO PAGO";
+
+      card.appendChild(mesAno);
+      card.appendChild(status);
+      lista.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Erro ao carregar pagamentos", err);
+  }
+}
+
+carregarPagamentos();
+</script>
+
+</body>
+</html>

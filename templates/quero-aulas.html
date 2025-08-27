@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SabApp - Disciplinas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #f4f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    .search-box {
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .box {
+      background-color: white;
+      border-radius: 16px;
+      padding: 30px 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 200px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .box:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>Escolha a Disciplina</h1>
+  <div class="search-box">
+    <input type="text" placeholder="Pesquisar outras..." />
+  </div>
+  <div class="container">
+    <a href="/precos" class="box">Matemática</a>
+    <a href="/precos" class="box">Língua Portuguesa</a>
+    <a href="/precos" class="box">Inglês</a>
+    <a href="/precos" class="box">Francês</a>
+    <a href="/precos" class="box">Química</a>
+    <a href="/precos" class="box">Física</a>
+  </div>
+</body>
+</html>

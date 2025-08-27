@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Conexão com o Professor</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      font-family: "Roboto", sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding-top: 20px;
+    }
+
+    video {
+      width: 90vw;
+      max-width: 400px;
+      height: 70vh;
+      border-radius: 0px;
+      border: 3px solid #fff;
+      margin-bottom: 12px;
+      object-fit: cover;
+    }
+
+    #localVideo {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 120px;
+      height: 90px;
+      border: 2px solid #fff;
+      border-radius: 0px;
+    }
+
+    #status {
+      margin-bottom: 12px;
+      font-size: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">🔎 Buscando chamada do professor...</div>
+
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline></video>
+
+  <!-- Firebase + PeerJS -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
+      authDomain: "exap-8a935.firebaseapp.com",
+      projectId: "exap-8a935",
+      storageBucket: "exap-8a935.appspot.com",
+      messagingSenderId: "664710895978",
+      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+
+    const aluno = "{{ aluno }}";
+    const professor = "{{ professor }}";
+
+    let peer;
+    let localStream;
+
+    async function startCamera() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+        return true;
+      } catch (err) {
+        console.error("Erro ao acessar a câmera e microfone:", err);
+        statusEl.textContent = "❌ Erro ao acessar a câmera/microfone";
+        return false;
+      }
+    }
+
+    function initPeerAndConnect(peerIdDoProfessor) {
+      peer = new Peer();
+
+      peer.on("open", () => {
+        statusEl.textContent = "🔗 Conectando ao professor...";
+        const call = peer.call(peerIdDoProfessor, localStream);
+
+        call.on("stream", (remoteStream) => {
+          remoteVideo.srcObject = remoteStream;
+          statusEl.textContent = "✅ Conectado com o professor!";
+        });
+
+        call.on("close", () => {
+          statusEl.textContent = "🔌 Conexão encerrada.";
+        });
+
+        call.on("error", (err) => {
+          console.error("Erro na chamada:", err);
+          statusEl.textContent = "⚠️ Erro na chamada.";
+        });
+      });
+
+      peer.on("error", (err) => {
+        console.error("Erro PeerJS:", err);
+        statusEl.textContent = "❌ Erro no PeerJS.";
+      });
+    }
+
+    async function verificarPermissaoEConectar() {
+      try {
+        const resp = await fetch(`/registrar-chamada`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            aluno: aluno,
+            professor: professor
+          })
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok && result.sala) {
+          buscarPeerIdEDiscar();
+        } else {
+          statusEl.textContent = "❌ Conexão não autorizada.";
+          console.warn(result);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar status:", err);
+        statusEl.textContent = "⚠️ Falha ao verificar a autorização.";
+      }
+    }
+
+    async function buscarPeerIdEDiscar() {
+      try {
+        const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+        const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+        const data = await res.json();
+
+        if (data.peer_id) {
+          initPeerAndConnect(data.peer_id);
+        } else {
+          statusEl.textContent = "⚠️ ID do professor não encontrado.";
+        }
+      } catch (err) {
+        console.error("Erro ao buscar o ID do professor:", err);
+        statusEl.textContent = "❌ Erro ao buscar ID.";
+      }
+    }
+
+    startCamera().then((ok) => {
+      if (ok) {
+        verificarPermissaoEConectar();
+      }
+    });
+  </script>
+</body>
+</html>

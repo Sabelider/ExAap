@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Salário do Professor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Nunito', sans-serif;
+            background: #f4f4f8;
+            color: #333;
+            padding-bottom: 50px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            padding: 30px 40px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Heebo', sans-serif;
+            font-size: 32px;
+            color: #fff;
+            margin: 0;
+        }
+
+        .card {
+            max-width: 500px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            text-align: center;
+        }
+
+        .card p {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0;
+            color: #444;
+        }
+
+        .valor {
+            font-size: 40px;
+            font-weight: bold;
+            color: #00b894;
+            margin-top: 15px;
+        }
+
+        .tabela-container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.07);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table thead {
+            background: #00c9ff;
+            color: #fff;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .status-pago {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-nao-pago {
+            color: red;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Salário - {{ nome }}</h1>
+    </div>
+
+    <div class="card">
+        <p>O seu valor a receber no mês corrente é:</p>
+        <div class="valor">{{ saldo_atual }} Kz</div>
+    </div>
+
+    <div class="tabela-container">
+        <h2 style="text-align:center;">Histórico de Pagamentos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Data de Pagamento</th>
+                    <th>Valor Pago</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pagamentos and pagamentos|length > 0 %}
+                    {% for pagamento in pagamentos %}
+                    <tr>
+                        <td>{{ pagamento.mes }}</td>
+                        <td>{{ pagamento.data_pagamento or '-' }}</td>
+                        <td>{{ pagamento.valor_pago | round(2) }} Kz</td>
+                        <td>{{ pagamento.email_professor }}</td>
+                        <td>
+                            {% if pagamento.valor_pago > 0 %}
+                                <span class="status-pago">PAGO</span>
+                            {% else %}
+                                <span class="status-nao-pago">NÃO PAGO</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="color:#777;">Nenhum pagamento registrado.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

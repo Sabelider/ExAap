@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aula Online</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background-color: #000;
+      color: white;
+    }
+
+    #barra-topo {
+      background-color: white;
+      color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      z-index: 30;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #barra-topo img {
+      height: 30px;
+      margin-right: 10px;
+      position: absolute;
+      left: 15px;
+    }
+
+    #videos {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin-top: 50px; /* espaço para a barra branca */
+    }
+
+    #video-professor {
+      height: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #video-alunos {
+      height: 50%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-y: auto;
+      padding: 10px;
+      gap: 10px;
+      position: relative;
+    }
+
+    .video-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .video-container video {
+      width: 160px;
+      height: 120px;
+      object-fit: cover;
+      border: 2px solid white;
+      border-radius: 10px;
+      background: black;
+    }
+
+    .video-container span {
+      margin-top: 5px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    #localVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border: none;
+      border-radius: 0;
+    }
+
+    #barra-botoes {
+      position: absolute;
+      top: 55%;
+      right: 0;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px;
+      border-radius: 10px 0 0 10px;
+      z-index: 10;
+    }
+
+    .botao-icone {
+      background: #007bff;
+      border: none;
+      color: white;
+      font-size: 20px;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+    }
+
+    .botao-icone:hover {
+      background: #0056b3;
+    }
+
+    .encerrar {
+      background: red;
+    }
+
+    #solicitacoes {
+      position: absolute;
+      top: 60px;
+      left: 10px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    #botoes-inferiores {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .botao-extra {
+      background: white;
+      color: black;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="barra-topo">
+  <img src="/static/logo.png" alt="Logo">
+  <span id="nome-disciplina">{{ professor.formado_em }}</span>
+</div>
+
+<div id="solicitacoes">
+  <strong>Solicitações de entrada:</strong>
+  <ul id="lista-solicitacoes"></ul>
+</div>
+
+<div id="barra-botoes">
+  <button class="botao-icone" id="notificacao-solicitacoes" title="Solicitações de entrada">🔔</button>
+  <button class="botao-icone" id="copiar-id" title="Copiar código">🔗</button>
+  <button class="botao-icone" id="trocar-camera" title="Trocar câmera">🔄</button>
+  <button class="botao-icone" id="ver-alunos" title="Ver alunos">👥</button>
+  <button class="botao-icone encerrar" id="encerrar" title="Terminar aula">⛔</button>
+</div>
+
+<div id="videos">
+  <div id="video-professor">
+    <video id="localVideo" autoplay muted playsinline></video>
+  </div>
+  <div id="video-alunos">
+    <!-- Botões de interação dos alunos -->
+    <div id="botoes-inferiores">
+      <button class="botao-extra" onclick="gerarLink()">➕ Criar link</button>
+      <button class="botao-extra" onclick="entrarNaAula()">👤 Entrar na aula</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script>
+  const peer = new Peer();
+  let localStream, currentFacing = "user";
+  const alunos = {};
+  const listaSolicitacoes = document.getElementById("lista-solicitacoes");
+  const solicitacoesBox = document.getElementById("solicitacoes");
+
+  peer.on("open", (id) => {
+    document.getElementById("copiar-id").onclick = () => {
+      navigator.clipboard.writeText(id);
+      alert("Código da aula copiado: " + id);
+    };
+    escutarSolicitacoes();
+  });
+
+  async function startStream(facing = "user") {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing },
+        audio: true
+      });
+      localStream = stream;
+      document.getElementById("localVideo").srcObject = stream;
+    } catch (err) {
+      alert("Erro ao acessar a câmera/mic.");
+    }
+  }
+
+  startStream();
+
+  document.getElementById("trocar-camera").onclick = async () => {
+    currentFacing = currentFacing === "user" ? "environment" : "user";
+    localStream.getTracks().forEach(track => track.stop());
+    await startStream(currentFacing);
+  };
+
+  document.getElementById("encerrar").onclick = () => {
+    Object.values(alunos).forEach(call => call.close());
+    alert("Aula encerrada.");
+    window.location.href = "/perfil_prof";
+  };
+
+  document.getElementById("ver-alunos").onclick = () => {
+    document.querySelectorAll("#video-alunos video").forEach(video => video.style.display = "block");
+  };
+
+  document.getElementById("notificacao-solicitacoes").onclick = () => {
+    solicitacoesBox.style.display = solicitacoesBox.style.display === "none" ? "block" : "none";
+  };
+
+  peer.on("call", call => {
+    call.answer(localStream);
+    alunos[call.peer] = call;
+
+    call.on("stream", (remoteStream) => {
+      const container = document.createElement("div");
+      container.className = "video-container";
+
+      const video = document.createElement("video");
+      video.srcObject = remoteStream;
+      video.autoplay = true;
+      video.playsInline = true;
+
+      const nome = document.createElement("span");
+      nome.textContent = "Aluno";
+
+      container.appendChild(video);
+      container.appendChild(nome);
+      document.getElementById("video-alunos").appendChild(container);
+    });
+
+    call.on("close", () => {
+      const containers = document.querySelectorAll("#video-alunos .video-container");
+      containers.forEach(c => {
+        if (c.querySelector("video").srcObject === call.remoteStream) {
+          c.remove();
+        }
+      });
+    });
+  });
+
+  function escutarSolicitacoes() {
+    // Exemplo
+    setTimeout(() => {
+      adicionarSolicitacao("aluno@email.com", "Pedro");
+    }, 3000);
+  }
+
+  function adicionarSolicitacao(email, nome) {
+    solicitacoesBox.style.display = "block";
+    const li = document.createElement("li");
+    li.textContent = nome + " ";
+
+    const btn = document.createElement("button");
+    btn.textContent = "Aprovar";
+    btn.onclick = async () => {
+      const formData = new FormData();
+      formData.append("email_prof", "{{ professor.email }}");
+      formData.append("email_aluno", email);
+      formData.append("nome_aluno", nome);
+
+      const resp = await fetch("/aceitar_aluno", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await resp.json();
+      if (resp.ok) {
+        alert(`✅ ${nome} aprovado.`);
+        li.remove();
+        if (!listaSolicitacoes.hasChildNodes()) {
+          solicitacoesBox.style.display = "none";
+        }
+      } else {
+        alert("Erro: " + result.erro);
+      }
+    };
+
+    li.appendChild(btn);
+    listaSolicitacoes.appendChild(li);
+  }
+
+  function gerarLink() {
+    alert("Link da aula: " + peer.id);
+  }
+
+  async function entrarNaAula() {
+    const link = prompt("Cole o link da aula:");
+    const nome = prompt("Seu nome:");
+    const senha = prompt("Sua senha:");
+
+    const resp = await fetch("/verificar_aluno", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, senha })
+    });
+
+    if (resp.ok) {
+      const conn = peer.call(link, localStream);
+    } else {
+      alert("Acesso negado. Nome ou senha inválido.");
+    }
+  }
+</script>
+</body>
+</html>

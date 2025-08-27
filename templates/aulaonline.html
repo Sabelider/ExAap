@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SabApp - Chamada PeerJS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f9f9f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 22px;
+      color: #222;
+    }
+
+    #info {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    #info div {
+      margin-bottom: 8px;
+    }
+
+    .video-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    video {
+      width: 300px;
+      height: 225px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      background: black;
+      object-fit: cover;
+    }
+
+    #connectArea {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      width: 260px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    .back-button {
+      margin-top: 10px;
+      background-color: #555;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #333;
+    }
+
+    @media (max-width: 700px) {
+      video {
+        width: 100%;
+        height: auto;
+      }
+
+      input {
+        width: 100%;
+      }
+
+      #connectArea {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Chamada por Vídeo - SabApp</h1>
+
+  <div id="info">
+    <div><strong>O seu ID:</strong> <span id="myId">Gerando...</span></div>
+    <div><strong>Status:</strong> <span id="status">Aguardando conexão...</span></div>
+  </div>
+
+  <div class="video-area">
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <div id="connectArea">
+    <input type="text" id="remoteIdInput" placeholder="Cole o ID do outro participante">
+    <button onclick="chamar()">Entrar</button>
+  </div>
+
+  <a href="/" class="back-button">Voltar ao Início</a>
+
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script>
+    const myIdSpan = document.getElementById("myId");
+    const statusSpan = document.getElementById("status");
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+
+    let localStream;
+    let peer;
+    let currentCall;
+
+    async function startCamera() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+      } catch (err) {
+        alert("Erro ao acessar a câmera e o microfone");
+        console.error(err);
+      }
+    }
+
+    function initPeer() {
+      peer = new Peer();
+
+      peer.on("open", (id) => {
+        myIdSpan.textContent = id;
+        console.log("📡 Meu ID:", id);
+      });
+
+      peer.on("call", (call) => {
+        statusSpan.textContent = "📞 Recebendo chamada...";
+        call.answer(localStream);
+
+        call.on("stream", (remoteStream) => {
+          remoteVideo.srcObject = remoteStream;
+          statusSpan.textContent = "✅ Conectado!";
+        });
+
+        call.on("close", () => {
+          statusSpan.textContent = "🔌 Conexão encerrada.";
+        });
+
+        currentCall = call;
+      });
+
+      peer.on("error", (err) => {
+        console.error("Erro PeerJS:", err);
+        alert("Erro no PeerJS: " + err.message);
+      });
+    }
+
+    function chamar() {
+      const remoteId = document.getElementById("remoteIdInput").value.trim();
+      if (!remoteId) {
+        alert("Digite um ID válido!");
+        return;
+      }
+
+      statusSpan.textContent = "🔗 Conectando...";
+      const call = peer.call(remoteId, localStream);
+
+      call.on("stream", (remoteStream) => {
+        remoteVideo.srcObject = remoteStream;
+        statusSpan.textContent = "✅ Conectado!";
+      });
+
+      call.on("close", () => {
+        statusSpan.textContent = "🔌 Conexão encerrada.";
+      });
+
+      call.on("error", (err) => {
+        console.error("Erro na chamada:", err);
+        statusSpan.textContent = "Erro na chamada.";
+      });
+
+      currentCall = call;
+    }
+
+    // Inicialização
+    startCamera().then(() => {
+      initPeer();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Aluno</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    function toggleDiscipline(btn) {
+      btn.classList.toggle('bg-blue-500');
+      btn.classList.toggle('text-white');
+      btn.classList.toggle('bg-gray-200');
+      btn.classList.toggle('text-gray-800');
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          document.getElementById('latitude').value = position.coords.latitude;
+          document.getElementById('longitude').value = position.coords.longitude;
+        });
+      } else {
+        alert("Geolocalização não é suportada por este navegador.");
+      }
+    }
+
+    function handleSubmit(event) {
+      const selected = Array.from(document.querySelectorAll('.discipline-btn.bg-blue-500')).map(btn => btn.dataset.value);
+      document.getElementById('disciplinas').value = selected.join(', ');
+    }
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <div class="w-full max-w-2xl px-4">
+  
+    {% if mensagem_sucesso %}
+        <p style="color: green;">{{ mensagem_sucesso }}</p>
+    {% endif %}
+
+    <form action="/cadastrar-aluno" method="post" onsubmit="handleSubmit(event)" class="bg-white p-8 rounded shadow-md w-full">
+      <h2 class="text-2xl font-bold mb-6 text-gray-800">Cadastro de Aluno</h2>
+      <div class="grid grid-cols-1 gap-4">
+        <input type="text" name="nome_completo" placeholder="Nome completo" class="p-2 border rounded">
+        <input type="date" name="data_nascimento" placeholder="Data de nascimento" class="p-2 border rounded">
+        <input type="number" name="idade" placeholder="Idade" class="p-2 border rounded">
+        <input type="text" name="nome_pai" placeholder="Nome do pai" class="p-2 border rounded">
+        <input type="text" name="nome_mae" placeholder="Nome da mãe" class="p-2 border rounded">
+        <input type="text" name="morada" placeholder="Morada atual" class="p-2 border rounded">
+        <input type="text" name="referencia" placeholder="Ponto de referência da morada" class="p-2 border rounded">
+      </div>
+
+      <h3 class="text-lg font-semibold mt-6 mb-2">Disciplinas para explicações:</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="toggleDiscipline(this)" data-value="Matemática" class="discipline-btn bg-gray-200 text-gray-800 p-2 rounded">Matemática</button>
+        <button type="button" onclick="toggleDiscipline(this)" data-value="L. Portuguesa" class="discipline-btn bg-gray-200 text-gray-800 p-2 rounded">L. Portuguesa</button>
+        <button type="button" onclick="toggleDiscipline(this)" data-value="L. Inglesa" class="discipline-btn bg-gray-200 text-gray-800 p-2 rounded">L. Inglesa</button>
+        <button type="button" onclick="toggleDiscipline(this)" data-value="Física" class="discipline-btn bg-gray-200 text-gray-800 p-2 rounded">Física</button>
+        <button type="button" onclick="toggleDiscipline(this)" data-value="Química" class="discipline-btn bg-gray-200 text-gray-800 p-2 rounded">Química</button>
+        <input type="text" name="outra_disciplina" placeholder="Outra disciplina (se houver)" class="p-2 border rounded col-span-2">
+      </div>
+      <input type="hidden" id="disciplinas" name="disciplinas">
+
+      <div class="mt-6">
+        <button type="button" onclick="getLocation()" class="bg-green-500 text-white px-4 py-2 rounded">Obter Localização</button>
+        <input type="hidden" name="latitude" id="latitude">
+        <input type="hidden" name="longitude" id="longitude">
+      </div>
+
+      <div class="mt-6 text-center">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Cadastrar Aluno</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

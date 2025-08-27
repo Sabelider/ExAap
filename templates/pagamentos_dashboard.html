@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Pagamentos - {{ professor }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 15px;
+            font-size: 16px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        /* Contêiner para rolagem horizontal da tabela em telas pequenas */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background-color: #fff;
+            box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
+            min-width: 600px; /* Evita colunas espremidas demais */
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .status-pago {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-nao-pago {
+            color: red;
+            font-weight: bold;
+        }
+
+        .btn-voltar {
+            display: inline-block;
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn-voltar:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-pdf {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-pdf:hover {
+            background-color: #218838;
+        }
+
+        .sem-registros {
+            margin-top: 20px;
+            color: #777;
+            font-style: italic;
+        }
+
+        /* Ajustes para telas pequenas */
+        @media (max-width: 600px) {
+            body {
+                font-size: 14px;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.2rem;
+            }
+            th, td {
+                font-size: 0.8rem;
+                padding: 6px;
+            }
+            .btn-voltar {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+            .btn-pdf {
+                font-size: 0.7rem;
+                padding: 4px 6px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <a href="/" class="btn-voltar">← Voltar</a>
+
+    <h1>Histórico de Pagamentos - {{ professor }}</h1>
+
+    {% if pagamentos and pagamentos|length > 0 %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Data Pagamento</th>
+                    <th>Hora</th>
+                    <th>Valor Pago (Kz)</th>
+                    <th>Status</th>
+                    <th>Recibo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pagamentos|sort(attribute='mes') %}
+                <tr>
+                    <td>{{ p.mes }}</td>
+                    <td>{{ p.data_pagamento or '-' }}</td>
+                    <td>{{ p.hora_pagamento or '-' }}</td>
+                    <td>{{ "{:,.2f}".format(p.valor_pago).replace(",", "X").replace(".", ",").replace("X", ".") }}</td>
+                    <td class="{{ 'status-pago' if p.status|lower == 'pago' else 'status-nao-pago' }}">
+                        {{ p.status }}
+                    </td>
+                    <td>
+                        {% if p.status|lower == 'pago' %}
+                        <button class="btn-pdf" onclick="gerarRecibo('{{ p.mes }}', '{{ p.data_pagamento }}', '{{ p.hora_pagamento }}', '{{ '{:,.2f}'.format(p.valor_pago).replace(',', 'X').replace('.', ',').replace('X', '.') }}', '{{ p.status }}', '{{ professor }}', '{{ email_professor }}')">
+                            📄 Recibo
+                        </button>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="sem-registros">Não há registros de pagamento para este professor.</p>
+    {% endif %}
+
+    <script>
+        async function gerarRecibo(mes, data, hora, valor, status, professor, email) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const logoUrl = "/static/logo.png";
+            const logoImg = await fetch(logoUrl).then(r => r.blob());
+            const reader = new FileReader();
+
+            reader.onloadend = function () {
+                const base64Logo = reader.result;
+
+                doc.addImage(base64Logo, "PNG", 14, 10, 25, 25);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Sabi Lider - Comércio e Prestações de Serviços, (SU) LDA", 42, 15);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("NIF: 5002232529", 42, 21);
+                doc.text("Matrícula: 50039-24/241211", 42, 26);
+                doc.text("Sede: Luanda, Município de Cazenga,", 42, 31);
+                doc.text("Distrito Urbano de Cazenga, Centralidade da Marconi", 42, 36);
+
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text("Recibo de Pagamento", 105, 50, { align: "center" });
+
+                doc.setLineWidth(0.5);
+                doc.line(14, 55, 196, 55);
+
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Professor: ${professor}`, 14, 65);
+                doc.text(`E-mail: ${email}`, 14, 72);
+
+                doc.text(`Mês de Referência: ${mes}`, 14, 82);
+                doc.text(`Data de Pagamento: ${data}`, 14, 89);
+                doc.text(`Hora: ${hora}`, 14, 96);
+                doc.text(`Valor Pago: ${valor} Kz`, 14, 103);
+                doc.text(`Status: ${status}`, 14, 110);
+
+                doc.setFontSize(10);
+                doc.text("Documento gerado eletronicamente - válido sem assinatura", 105, 280, { align: "center" });
+
+                doc.save(`recibo_${mes}_${data}.pdf`);
+            };
+
+            reader.readAsDataURL(logoImg);
+        }
+    </script>
+
+</body>
+</html>

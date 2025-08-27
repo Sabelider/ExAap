@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SabApp - Criar Conta</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .logo {
+      margin-bottom: 40px;
+    }
+
+    .logo img {
+      width: 180px;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .box {
+      background-color: white;
+      border-radius: 16px;
+      padding: 40px 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 220px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .box:hover {
+      transform: scale(1.05);
+    }
+
+    .box h2 {
+      font-size: 18px;
+    }
+
+    .back-button {
+      background-color: #555;
+      color: #fff;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .back-button:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="/static/logo.png" alt="Logotipo SabApp" />
+  </div>
+
+  <div class="container">
+    <a href="/dados-professor.html" class="box">
+      <h2>Inscrição</h2>
+    </a>
+
+    <a href="/" class="back-button">Voltar ao Início</a>
+  </div>
+</body>
+</html>

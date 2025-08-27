@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Professores Registrados</title>
+</head>
+<body>
+    <h1>Lista de Professores</h1>
+    <ul>
+        <!-- A lista de professores será exibida aqui -->
+        {% for professor in professores %}
+            <li>
+                Nome: {{ professor.nome }}<br>
+                B.I: {{ professor.bi }}<br>
+                Habilitações: {{ professor.habilitacoes }}<br>
+                Disciplinas: {{ professor.disciplinas }}<br>
+                Telefone: {{ professor.telefone }}<br>
+                E-mail: {{ professor.email }}<br>
+                Localização: ({{ professor.latitude }}, {{ professor.longitude }})
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Formulário para registrar um novo professor -->
+    <h2>Cadastrar Novo Professor</h2>
+    <form action="/registrar_professor/" method="post">
+        Nome: <input type="text" name="nome" required><br>
+        B.I: <input type="text" name="bi" required><br>
+        Habilitações: <input type="text" name="habilitacoes" required><br>
+        Disciplinas: <input type="text" name="disciplinas" required><br>
+        Telefone: <input type="text" name="telefone" required><br>
+        E-mail: <input type="email" name="email" required><br>
+        Localização (latitude): <input type="number" step="any" name="latitude" required><br>
+        Localização (longitude): <input type="number" step="any" name="longitude" required><br>
+        <button type="submit">Registrar</button>
+    </form>
+</body>
+</html>

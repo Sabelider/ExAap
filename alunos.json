@@ -1,0 +1,41 @@
+[
+  {
+    "nome_completo": "João Silva",
+    "bi": "123456789",
+    "idade": 16,
+    "classe": "10A",
+    "nome_pai": "Carlos Silva",
+    "nome_mae": "Ana Silva",
+    "disciplinas": ["Matemática", "Física", "Química"],
+    "morada": "Rua A, Bairro Central",
+    "referencia": "Próximo ao mercado X",
+    "latitude": "10.12345",
+    "longitude": "20.54321"
+  },
+  {
+    "nome_completo": "Maria Santos",
+    "bi": "987654321",
+    "idade": 17,
+    "classe": "12B",
+    "nome_pai": "José Santos",
+    "nome_mae": "Fernanda Santos",
+    "disciplinas": ["Português", "História", "Geografia"],
+    "morada": "Av. B, Bairro Sul",
+    "referencia": "Em frente à escola Y",
+    "latitude": "15.67890",
+    "longitude": "25.98765"
+  },
+  {
+    "nome_completo": "Pedro Oliveira",
+    "bi": "112233445",
+    "idade": 15,
+    "classe": "9C",
+    "nome_pai": "Manuel Oliveira",
+    "nome_mae": "Laura Oliveira",
+    "disciplinas": ["Inglês", "Matemática", "Biologia"],
+    "morada": "Travessa C, Bairro Norte",
+    "referencia": "Ao lado do hospital Z",
+    "latitude": "12.34567",
+    "longitude": "22.76543"
+  }
+]

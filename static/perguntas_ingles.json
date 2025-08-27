@@ -1,0 +1,84 @@
+{
+    "perguntas": {
+        "1": {
+            "pergunta": "What is your name?",
+            "resposta": "My name is John."
+        },
+        "2": {
+            "pergunta": "How old are you?",
+            "resposta": "I am 25 years old."
+        },
+        "3": {
+            "pergunta": "Where do you live?",
+            "resposta": "I live in London."
+        },
+        "4": {
+            "pergunta": "What do you do?",
+            "resposta": "I am a student."
+        },
+        "5": {
+            "pergunta": "Do you like music?",
+            "resposta": "Yes, I love music."
+        },
+        "6": {
+            "pergunta": "Can you swim?",
+            "resposta": "Yes, I can swim well."
+        },
+        "7": {
+            "pergunta": "What time is it?",
+            "resposta": "It is 3 o'clock."
+        },
+        "8": {
+            "pergunta": "Are you hungry?",
+            "resposta": "Yes, I am very hungry."
+        },
+        "9": {
+            "pergunta": "Do you have any pets?",
+            "resposta": "Yes, I have a dog."
+        },
+        "10": {
+            "pergunta": "What is your favorite color?",
+            "resposta": "My favorite color is blue."
+        },
+        "11": {
+            "pergunta": "What day is it today?",
+            "resposta": "Today is Monday."
+        },
+        "12": {
+            "pergunta": "What is the weather like?",
+            "resposta": "It is sunny and warm."
+        },
+        "13": {
+            "pergunta": "Do you like sports?",
+            "resposta": "Yes, I like football."
+        },
+        "14": {
+            "pergunta": "Can you play the guitar?",
+            "resposta": "No, I can't."
+        },
+        "15": {
+            "pergunta": "Do you speak English?",
+            "resposta": "Yes, I do."
+        },
+        "16": {
+            "pergunta": "Where are you from?",
+            "resposta": "I am from Angola."
+        },
+        "17": {
+            "pergunta": "Are you tired?",
+            "resposta": "Yes, I am a little tired."
+        },
+        "18": {
+            "pergunta": "What do you like to eat?",
+            "resposta": "I like to eat pizza."
+        },
+        "19": {
+            "pergunta": "What is your hobby?",
+            "resposta": "My hobby is reading books."
+        },
+        "20": {
+            "pergunta": "Do you go to school?",
+            "resposta": "Yes, I go to school every day."
+        }
+    }
+}

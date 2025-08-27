@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerar PDF - Alunos</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2e86de;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background-color: #2e86de;
+            color: white;
+            padding: 15px 25px;
+            font-size: 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #1e5fad;
+        }
+
+        .info {
+            margin-top: 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Relatório de Alunos</h1>
+
+    <a class="btn" href="/gerar-pdf-alunos/download">📥 Baixar PDF</a>
+
+    <div class="info">
+        Clique no botão acima para gerar e baixar o documento em PDF com a lista dos alunos cadastrados.
+    </div>
+
+</body>
+</html>

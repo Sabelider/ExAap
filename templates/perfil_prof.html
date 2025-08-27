@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Perfil do Professor</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+  body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background: #f4f4f8;
+    color: #333;
+    padding-bottom: 70px;
+  }
+
+  .header-bai {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    padding: 20px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .header-bai img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .header-bai .info {
+    flex: 1;
+  }
+
+  .header-bai .info h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .header-bai .info p {
+    margin: 2px 0;
+    font-size: 14px;
+  }
+
+  .header-bai .saldo {
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .saldo-toggle {
+    background-color: #fff;
+    color: #000;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  .btn-ver-aulas {
+    margin-top: 10px;
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .day {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #f1f1f1;
+  }
+
+  .day.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+  }
+
+  .time {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+    border-radius: 5px;
+    background: #f9f9f9;
+    cursor: pointer;
+  }
+
+  .time.active {
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+    border-color: #218838;
+  }
+
+.botao-padrao {
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  border: none;
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-align: center;
+  margin-top: 10px;
+  margin-right: 5px;
+}
+
+.botao-padrao:hover {
+  opacity: 0.85;
+}
+  
+.logout-button {
+  position: fixed; 
+  top: 15px;
+  right: 20px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 1000; 
+}
+
+.logout-button:hover {
+  background-color: #d9363e;
+}
+  .botao-menu {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 20px 15px;
+  }
+
+  .botao-menu button {
+    flex: 1;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    border: none;
+    border-radius: 16px;
+    padding: 15px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #000;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s ease;
+    text-align: center;
+  }
+
+  .botao-menu button:hover {
+    opacity: 0.85;
+  }
+
+  .ultimas-aulas {
+    padding: 20px;
+  }
+
+  .ultimas-aulas h3 {
+    margin-bottom: 15px;
+  }
+
+  .aula-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    cursor: pointer;
+  }
+
+  .aula-item i {
+    color: #007bff;
+    margin-right: 10px;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    z-index: 100;
+  }
+
+  .bottom-nav button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #444;
+    cursor: pointer;
+  }
+
+  .secao-dinamica {
+    display: none;
+    padding: 20px;
+    margin: 10px 15px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  }
+
+  .secao-dinamica h4 {
+    margin-bottom: 10px;
+    color: #00796b;
+  }
+
+  @media (max-width: 700px) {
+    .botao-menu {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+
+    .botao-menu button {
+      min-width: 120px;
+      flex: 0 0 auto;
+    }
+  }
+</style>
+
+</head>
+ <!-- Botão de logout no canto superior direito -->
+  <form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
+    <input type="hidden" name="email" value="{{ professor.email }}">
+    <button type="submit" class="logout-button">Sair</button>
+  </form>  
+
+  <div class="header-bai">
+    <img src="/static/perfil.png" alt="Foto Perfil">
+    <div class="info">
+      <h2>Olá, {{ professor.nome_completo }} 👋</h2>
+      <p>Nº B.I: {{ professor.bilhete }}</p>
+      <p class="saldo">
+        Saldo: 
+        <span id="saldo">Kz ******</span>
+        <span class="saldo-toggle" onclick="toggleSaldo()">👁️</span>
+      </p>
+    </div>
+  </div>
+
+<!-- Botões principais -->
+<div class="botao-menu">
+  <button onclick="toggleSection('meus-alunos', listarMeusAlunos)">Meus alunos</button>
+  <button onclick="toggleSection('alunos-disponiveis', buscarAlunosDisponiveis)">Novos alunos disponíveis</button>
+  <button onclick="toggleSection('aulas-dia', mostrarAulasDoDia)">Aulas do dia</button>
+  <button onclick="toggleSection('aulas-semana', mostrarAulasDaSemana)">Aulas da Semana</button>
+</div>
+
+<!-- 📚 Últimas Aulas Dadas -->
+<div class="ultimas-aulas" style="margin-top: 20px; background: #ffffff; padding: 16px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+  <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px; color: #333;">Últimas aulas dadas</h3>
+  <ul id="lista-ultimas-aulas" style="list-style: none; padding: 0; margin: 0;">
+    <li style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 17px; color: #444;">
+      Carregando...
+    </li>
+  </ul>
+</div>
+
+<!-- Seções dinâmicas -->
+<div id="alunos-disponiveis" class="secao-dinamica">
+  <h4>Alunos Disponíveis</h4>
+  <div id="lista-alunos-disponiveis"></div>
+</div>
+
+<div id="meus-alunos" class="secao-dinamica">
+  <h4>Meus Alunos</h4>
+  <div id="lista-meus-alunos"></div>
+</div>
+
+<div id="ver-dados" class="secao-dinamica">
+  <h4>Meus Dados</h4>
+  <p>Email: {{ professor.email }}</p>
+  <p>Telefone: {{ professor.telefone }}</p>
+</div>
+
+<!-- Aulas do Dia -->
+<div id="aulas-dia" class="secao-dinamica" style="display:none; margin-top:10px; background:#f9f9f9; padding:10px; border-radius:8px;">
+  <h4>Aulas de Hoje</h4>
+  <div id="lista-aulas-dia"></div>
+</div>
+
+<!-- Aulas da Semana -->
+<div id="aulas-semana" class="secao-dinamica" style="display:none; margin-top:10px; background:#eef; padding:10px; border-radius:8px;">
+  <h4>Minhas Aulas da Semana</h4>
+  <div id="lista-aulas-semana"></div>
+</div>
+
+<!-- FUNDO ESCURO PARA DETECTAR CLIQUE FORA -->
+<div id="calendarOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:999;" onclick="fecharCalendarioSeForFora(event)">
+  <!-- CAIXA CALENDÁRIO -->
+  <div id="calendarContainer" onclick="event.stopPropagation()" style="position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:15px; z-index:1000; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); width:350px; max-height:85vh; overflow-y:auto; font-size:14px;">
+    <h4>Selecionar Horários</h4>
+    <div id="daySelector" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
+    <div id="timeSelector" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;"></div>
+    <div style="margin-top:15px; text-align:right;">
+      <button onclick="enviarHorario()" style="background:#28a745; color:#fff; border:none; padding:8px 12px; border-radius:5px;">Enviar o horário</button>
+      <button onclick="fecharCalendario()" style="margin-left:10px;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Painel de Informações -->
+<div id="painel-informacoes" style="display:none; position:fixed; bottom:60px; left:10px; right:10px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:1000; font-size:15px; max-height:80vh; overflow-y:auto;">
+  <h3 style="margin-top:0; color:#333;">Bem-vindo(a) à Sabi Líder!</h3>
+  <p>O seu centro de formação online, onde pode lecionar de forma flexível, segura e eficiente — sem sair de casa.</p>
+
+  <h4 style="margin-top:15px; color:#444;">🌟 Vantagens das aulas online</h4>
+  <ul style="padding-left:20px; line-height:1.6;">
+    <li>Flexibilidade de horários: ensine quando quiser.</li>
+    <li>Sem deslocamentos: economize tempo e custos.</li>
+    <li>Conexão direta com os alunos: interações em tempo real.</li>
+    <li>Ambiente organizado: histórico, chamadas e relatórios num só lugar.</li>
+    <li>Privacidade e segurança de dados garantidos.</li>
+  </ul>
+
+  <h4 style="margin-top:15px; color:#444;">🔐 Políticas de Privacidade</h4>
+  <ul style="padding-left:20px; line-height:1.6;">
+    <li>Todos os dados são protegidos e armazenados com segurança.</li>
+    <li>O uso da plataforma está sujeito à autorização de acesso individual.</li>
+    <li>O professor compromete-se a manter a ética e o respeito nas aulas.</li>
+    <li>O conteúdo gerado é de responsabilidade do educador.</li>
+  </ul>
+
+  <h4 style="margin-top:15px; color:#444;">🧾 Modo de Uso</h4>
+  <ul style="padding-left:20px; line-height:1.6;">
+    <li>Use o menu inferior para navegar entre alunos, salários e aulas.</li>
+    <li>Consulte sua agenda semanal com um clique.</li>
+    <li>Ao iniciar uma aula, garanta boa conexão e ambiente tranquilo.</li>
+    <li>Comunique-se com clareza e esteja sempre disponível nos horários acordados.</li>
+  </ul>
+
+  <div style="text-align:right; margin-top:20px;">
+    <button onclick="fecharMenuResumo()" style="background:#dc3545; color:#fff; border:none; padding:8px 12px; border-radius:5px;">Fechar</button>
+  </div>
+</div>
+
+<!-- Navegação inferior -->
+<div class="bottom-nav">
+  <button onclick="abrirPerfil()" title="Meu Perfil">
+    <i class="fas fa-user-circle"></i>
+  </button>
+  <button onclick="abrirSalarios()" title="Salários">
+    <i class="fas fa-money-bill-wave"></i>
+  </button>
+  <button onclick="abrirMenuResumo()" title="Informações">
+    <i class="fas fa-bars"></i>
+  </button>
+</div>
+
+<!-- Formulário oculto para redirecionar ao perfil -->
+<form method="POST" action="/dados_professor" id="form-dados-prof" style="display:none;">
+  <input type="hidden" name="email" id="prof-email-hidden">
+</form>
+
+<script>
+
+
+let saldoVisivel = false;
+let saldoReal = 0;
+
+async function buscarSaldo() {
+  try {
+    const email = "{{ professor.email }}";
+    const res = await fetch(`/saldo-atual?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if (data.saldo_atual !== undefined) {
+      saldoReal = data.saldo_atual;
+    }
+  } catch (error) {
+    console.error("Erro ao buscar saldo:", error);
+  }
+}
+
+async function toggleSaldo() {
+  const saldo = document.getElementById('saldo');
+
+  // Buscar o saldo apenas se ainda for 0
+  if (!saldoReal) {
+    await buscarSaldo();
+  }
+
+  if (saldoVisivel) {
+    saldo.textContent = 'Kz ******';
+  } else {
+    saldo.textContent = 'Kz ' + saldoReal.toLocaleString('pt-PT', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  saldoVisivel = !saldoVisivel;
+}
+  
+  function verDetalhesAula(aluno, hora) {
+    alert("Aula para: " + aluno + "\nHorário: " + hora + "\nDuração: 1h\nValor: Kz 1.250,00");
+  }
+
+  function abrirMenuResumo() {
+    const painel = document.getElementById("painel-informacoes");
+    painel.style.display = "block";
+  }
+
+  function fecharMenuResumo() {
+    const painel = document.getElementById("painel-informacoes");
+    painel.style.display = "none";
+  }
+
+  function toggleDados() {
+    const div = document.getElementById('dadosSecretos');
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function toggleSection(id, fetchFunction) {
+    const section = document.getElementById(id);
+    if (section.style.display === 'block') {
+      section.style.display = 'none';
+    } else {
+      section.style.display = 'block';
+      if (typeof fetchFunction === 'function') {
+        fetchFunction();
+      }
+    }
+  }
+  
+function abrirSalarios() {
+    const email = "{{ professor.email }}";
+    window.location.href = `/salarios?email=${encodeURIComponent(email)}`;
+  }
+  
+  function abrirPerfil() {
+    const email = "{{ professor.email }}";
+    document.getElementById('prof-email-hidden').value = email;
+    document.getElementById('form-dados-prof').submit();
+  }
+
+  async function enviarNotificacao(aluno) {
+    try {
+      const resposta = await fetch("/ativar-notificacao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aluno: aluno
+        })
+      });
+
+      const resultado = await resposta.json();
+      alert(resultado.msg || "Notificação enviada!");
+    } catch (error) {
+      console.error("Erro ao enviar notificação:", error);
+      alert("Erro ao enviar notificação.");
+    }
+  }
+
+async function mostrarAulasDoDia() {
+  const professorEmail = "{{ professor.email }}";
+
+  const resposta = await fetch("/aulas_do_dia", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ professor_email: professorEmail })
+  });
+
+  const dados = await resposta.json();
+  const lista = document.getElementById("lista-aulas-dia");
+  lista.innerHTML = "";
+
+  if (dados.aulas && Array.isArray(dados.aulas) && dados.aulas.length > 0) {
+    dados.aulas.forEach(item => {
+      const bloco = document.createElement("div");
+      bloco.style.marginBottom = "10px";
+      bloco.innerHTML = `
+        <div style="padding: 6px 10px; background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <strong>${item.aluno}</strong><br>
+          Horários: ${item.horarios.join(", ")}<br>
+          Valor: ${item.preco}
+        </div>
+      `;
+      lista.appendChild(bloco);
+    });
+  } else {
+    lista.innerHTML = "Nenhuma aula marcada para hoje.";
+  }
+}
+
+async function mostrarAulasDaSemana() {
+  const professorEmail = "{{ professor.email }}";
+
+  const resposta = await fetch("/aulas_da_semana", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ professor_email: professorEmail })
+  });
+
+  const dados = await resposta.json();
+  const lista = document.getElementById("lista-aulas-semana");
+  lista.innerHTML = "";
+
+  if (dados.aulas && typeof dados.aulas === "object" && Object.keys(dados.aulas).length > 0) {
+    // ✅ Ordem corrigida conforme backend com OrderedDict
+    const diasOrdenados = [
+      "Domingo", "Segunda-feira", "Terça-feira",
+      "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"
+    ];
+
+    diasOrdenados.forEach(dia => {
+      const aulasDia = dados.aulas[dia];
+      if (aulasDia && aulasDia.length > 0) {
+        const diaDiv = document.createElement("div");
+        diaDiv.style.marginBottom = "15px";
+        diaDiv.innerHTML = `<h5 style="text-transform: capitalize;">${dia}</h5>`;
+
+        aulasDia.forEach(item => {
+          const aulaItem = document.createElement("div");
+          aulaItem.style.marginLeft = "10px";
+          aulaItem.innerHTML = `
+            <strong>${item.aluno}</strong>: ${item.horarios.join(", ")}<br>
+            Valor: ${item.preco}
+          `;
+          diaDiv.appendChild(aulaItem);
+        });
+
+        lista.appendChild(diaDiv);
+      }
+    });
+  } else {
+    lista.innerHTML = "Nenhuma aula marcada para esta semana.";
+  }
+}
+  
+  function slugify(text) {
+    return text
+      .toLowerCase()
+      .replace(/\s+/g, '-')       
+      .replace(/[^\w\-@.]+/g, '') 
+      .replace(/\-\-+/g, '-')     
+      .replace(/^-+/, '')         
+      .replace(/-+$/, '');        
+  }
+
+  async function iniciarChamada(aluno, professorEmail) {
+    try {
+      await enviarNotificacao(aluno);
+
+      // Registrar a aula no Firebase
+      await fetch("/iniciar-aula", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          aluno: aluno,
+          professor: professorEmail,
+          sala: `${slugify(professorEmail)}-${slugify(aluno)}`
+        })
+      });
+
+      // ✅ Definir status como "ok"
+      await fetch("/definir-status-ok", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ aluno: aluno })
+      });
+
+      // Redirecionar para a sala
+    window.location.href = `/sala_virtual_professor?email=${encodeURIComponent(professorEmail)}&aluno=${encodeURIComponent(aluno)}`;
+    } catch (error) {
+      console.error("Erro ao iniciar chamada:", error);
+      alert("Erro ao iniciar a chamada.");
+    }
+  }
+
+let alunoSelecionado = null;
+
+async function listarMeusAlunos() {
+  const emailProfessorLogado = "{{ professor.email }}";
+
+  try {
+    const res = await fetch(`/meus-alunos-status/${encodeURIComponent(emailProfessorLogado)}`);
+    const lista = await res.json();
+    const container = document.getElementById('meus-alunos');
+    container.innerHTML = '<h2>Meus Alunos</h2>';
+
+    if (lista.length === 0) {
+      container.innerHTML += '<p>Nenhum aluno vinculado ainda.</p>';
+      return;
+    }
+
+    lista.forEach(aluno => {
+      const card = document.createElement('div');
+      card.className = 'aluno-card';
+
+      const statusClass = aluno.online ? 'online' : 'offline';
+      const statusText = aluno.online ? 'Online' : 'Offline';
+
+      card.innerHTML = `
+        <div class="aluno-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span><strong>${aluno.nome}</strong> - ${aluno.disciplina}</span>
+          <div class="status">
+            <span>${statusText}</span>
+            <span class="status-dot ${statusClass}"></span>
+          </div>
+        </div>
+      `;
+
+      if (aluno.online) {
+        const iniciarBtn = document.createElement('button');
+        iniciarBtn.textContent = 'Dar Aula';
+        iniciarBtn.className = 'botao-padrao';
+        iniciarBtn.onclick = (e) => {
+          e.stopPropagation();
+          iniciarChamada(aluno.nome, emailProfessorLogado);
+        };
+        card.appendChild(iniciarBtn);
+      }
+
+      const desvincularBtn = document.createElement('button');
+      desvincularBtn.textContent = 'Desvincular';
+      desvincularBtn.className = 'botao-padrao';
+      desvincularBtn.onclick = (e) => {
+        e.stopPropagation();
+        desvincularAluno(aluno.nome, emailProfessorLogado);
+      };
+      card.appendChild(desvincularBtn);
+
+      const horarioBtn = document.createElement('button');
+      horarioBtn.textContent = 'Horário';
+      horarioBtn.className = 'botao-padrao';
+      horarioBtn.onclick = (e) => {
+        e.stopPropagation();
+        alunoSelecionado = aluno.nome;
+        abrirCalendario();
+      };
+      card.appendChild(horarioBtn);
+
+      const aulasBtn = document.createElement('button');
+      aulasBtn.textContent = 'Aulas dadas';
+      aulasBtn.className = 'botao-padrao';
+      aulasBtn.onclick = (e) => {
+        e.stopPropagation();
+        verAulasDadas(aluno.nome);
+      };
+      card.appendChild(aulasBtn);
+
+      container.appendChild(card); 
+    });
+
+  } catch (error) {
+    console.error("Erro ao buscar alunos:", error);
+    alert("Erro ao buscar alunos.");
+  }
+}
+
+async function verAulasDadas(nomeAluno) {
+  try {
+    const response = await fetch("/ver-aulas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: nomeAluno })
+    });
+
+    const data = await response.json();
+
+    if (data.erro) {
+      alert("Erro: " + data.erro);
+      return;
+    }
+
+    let mensagem = `Aulas dadas para ${nomeAluno}:\n\n`;
+    mensagem += `Total de aulas dadas: ${data.aulas_dadas}\n`;
+    mensagem += `Aulas restantes: ${data.restantes}`;
+
+    alert(mensagem);
+  } catch (error) {
+    console.error("Erro ao buscar aulas dadas:", error);
+    alert("Erro ao buscar aulas dadas.");
+  }
+}
+
+async function carregarUltimasAulas(professorEmail) {
+    try {
+      const resposta = await fetch("/ultimas-aulas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professor_email: professorEmail })
+      });
+
+      const resultado = await resposta.json();
+
+      const lista = document.getElementById("lista-ultimas-aulas");
+      lista.innerHTML = ""; // limpar antes de preencher
+
+      if (resultado.ultimas_aulas && resultado.ultimas_aulas.length > 0) {
+        resultado.ultimas_aulas.forEach((aula) => {
+          const item = document.createElement("li");
+          item.innerHTML = `<strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}`;
+          lista.appendChild(item);
+        });
+      } else {
+        lista.innerHTML = "<li>Nenhuma aula registrada ainda.</li>";
+      }
+
+    } catch (error) {
+      console.error("Erro ao carregar últimas aulas:", error);
+    }
+  }
+
+  const professorEmail = "{{ professor.email }}";
+  carregarUltimasAulas(professorEmail);
+  
+ async function buscarAlunosDisponiveis() {
+    const email = "{{ professor.email }}";
+    try {
+      const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
+      const lista = await res.json();
+      const container = document.getElementById('alunos-disponiveis');
+      container.innerHTML = '<h2>Alunos Disponíveis</h2>';
+
+      if (lista.length === 0) {
+        container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
+        return;
+      }
+
+      lista.forEach(aluno => {
+        const card = document.createElement('div');
+        card.className = 'aluno-card';
+
+        const nomeAluno = aluno.nome;
+        const disciplina = aluno.disciplina;
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${nomeAluno}</strong> - ${disciplina}
+            </div>
+            <button class="notificar-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
+              Vincular
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    } catch (error) {
+      console.error("Erro ao buscar alunos disponíveis:", error);
+      alert("Erro ao buscar alunos disponíveis.");
+    }
+  }
+
+  async function vincularAluno(nomeAluno, professorEmail) {
+    try {
+      const res = await fetch('/vincular-aluno', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          professor_email: professorEmail,
+          aluno_nome: nomeAluno
+        })
+      });
+
+      if (res.ok) {
+        alert(`Aluno "${nomeAluno}" vinculado com sucesso!`);
+        buscarAlunosDisponiveis();
+      } else {
+        const erro = await res.json();
+        alert(`Erro: ${erro.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao vincular aluno:', error);
+      alert('Erro interno ao tentar vincular o aluno.');
+    }
+  }
+  
+let horarioSelecionado = {}; 
+let diaAtivo = ""; 
+
+function abrirCalendario() {
+  const overlay = document.getElementById('calendarOverlay');
+  overlay.style.display = 'block';
+  gerarCalendario();
+}
+
+function fecharCalendario() {
+  document.getElementById('calendarOverlay').style.display = 'none';
+}
+
+function fecharCalendarioSeForFora(event) {
+  if (event.target.id === 'calendarOverlay') {
+    fecharCalendario();
+  }
+}
+
+function gerarCalendario() {
+  const dias = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+  const daySelector = document.getElementById('daySelector');
+  const timeSelector = document.getElementById('timeSelector');
+
+  daySelector.innerHTML = '';
+  timeSelector.innerHTML = '';
+  diaAtivo = ""; 
+
+  dias.forEach(dia => {
+    const div = document.createElement('div');
+    div.textContent = dia;
+    div.className = 'day';
+    div.onclick = () => {
+      document.querySelectorAll('.day').forEach(d => d.classList.remove('active'));
+      div.classList.add('active');
+      diaAtivo = dia;
+      gerarHorarios(); 
+    };
+    daySelector.appendChild(div);
+  });
+}
+
+function gerarHorarios() {
+  const timeSelector = document.getElementById('timeSelector');
+  timeSelector.innerHTML = '';
+
+  if (!diaAtivo) return;
+
+  const horariosSalvos = horarioSelecionado[diaAtivo] || [];
+
+  const inicio = 7.5;
+  const fim = 20.5;
+
+  for (let h = inicio; h < fim; h++) {
+    const horaInicial = `${Math.floor(h)}:${h % 1 ? '30' : '00'}`;
+    const horaFinal = `${Math.floor(h + 1)}:${(h + 1) % 1 ? '30' : '00'}`;
+    const texto = `${horaInicial} - ${horaFinal}`;
+    const div = document.createElement('div');
+    div.textContent = texto;
+    div.className = 'time';
+
+    if (horariosSalvos.includes(texto)) {
+      div.classList.add('active');
+    }
+
+    div.onclick = () => {
+      div.classList.toggle('active');
+      if (!horarioSelecionado[diaAtivo]) {
+        horarioSelecionado[diaAtivo] = [];
+      }
+      if (div.classList.contains('active')) {
+        horarioSelecionado[diaAtivo].push(texto);
+      } else {
+        horarioSelecionado[diaAtivo] = horarioSelecionado[diaAtivo].filter(h => h !== texto);
+      }
+    };
+    timeSelector.appendChild(div);
+  }
+}
+
+async function enviarHorario() {
+  if (!alunoSelecionado || Object.keys(horarioSelecionado).length === 0) {
+    alert("Selecione pelo menos um dia e horário.");
+    return;
+  }
+
+  const professorEmail = "{{ professor.email }}";
+
+  const mapaDias = {
+    "Segunda-feira": "Seg",
+    "Terça-feira": "Ter",
+    "Quarta-feira": "Qua",
+    "Quinta-feira": "Qui",
+    "Sexta-feira": "Sex",
+    "Sábado": "Sáb",
+    "Domingo": "Dom"
+  };
+
+  const horarioFormatado = {};
+  for (const dia in horarioSelecionado) {
+    const abreviado = mapaDias[dia] || dia;
+    horarioFormatado[abreviado] = horarioSelecionado[dia];
+  }
+
+  const payload = {
+    aluno_nome: alunoSelecionado,
+    professor_email: professorEmail,
+    horario: horarioFormatado
+  };
+
+  try {
+  
+    const response = await fetch("/enviar-horario", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert(`Horário enviado com sucesso para ${alunoSelecionado}!`);
+
+      
+      const diasSelecionados = Object.keys(horarioSelecionado);
+      const ultimoDia = diasSelecionados[diasSelecionados.length - 1];
+      const horarios = horarioSelecionado[ultimoDia];
+
+      if (ultimoDia && horarios && horarios.length > 0) {
+        const guardarPayload = {
+          aluno: alunoSelecionado,
+          dias: [ultimoDia],
+          horarios: horarios
+        };
+
+        const guardarResponse = await fetch("/guardar-horario", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(guardarPayload)
+        });
+
+        const guardarData = await guardarResponse.json();
+        if (guardarResponse.ok) {
+          console.log("Horário também guardado com sucesso!");
+        } else {
+          console.warn("Erro ao guardar horário:", guardarData.erro || "Erro desconhecido.");
+        }
+      }
+
+      fecharCalendario();
+    } else {
+      alert("Erro ao enviar horário: " + (data.detail || "Erro desconhecido."));
+    }
+  } catch (e) {
+    alert("Erro ao enviar o horário.");
+    console.error(e);
+  }
+}
+
+  function toggleDados() {
+    const div = document.getElementById("dadosSecretos");
+    div.style.display = div.style.display === "none" ? "block" : "none";
+
+    const mensagensDiv = document.getElementById("mensagensAdmin");
+    mensagensDiv.style.display = mensagensDiv.style.display === "none" ? "block" : "none";
+  }
+
+  async function buscarMensagensProfessor() {
+    const email = "{{ professor.email }}".trim().toLowerCase();
+    const res = await fetch(`/mensagens-professor/${email}`);
+    const dados = await res.json();
+
+    const lista = document.getElementById("listaMensagens");
+    lista.innerHTML = "";
+
+    if (dados.mensagens && dados.mensagens.length > 0) {
+      dados.mensagens.forEach(msg => {
+        const item = document.createElement("li");
+        item.style.padding = "10px";
+        item.style.borderBottom = "1px solid #ffe082";
+        item.innerHTML = `<strong>${msg.data || "Sem data"}:</strong><br>${msg.texto}`;
+        lista.appendChild(item);
+      });
+    } else {
+      lista.innerHTML = "<li style='color:#777'>Nenhuma mensagem recebida ainda.</li>";
+    }
+  }
+
+ 
+  window.addEventListener("DOMContentLoaded", buscarMensagensProfessor);
+</script>
+</body>
+</html>

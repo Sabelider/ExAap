@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sala Virtual - Professor</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      font-family: "Roboto", sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding-top: 20px;
+    }
+
+    video {
+      width: 90vw;
+      max-width: 400px;
+      height: 70vh;
+      border: 3px solid #fff;
+      margin-bottom: 12px;
+      object-fit: cover;
+    }
+
+    #localVideo {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 120px;
+      height: 90px;
+      border: 2px solid #fff;
+    }
+
+    #info {
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    #status {
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    #cronometro {
+      font-size: 26px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    #confirmarAulaBtn {
+      display: none;
+      margin-top: 16px;
+      background-color: #ffa500;
+      color: black;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+    }
+
+    #confirmarAulaBtn:hover {
+      background-color: #ff8800;
+    }
+
+    #chamarAlunoBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: green;
+      color: white;
+      font-weight: bold;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #chamarAlunoBtn:hover {
+      background-color: darkgreen;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <div><strong>O seu ID:</strong> <span id="myId">Gerando...</span></div>
+    <div><strong>Status:</strong> <span id="status">Aguardando conexão...</span></div>
+    <div id="cronometro" style="display: none;">01:00</div>
+  </div>
+
+  <div>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar o Aluno</button>
+  <button id="confirmarAulaBtn" onclick="registrarAula()">Confirmar aula dada?</button>
+
+  <!-- Firebase + PeerJS -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
+      authDomain: "exap-8a935.firebaseapp.com",
+      projectId: "exap-8a935",
+      storageBucket: "exap-8a935.appspot.com",
+      messagingSenderId: "664710895978",
+      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script>
+    const myIdSpan = document.getElementById("myId");
+    const statusSpan = document.getElementById("status");
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const cronometro = document.getElementById("cronometro");
+    const confirmarAulaBtn = document.getElementById("confirmarAulaBtn");
+    const chamarAlunoBtn = document.getElementById("chamarAlunoBtn");
+
+    const email = "{{ email }}";
+    const aluno = "{{ aluno }}";
+
+    let localStream;
+    let peer;
+    let currentCall;
+    let meuPeerId = "";
+    let tempoRestante = 60;
+    let intervalo;
+
+    async function startCamera() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+      } catch (err) {
+        alert("Erro ao acessar câmera e microfone");
+        console.error(err);
+      }
+    }
+
+    function initPeer() {
+      peer = new Peer();
+
+      peer.on("open", (id) => {
+        meuPeerId = id;
+        myIdSpan.textContent = id;
+      });
+
+      peer.on("call", (call) => {
+        statusSpan.textContent = "📞 Recebendo chamada...";
+        call.answer(localStream);
+        handleCallEvents(call);
+      });
+
+      peer.on("error", (err) => {
+        console.error("Erro PeerJS:", err);
+        alert("Erro no PeerJS: " + err.message);
+      });
+    }
+
+    function handleCallEvents(call) {
+      call.on("stream", (remoteStream) => {
+        remoteVideo.srcObject = remoteStream;
+        statusSpan.textContent = "✅ Conectado!";
+        iniciarCronometro();
+      });
+
+      call.on("close", () => {
+        statusSpan.textContent = "🔌 Conexão encerrada.";
+        confirmarAulaBtn.style.display = "inline-block"; // Garante visibilidade
+      });
+
+      call.on("error", (err) => {
+        console.error("Erro na chamada:", err);
+        confirmarAulaBtn.style.display = "inline-block";
+      });
+
+      currentCall = call;
+    }
+
+    function enviarIdAoPerfil() {
+      chamarAlunoBtn.style.display = "none";
+
+      fetch("/enviar-id-aula", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          peer_id: meuPeerId,
+          email: email.trim().toLowerCase(),
+          aluno: aluno.trim().toLowerCase()
+        })
+      })
+      .then(res => {
+        if (res.ok) alert("✅ ID da aula enviado!");
+        else alert("⚠️ Erro ao enviar ID.");
+      })
+      .catch(err => {
+        console.error("Erro:", err);
+        alert("Erro ao enviar ID.");
+      });
+    }
+
+    function iniciarCronometro() {
+      cronometro.style.display = "block";
+      tempoRestante = 60;
+
+      intervalo = setInterval(() => {
+        if (tempoRestante <= 0) {
+          clearInterval(intervalo);
+          cronometro.textContent = "00:00";
+          encerrarChamada();
+          return;
+        }
+
+        tempoRestante--;
+        let minutos = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
+        let segundos = (tempoRestante % 60).toString().padStart(2, '0');
+        cronometro.textContent = `${minutos}:${segundos}`;
+      }, 1000);
+    }
+
+    function encerrarChamada() {
+      if (currentCall) {
+        currentCall.close();
+        remoteVideo.srcObject = null;
+        statusSpan.textContent = "⏱️ Aula encerrada";
+      }
+
+     
+      confirmarAulaBtn.style.display = "inline-block";
+    }
+  function registrarAula() {
+    const btn = document.getElementById("confirmarAulaBtn");
+    btn.disabled = true; 
+
+    fetch("/registrar-aula", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professor: email.trim().toLowerCase(),
+        aluno: aluno.trim().toLowerCase()
+      })
+    })
+    .then(res => {
+      if (res.ok) {
+        alert("✅ Aula registrada com sucesso!");
+        btn.style.display = "none"; 
+      } else {
+        alert("⚠️ Falha ao registrar aula.");
+        btn.disabled = false;
+      }
+    })
+    .catch(err => {
+      console.error("Erro ao registrar aula:", err);
+      alert("Erro de conexão ao registrar aula.");
+      btn.disabled = false; 
+    });
+  }
+
+    startCamera().then(initPeer);
+  </script>
+</body>
+</html>

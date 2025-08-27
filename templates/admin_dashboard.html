@@ -1,0 +1,762 @@
+<!DOCTYPE html>  
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login do Administrador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e6ecf0;
+  }
+  .navbar {
+    background: linear-gradient(135deg, #0078d7, #00bcf2);
+    padding: 15px 20px;
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .login-form {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  .login-form input,
+  .login-form button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+  }
+  .login-form input { border: 1px solid #ccc; font-size: 14px; }
+  .login-form button {
+    background: linear-gradient(135deg, #0078d7, #00bcf2);
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 14px;
+  }
+  .login-form button:hover {
+    background: linear-gradient(135deg, #005fa3, #00a4c2);
+  }
+  .container {
+    padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+  .card {
+    flex: 1 1 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 15px;
+  }
+  .card h2 { font-size: 16px; margin-bottom: 8px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 6px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  th { background-color: #f9f9f9; font-weight: 600; }
+  .btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #0078d7, #00bcf2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+  .btn:hover {
+    background: linear-gradient(135deg, #005fa3, #00a4c2);
+  }
+  .toggle-btn { width: 100%; text-align: left; margin-bottom: 8px; }
+  .section { display: none; margin-top: 10px; }
+  textarea, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+  }
+  .status-circulo {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+  .status-verde { background-color: green; }
+  .status-vermelho { background-color: red; }
+
+
+  @media (max-width: 700px) {
+    .container { flex-direction: column; align-items: center; padding: 10px; }
+    table, th, td { font-size: 12px; }
+    .btn { font-size: 12px; padding: 5px 10px; }
+  }
+  @media (max-width: 500px) {
+    .card { flex: 1 1 100%; padding: 10px; }
+    table, th, td { font-size: 11px; }
+    .btn { font-size: 11px; padding: 4px 8px; }
+    .login-form { margin: 30px 10px; padding: 15px; }
+  }
+</style>
+</head>
+<body>
+  <div class="navbar">Painel do Administrador</div>
+
+  <div class="login-form" id="login-form">
+    <h2>Entrar</h2>
+    <input type="text" id="username" placeholder="Nome de utilizador">
+    <input type="password" id="password" placeholder="Palavra-passe">
+    <button onclick="verificarLogin()">Entrar</button>
+    <p id="login-erro" style="color:red;"></p>
+  </div>
+
+  <div class="container" id="painel" style="display:none">
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('alunos-cadastrados')">👨‍🎓 Alunos Cadastrados</button>
+      <div class="section" id="alunos-cadastrados">
+        <button class="btn" onclick="carregarAlunos()">Atualizar</button>
+        <table id="tabela-alunos">
+          <thead><tr><th>Nome</th><th>Disciplina</th><th>Online</th><th>Vinculado</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('alunos-disponiveis')">📋 Alunos sem Vínculo</button>
+      <div class="section" id="alunos-disponiveis">
+        <button class="btn" onclick="carregarAlunosDisponiveis()">Atualizar</button>
+        <table id="tabela-disponiveis">
+          <thead><tr><th>Nome</th><th>Disciplina</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('professores-online')">🧑‍🏫 Professores Online</button>
+      <div class="section" id="professores-online">
+        <button class="btn" onclick="carregarProfessores()">Atualizar</button>
+        <table id="tabela-professores">
+          <thead><tr><th>Email</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-ao-vivo')">🎥 Aulas em Andamento</button>
+      <div class="section" id="aulas-ao-vivo">
+        <button class="btn" onclick="carregarAulas()">Atualizar</button>
+        <table id="tabela-aulas">
+          <thead><tr><th>Aluno</th><th>Professor</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-dadas')">📚 Relatório de Aulas</button>
+      <div class="section" id="aulas-dadas">
+        <button class="btn" onclick="carregarRelatorioAulas()">Atualizar</button>
+        <table id="tabela-aulas-dadas">
+          <thead><tr><th>Professor</th><th>Aluno</th><th>Aulas Dadas</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn toggle-btn" onclick="alternarVisibilidade('enviar-mensagem')">✉️ Enviar Mensagem</button>
+      <div class="section" id="enviar-mensagem">
+        <h2>Mensagem ao Professor</h2>
+        <select id="lista-professores">
+          <option disabled selected>Selecione o professor</option>
+        </select>
+        <textarea id="mensagem-texto" placeholder="Digite sua mensagem"></textarea>
+        <button class="btn" onclick="enviarMensagem()">Enviar Mensagem</button>
+      </div>
+    </div>
+
+<!-- Controle de Pagamentos de Alunos -->
+<div class="card">
+  <button class="btn toggle-btn" onclick="alternarVisibilidade('controle-pagamentos')">
+    💰 Controle de Pagamentos de Alunos
+  </button>
+  
+  <div class="section" id="controle-pagamentos">
+    <button class="btn" onclick="carregarPagamentos()">Atualizar</button>
+    
+    <!-- Tabela principal de alunos -->
+    <table id="tabela-pagamentos">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Status Atual</th>
+          <th>Dívida</th>
+          <th>Último Pagamento</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Tabela de meses (detalhes do aluno) -->
+    <div id="detalhes-aluno" style="display:none; margin-top:15px; position: relative;">
+      <!-- Botão Fechar -->
+      <button onclick="document.getElementById('detalhes-aluno').style.display='none'" 
+              style="position: absolute; top: 5px; right: 5px; background: transparent; border: none; font-size: 18px; cursor: pointer;">
+        ❌
+      </button>
+
+      <h3 id="nome-aluno" style="margin-top:0;"></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Ano</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-meses"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Controle de Pagamentos de Professores -->
+<div class="card">
+  <button class="btn toggle-btn" onclick="alternarVisibilidade('controle-pagamentos-prof')">
+    💰 Controle de Pagamento de Professores
+  </button>
+  
+  <div class="section" id="controle-pagamentos-prof">
+    <button class="btn" onclick="carregarPagamentosProf()">Atualizar</button>
+    
+    <!-- Tabela principal de professores -->
+    <table id="tabela-pagamentos-prof">
+      <thead>
+        <tr>
+          <th>Professor</th>
+          <th>Status Atual</th>
+          <th>Valor a Pagar (R$)</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Tabela de meses (detalhes do professor) -->
+    <div id="detalhes-prof" style="display:none; margin-top:15px; position: relative;">
+      <button onclick="document.getElementById('detalhes-prof').style.display='none'" 
+              style="position: absolute; top: 5px; right: 5px; background: transparent; border: none; font-size: 18px; cursor: pointer;">
+        ❌
+      </button>
+      <h3 id="nome-prof" style="margin-top:0;"></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Data Pagamento</th>
+            <th>Valor Pago (Kz)</th>
+            <th>Email do Professor</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-meses-prof"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  function alternarVisibilidade(id) {
+    const el = document.getElementById(id);
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+  }
+
+  function verificarLogin() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+    if (user === 'admin' && pass === '12345') {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('painel').style.display = 'block';
+    } else {
+      document.getElementById('login-erro').innerText = 'Credenciais inválidas';
+    }
+  }
+
+  async function carregarAlunos() {
+    const res = await fetch("/listar-alunos");
+    const alunos = await res.json();
+    const tbody = document.querySelector("#tabela-alunos tbody");
+    tbody.innerHTML = "";
+    alunos.forEach(a => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${a.nome}</td>
+          <td>${a.disciplina}</td>
+          <td>${a.online ? "✅" : "❌"}</td>
+          <td>${a.vinculado ? "Sim" : "Não"}</td>
+          <td><button onclick="removerAluno('${a.nome}')" style="background:red;color:white;border:none;padding:4px 8px;border-radius:4px;">Remover</button></td>
+        </tr>
+      `;
+    });
+  }
+
+  async function carregarAlunosDisponiveis() {
+    const res = await fetch("/alunos-nao-vinculados");
+    const dados = await res.json();
+    const tbody = document.querySelector("#tabela-disponiveis tbody");
+    tbody.innerHTML = "";
+    dados.forEach(aluno => {
+      tbody.innerHTML += `
+        <tr><td>${aluno.nome}</td><td>${aluno.disciplina}</td></tr>
+      `;
+    });
+  }
+
+  async function carregarProfessores() {
+    const res = await fetch("/listar-professores-online");
+    const profs = await res.json();
+    const tbody = document.querySelector("#tabela-professores tbody");
+    const select = document.getElementById("lista-professores");
+    tbody.innerHTML = "";
+    if (select) {
+      select.innerHTML = `
+        <option disabled selected>Selecione o professor</option>
+        <option value="todos">Todos os Professores</option>
+      `;
+    }
+    profs.forEach(p => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.email}</td>
+          <td>${p.online ? "✅" : "❌"}</td>
+          <td><button onclick="removerProfessor('${p.email}')" style="background:red;color:white;border:none;padding:4px 8px;border-radius:4px;">Remover</button></td>
+        </tr>
+      `;
+      if (select && p.email) {
+        select.innerHTML += `<option value="${p.email}">${p.email}</option>`;
+      }
+    });
+  }
+
+  async function carregarAulas() {
+    const res = await fetch("/listar-chamadas");
+    const chamadas = await res.json();
+    const tbody = document.querySelector("#tabela-aulas tbody");
+    tbody.innerHTML = "";
+    chamadas.forEach(ch => {
+      tbody.innerHTML += `
+        <tr><td>${ch.aluno}</td><td>${ch.professor}</td><td>${ch.status}</td></tr>
+      `;
+    });
+  }
+
+  async function carregarRelatorioAulas() {
+    const res = await fetch("/relatorio-aulas");
+    const dados = await res.json();
+    const tbody = document.querySelector("#tabela-aulas-dadas tbody");
+    tbody.innerHTML = "";
+    dados.forEach(item => {
+      tbody.innerHTML += `
+        <tr><td>${item.professor}</td><td>${item.aluno}</td><td>${item.aulas_dadas}</td></tr>
+      `;
+    });
+  }
+
+  async function removerAluno(nome) {
+    if (confirm(`Deseja mesmo remover o aluno "${nome}"?`)) {
+      await fetch("/remover-aluno", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome })
+      });
+      carregarAlunos();
+    }
+  }
+
+  async function removerProfessor(email) {
+    if (confirm(`Deseja mesmo remover o professor "${email}"?`)) {
+      await fetch("/remover-professor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      carregarProfessores();
+    }
+  }
+
+  async function enviarMensagem() {
+    const email = document.getElementById("lista-professores").value;
+    const mensagem = document.getElementById("mensagem-texto").value.trim();
+
+    if (!email || !mensagem) {
+      alert("Selecione o professor ou todos, e digite a mensagem.");
+      return;
+    }
+
+    if (email === "todos") {
+      const res = await fetch("/listar-professores-online");
+      const professores = await res.json();
+      for (const prof of professores) {
+        if (prof.email) {
+          await fetch("/enviar-mensagem-professor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: prof.email, mensagem })
+          });
+        }
+      }
+      alert("Mensagem enviada para todos os professores.");
+    } else {
+      await fetch("/enviar-mensagem-professor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, mensagem })
+      });
+      alert("Mensagem enviada com sucesso.");
+    }
+
+    document.getElementById("mensagem-texto").value = "";
+  }
+
+async function marcarPago(alunoId, temDivida) { 
+    if (!temDivida) {
+        alert("Este aluno já está com o pagamento em dia.");
+        return;
+    }
+
+    // Buscar dados do aluno pelo ID
+    const res = await fetch("/listar-pagamentos");
+    const alunos = await res.json();
+    const aluno = alunos.find(a => a.id === alunoId);
+    if (!aluno) {
+        alert("Aluno não encontrado.");
+        return;
+    }
+
+    
+    const hoje = new Date();
+    const mes = hoje.getMonth() + 1; 
+    const ano = hoje.getFullYear();
+
+   
+    const valorMensal = aluno.Valor_mensal_aluno || 0;
+
+    
+    const resposta = await fetch("/api/registrar-pagamento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            aluno_nome: aluno.nome,
+            mes: mes,
+            ano: ano,
+            valor_pago: valorMensal,
+            pago: true
+        })
+    });
+
+    if (resposta.ok) {
+        alert(`Pagamento de ${aluno.nome} registrado para ${mes}/${ano} no valor de Kz ${valorMensal},00.`);
+        carregarPagamentos();
+    } else {
+        alert("Erro ao registrar pagamento.");
+    }
+}
+
+
+async function carregarPagamentos() {
+    const res = await fetch("/listar-pagamentos");
+    const alunos = await res.json();
+    const tbody = document.querySelector("#tabela-pagamentos tbody");
+    tbody.innerHTML = "";
+
+    alunos.forEach(a => {
+        const temDivida = a.divida && Number(a.divida) > 0;
+
+        const statusCor = temDivida ? "status-vermelho" : "status-verde";
+        const statusTexto = temDivida ? "Não paga" : "PAGA";
+
+        // Mostrar último pagamento registrado em paga_passado (se existir)
+        let ultimoPagamento = "—";
+        if (a.paga_passado && a.paga_passado.length > 0) {
+            const ultimo = a.paga_passado[a.paga_passado.length - 1];
+            ultimoPagamento = `${ultimo.mes}/${ultimo.ano} - Kz ${ultimo.valor_pago},00`;
+        }
+
+        tbody.innerHTML += `
+            <tr>
+              <td>${a.nome}</td>
+              <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
+              <td>Kz ${a.divida ? a.divida : 0},00</td>
+              <td>${ultimoPagamento}</td>
+              <td>
+                <button onclick="marcarPagoProf('${a.id}', ${temDivida}, '${a.professor}', ${a.divida ? a.divida : 0})" 
+                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
+                  PAGO
+                </button>
+                <button onclick="verPagamentos('${a.id}', '${a.nome}')" 
+                        style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
+                  Ver Pagamentos
+                </button>
+              </td>
+            </tr>
+        `;
+    });
+}
+
+async function verPagamentos(nomeNormalizado, nomeExibicao) {
+    try {
+        const res = await fetch(`/ver-pagamentos/${nomeNormalizado}`);
+        if (!res.ok) {
+            throw new Error(`Erro ${res.status} ao buscar pagamentos`);
+        }
+        const data = await res.json();
+
+        document.getElementById("nome-aluno").innerText = `📌 Pagamentos de ${nomeExibicao}`;
+        const tbody = document.getElementById("tabela-meses");
+        tbody.innerHTML = "";
+
+        const historico = data.historico_pagamentos || [];
+
+        if (historico.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento encontrado</td></tr>`;
+        } else {
+            historico.forEach(p => {
+                // garante valores padrão
+                const mes = p.mes || "-";
+                const ano = p.ano || "-";
+                const valor = p.valor ? `Kz ${Number(p.valor).toLocaleString("pt-AO")},00` : "Kz 0,00";
+                const status = p.status ? p.status : "Indefinido";
+
+                // cor no status
+                let statusClass = "";
+                if (status.toLowerCase() === "pago") statusClass = "style='color: green; font-weight: bold;'";
+                if (status.toLowerCase() === "não pago" || status.toLowerCase() === "nao pago") statusClass = "style='color: red; font-weight: bold;'";
+
+                tbody.innerHTML += `
+                    <tr>
+                      <td>${mes}</td>
+                      <td>${ano}</td>
+                      <td>${valor}</td>
+                      <td ${statusClass}>${status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById("detalhes-aluno").style.display = "block";
+    } catch (err) {
+        console.error("Erro ao buscar pagamentos:", err);
+        alert("Erro ao carregar histórico de pagamentos.");
+    }
+}
+
+  
+async function marcarPagoProf(id, statusAtual, professor, saldoAtual) {
+    try {
+        // Se ainda não estava pago → registra pagamento
+        if (!statusAtual) {
+            await fetch("/registrar-pagamento-prof", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: id,
+                    professor: professor,
+                    valor_pago: saldoAtual 
+                })
+            });
+        } else {
+           
+            await fetch("/atualizar-pagamento-prof", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: id,
+                    professor: professor,
+                    valor_pago: 0 
+                })
+            });
+        }
+
+       
+        carregarPagamentosProf();
+
+    } catch (err) {
+        console.error("Erro ao atualizar pagamento do professor:", err);
+        alert("Ocorreu um erro ao atualizar o pagamento. Veja o console para detalhes.");
+    }
+}
+
+async function verMeses(id) {
+    const res = await fetch(`/detalhes-pagamento/${id}`);
+    const dados = await res.json();
+
+    document.getElementById("nome-aluno").textContent = dados.aluno;
+    const tbody = document.getElementById("tabela-meses");
+    tbody.innerHTML = "";
+
+    dados.meses.forEach(m => {
+        const cor = m.status ? "status-verde" : "status-vermelho";
+        const texto = m.status ? "PAGA" : "Não paga";
+
+        tbody.innerHTML += `
+            <tr>
+              <td>${m.mes}</td>
+              <td><span class="status-circulo ${cor}"></span>${texto}</td>
+              <td>
+                <button onclick="marcarPagoMes('${id}', '${m.campo}', ${m.status})" 
+                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
+                  PAGO
+                </button>
+              </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("detalhes-aluno").style.display = "block";
+}
+
+async function marcarPagoMes(id, campo, statusAtual) {
+    const novoStatus = !statusAtual;
+    await fetch("/atualizar-pagamento-mes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, campo, status: novoStatus })
+    });
+    verMeses(id);
+}
+
+async function carregarPagamentosProf() {
+    try {
+        const res = await fetch("/listar-pagamentos-prof");
+        const professores = await res.json();
+        const tbody = document.querySelector("#tabela-pagamentos-prof tbody");
+        tbody.innerHTML = "";
+
+        professores.forEach(p => {
+            // Agora o status depende do saldo_atual
+            const statusCor = p.saldo_atual > 0 ? "status-vermelho" : "status-verde";
+            const statusTexto = p.saldo_atual > 0 ? "NÃO PAGO" : "PAGO";
+
+            tbody.innerHTML += `
+                <tr>
+                  <td><a href="#" onclick="verMesesProf('${p.id}')">${p.professor}</a></td>
+                  <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
+                  <td>R$ ${Number(p.saldo_atual).toFixed(2)}</td>
+                  <td>
+                    <button onclick="marcarPagoProf('${p.id}', '${p.proximo_mes_a_pagar}', '${p.professor}', ${p.saldo_atual})" 
+                            style="background:${statusCor === 'status-verde' ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
+                      ${statusTexto}
+                    </button>
+                    <button onclick="verHistoricoPagamentos('${p.professor}')" 
+                            style="background:blue;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
+                      Ver Histórico de Pagamentos
+                    </button>
+                  </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Erro ao carregar pagamentos de professores:", error);
+    }
+}
+
+
+function verHistoricoPagamentos(nomeProfessor) {
+    window.location.href = `/ver-pagamentos?professor=${encodeURIComponent(nomeProfessor)}`;
+}
+
+async function verMesesProf(emailProf) {
+    try {
+        // Faz a requisição passando o email como query parameter
+        const res = await fetch(`/salarios?email=${encodeURIComponent(emailProf)}`);
+        if (!res.ok) throw new Error(`Erro ${res.status} ao buscar dados`);
+
+        // Recebe o JSON com nome, saldo e pagamentos
+        const data = await res.json();
+
+        if (!data || !data.nome) {
+            alert("Professor não encontrado.");
+            return;
+        }
+
+        // Atualiza o nome do professor
+        document.getElementById("nome-prof").textContent = data.nome;
+
+        // Atualiza o saldo atual
+        document.getElementById("saldo-prof").textContent = `${Number(data.saldo_atual).toFixed(2)} Kz`;
+
+        // Preenche a tabela de meses/pagamentos
+        const tbody = document.getElementById("tabela-meses");
+        tbody.innerHTML = "";
+
+        if (data.pagamentos && data.pagamentos.length > 0) {
+            data.pagamentos.forEach(pagamento => {
+                const statusCor = pagamento.valor_pago > 0 ? "status-verde" : "status-vermelho";
+                const statusTexto = pagamento.valor_pago > 0 ? "PAGO" : "NÃO PAGO";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${pagamento.mes}</td>
+                        <td>${pagamento.data_pagamento || "-"}</td>
+                        <td>R$ ${Number(pagamento.valor_pago).toFixed(2)}</td>
+                        <td>${pagamento.email_professor || "-"}</td>
+                        <td><span class="${statusCor}">${statusTexto}</span></td>
+                        <td>
+                            <button onclick="marcarPagoMesProf('${emailProf}', '${pagamento.mes}', ${!!pagamento.valor_pago})" 
+                                    style="background:${statusCor === 'status-verde' ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
+                                ${statusTexto}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="color:#777;">Nenhum pagamento registrado.</td>
+                </tr>
+            `;
+        }
+
+        // Mostra o modal ou div de detalhes
+        document.getElementById("detalhes-prof").style.display = "block";
+
+    } catch (err) {
+        console.error("Erro ao carregar meses do professor:", err);
+        alert("Erro ao carregar detalhes do professor.");
+    }
+}
+  
+</script>
+</body>
+</html>

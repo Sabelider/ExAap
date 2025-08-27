@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login do Aluno</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #000;
+    }
+
+    .login-container {
+      background-color: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 40px 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: bold;
+      color: #181d38;
+      font-size: 24px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      background-color: #fff;
+      color: #000;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    input:focus {
+      outline: none;
+      background-color: #ffffff;
+      border: 1px solid #00c9ff;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+      transform: scale(1.1);
+    }
+
+    .terms {
+      font-size: 14px;
+      margin-bottom: 15px;
+      color: #000;
+    }
+
+    .terms a {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    button {
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      color: #000;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #00a6cc, #72e489);
+    }
+
+    .error {
+      background-color: rgba(255, 0, 0, 0.85);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 14px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
+
+      h2 {
+        font-size: 22px;
+      }
+
+      button {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login do Aluno</h2>
+
+    {% if erro %}
+      <div class="error">{{ erro }}</div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <label for="nome">Nome de Usuário</label>
+      <input type="text" name="nome" id="nome" required>
+
+      <label for="senha">Senha</label>
+      <input type="password" name="senha" id="senha" required>
+
+      <div class="terms">
+        <label>
+          <input type="checkbox" name="aceita_termos" required>
+          Aceito os <a href="#">termos de política de privacidade</a> e modos de uso.
+        </label>
+      </div>
+
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+</body>
+</html>

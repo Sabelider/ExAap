@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contrato de Prestação de Serviços</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      padding: 20px;
+      margin: 0;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      width: 60px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 18px;
+      color: #2e86de;
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 10px 0;
+    }
+
+    .clausulas {
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .clausulas ul {
+      margin-left: 20px;
+    }
+
+    .clausulas li {
+      margin: 5px 0;
+    }
+
+    .copy-btn {
+      background-color: #2e86de;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .copy-btn:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="static/logo.png" alt="Logo" class="logo">
+    <h2>Contrato de Prestação de Serviços</h2>
+    <div class="clausulas">
+      <p><strong>Cláusulas:</strong></p>
+      <ol>
+        <li><strong>Objeto do contrato:</strong><br>
+        O presente contrato tem como objeto a prestação de serviços de auxílio escolar ao(a) aluno(a) acima mencionado(a), através de aulas de explicação domiciliar, com foco nas necessidades educacionais do(a) aluno(a), conforme a avaliação prévia do Centro.</li>
+
+        <li><strong>Duração do contrato:</strong><br>
+        Este contrato tem uma duração inicial de 3 meses, com renovação automática ao final de cada período, caso nenhuma das partes se manifeste contrária à renovação.</li>
+
+        <li><strong>Valor e pagamento:</strong><br>
+        O valor mensal para a prestação dos serviços de auxílio escolar é de 24.900,00 Kz, com pagamento a ser efetuado até o último dia de cada mês. Caso o pagamento seja efetuado com atraso superior a 10 dias, será acrescido uma taxa de juros de 10% sobre o valor total na conta do banco BAI nº 282309786 10 001, IBAN nº 0040.0000.8230.9786.1016.6.
+        <button class="copy-btn" onclick="copyToClipboard()">Copiar IBAN</button>
+        </li>
+
+        <li><strong>Responsabilidade pela prestação dos serviços:</strong><br>
+        O Centro compromete-se a designar o melhor professor domiciliar disponível, adequado às necessidades do(a) aluno(a). Caso o(a) responsável pelo aluno(a) considere que o professor designado não atende às expectativas, poderá solicitar a substituição do profissional, sendo esta substituição realizada sem custos adicionais para o cliente.</li>
+
+        <li><strong>Responsabilidade do professor:</strong><br>
+        Caso o professor seja responsável por qualquer ato de má conduta dentro da residência do cliente, ele será responsabilizado, sendo passível de penalização legal e/ou extrajudicial, conforme a gravidade do ato. O Centro se compromete a agir rapidamente, tomando as devidas providências.</li>
+
+        <li><strong>Outras disposições:</strong><br>
+        Este contrato é regido pelas leis da República de Angola e qualquer questão não prevista nas cláusulas acima será resolvida de acordo com a legislação vigente.</li>
+      </ol>
+    </div>
+    <p><strong>ATT:</strong> Este contrato foi formulado para garantir que ambas as partes estejam cientes das suas responsabilidades e obrigações, assim como as condições de prestação dos serviços.</p>
+  </div>
+
+  <script>
+    function copyToClipboard() {
+      const ibans = "0040.0000.8230.9786.1016.6";  // IBAN especificado no contrato
+      navigator.clipboard.writeText(ibans).then(function() {
+        alert("IBAN copiado para a área de transferência!");
+      }, function() {
+        alert("Falha ao copiar o IBAN.");
+      });
+    }
+  </script>
+</body>
+</html>

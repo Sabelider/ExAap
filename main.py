@@ -1,6 +1,6 @@
 from starlette.status import HTTP_303_SEE_OTHER
 from fastapi.responses import JSONResponse, RedirectResponse, FileResponse, HTMLResponse
-from fastapi import FastAPI, Form, Request, UploadFile, File, Body, Query
+from fastapi import FastAPI, Form, Request, UploadFile, File, Body, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Optional
@@ -17,34 +17,40 @@ from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import unquote
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fpdf import FPDF
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
-from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-
+# Caminhos locais (se usar JSONs no projeto)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROFESSORES_JSON = os.path.join(BASE_DIR, "professores.json")
 ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 
-# Inicialização do Firebase com variável de ambiente
+# Inicialização do Firebase com variável de ambiente (Render → FIREBASE_KEY)
 firebase_json = os.environ.get("FIREBASE_KEY")
+
 if firebase_json and not firebase_admin._apps:
-    firebase_info = json.loads(firebase_json)
-    firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
+    try:
+        firebase_info = json.loads(firebase_json)
+        # Corrige as quebras de linha da private_key
+        if "private_key" in firebase_info:
+            firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
 
-    cred = credentials.Certificate(firebase_info)
-    firebase_admin.initialize_app(cred)
+        cred = credentials.Certificate(firebase_info)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+    except Exception as e:
+        raise RuntimeError(f"Erro ao inicializar Firebase: {e}")
+else:
+    db = None  # Evita quebrar se não estiver configurado
 
-db = firestore.client()
-
+# Criação do app FastAPI
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
 
 def carregar_professores_local():
     if os.path.exists(PROFESSORES_JSON):

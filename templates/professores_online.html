@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Professores</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-yI1D+/s0IV8I+0+Vgqgk19MrbEbQnZQkAIK5w1rZsU3u4XhG8yT1A4rFZ5cOa2kxkG7rA3+3kd4xQ5aK0d1ckA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .top-bar img {
+      height: 45px;
+    }
+
+    .form-container {
+      background-color: #ffffff;
+      padding: 100px 30px 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+      margin-top: 80px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #181d38;
+      font-size: 24px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: #f9f9f9;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: #00c9ff;
+      outline: none;
+      background-color: #fff;
+    }
+
+    button {
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #000;
+      width: 100%;
+      margin-top: 10px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #00a0c9, #7cd77b);
+    }
+
+    .success {
+      background-color: #4ade80;
+      color: #064e3b;
+      padding: 15px;
+      margin: 90px 0 20px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 700px;
+      text-align: center;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <img src="/static/logo.png" alt="Logo">
+  </div>
+
+  {% if success %}
+  <div class="success">Cadastro enviado com sucesso!</div>
+  {% endif %}
+
+  <form class="form-container" id="cadastroForm" method="post">
+    <h1>Cadastro de Professores</h1>
+
+    <input type="text" name="nome_completo" placeholder="Nome completo" required>
+    <input type="text" name="nome_mae" placeholder="Nome da mãe" required>
+    <input type="text" name="nome_pai" placeholder="Nome do pai" required>
+    <input type="text" name="bilhete" placeholder="Nº do bilhete de identidade" required>
+    <input type="text" name="provincia" placeholder="Província" required>
+    <input type="text" name="municipio" placeholder="Município" required>
+    <input type="text" name="bairro" placeholder="Bairro" required>
+    <input type="text" name="residencia" placeholder="Local de residência" required>
+    <input type="text" name="ponto_referencia" placeholder="Ponto de referência" required>
+    <input type="text" name="localizacao" id="localizacao" placeholder="Captando localização..." readonly required>
+    <input type="tel" name="telefone" placeholder="Nº de telefone" required>
+    <input type="tel" name="telefone_alternativo" placeholder="Telefone alternativo">
+    <input type="email" name="email" placeholder="Email" required>
+
+    <select name="nivel_ensino" id="nivel_ensino" required>
+      <option value="">Selecione o nível</option>
+      <option value="ensino_medio">Ensino Médio</option>
+      <option value="faculdade">Ensino Superior</option>
+    </select>
+
+    <input type="text" name="ano_faculdade" id="ano_faculdade" placeholder="Qual ano está frequentando?" style="display: none;">
+
+    <input type="text" name="area_formacao" placeholder="Área de formação" required>
+    <input type="password" name="senha" placeholder="Definir senha" required>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    document.getElementById('nivel_ensino').addEventListener('change', function () {
+      const ano = document.getElementById('ano_faculdade');
+      if (this.value === 'faculdade') {
+        ano.style.display = 'block';
+        ano.required = true;
+      } else {
+        ano.style.display = 'none';
+        ano.required = false;
+      }
+    });
+
+    // Captar localização GPS
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (position) {
+        document.getElementById('localizacao').value =
+          position.coords.latitude + ',' + position.coords.longitude;
+      }, function () {
+        document.getElementById('localizacao').value = 'Localização não autorizada';
+      });
+    } else {
+      document.getElementById('localizacao').value = 'Geolocalização não suportada';
+    }
+  </script>
+</body>
+</html>

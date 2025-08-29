@@ -614,15 +614,17 @@ async function carregarPagamentos() {
     });
 }
 
-async function verPagamentos(nomeNormalizado, nomeExibicao) {
+async function verPagamentos(nomeAluno, nomeExibicao) {
     try {
-        const res = await fetch(`/ver-pagamentos/${nomeNormalizado}`);
+        const res = await fetch(`/ver-pagamentos/${encodeURIComponent(nomeAluno)}`);
         if (!res.ok) {
             throw new Error(`Erro ${res.status} ao buscar pagamentos`);
         }
         const data = await res.json();
 
+        // Atualiza título do painel
         document.getElementById("nome-aluno").innerText = `📌 Pagamentos de ${nomeExibicao}`;
+
         const tbody = document.getElementById("tabela-meses");
         tbody.innerHTML = "";
 
@@ -632,23 +634,20 @@ async function verPagamentos(nomeNormalizado, nomeExibicao) {
             tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento encontrado</td></tr>`;
         } else {
             historico.forEach(p => {
-                // garante valores padrão
                 const mes = p.mes || "-";
                 const ano = p.ano || "-";
-                const valor = p.valor ? `Kz ${Number(p.valor).toLocaleString("pt-AO")},00` : "Kz 0,00";
-                const status = p.status ? p.status : "Indefinido";
+                const valor = p.valor_pago ? `Kz ${Number(p.valor_pago).toLocaleString("pt-AO")},00` : "Kz 0,00";
 
-                // cor no status
-                let statusClass = "";
-                if (status.toLowerCase() === "pago") statusClass = "style='color: green; font-weight: bold;'";
-                if (status.toLowerCase() === "não pago" || status.toLowerCase() === "nao pago") statusClass = "style='color: red; font-weight: bold;'";
+                // Determina status baseado em presença de pagamento
+                let status = p.valor_pago && p.valor_pago > 0 ? "Pago" : "Não pago";
+                let statusClass = status === "Pago" ? "style='color: green; font-weight: bold;'" : "style='color: red; font-weight: bold;'";
 
                 tbody.innerHTML += `
                     <tr>
-                      <td>${mes}</td>
-                      <td>${ano}</td>
-                      <td>${valor}</td>
-                      <td ${statusClass}>${status}</td>
+                        <td>${mes}</td>
+                        <td>${ano}</td>
+                        <td>${valor}</td>
+                        <td ${statusClass}>${status}</td>
                     </tr>
                 `;
             });

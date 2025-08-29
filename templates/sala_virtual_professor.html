@@ -5,136 +5,151 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sala Virtual - Professor</title>
   <style>
-  body {
-    margin: 0;
-    background: #000;
-    font-family: "Roboto", sans-serif;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    height: 100vh;
-    padding-top: 20px;
-  }
+    body {
+      margin: 0;
+      background: #000;
+      font-family: "Roboto", sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
 
-  video {
-    width: 90vw;
-    max-width: 400px;
-    height: 70vh;
-    border: 3px solid #fff;
-    margin-bottom: 12px;
-    object-fit: cover;
-  }
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-  #localVideo {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 120px;
-    height: 90px;
-    border: 2px solid #fff;
-  }
-
-  #info {
-    margin-bottom: 10px;
-    text-align: center;
-    font-size: 16px;
-  }
-
-  #status {
-    margin-bottom: 12px;
-    font-size: 16px;
-  }
-
-  #cronometro {
-    font-size: 26px;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 20px;
-  }
-
-  #confirmarAulaBtn {
-    display: none;
-    margin-top: 16px;
-    background-color: #ffa500;
-    color: black;
-    font-weight: bold;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-  }
-
-  #confirmarAulaBtn:hover {
-    background-color: #ff8800;
-  }
-
-  #chamarAlunoBtn {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: green;
-    color: white;
-    font-weight: bold;
-    padding: 12px 22px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-
-  #chamarAlunoBtn:hover {
-    background-color: darkgreen;
-  }
-
-  /* ===== Responsividade para telas maiores (PC) ===== */
-  @media (min-width: 768px) {
-    video {
-      max-width: 900px;
-      height: 70vh;
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     #localVideo {
-      width: 180px;
-      height: 135px;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 120px;
+      height: 90px;
       border: 2px solid #fff;
-      bottom: 30px;
-      right: 30px;
+      border-radius: 8px;
+      z-index: 10;
     }
 
-    #info {
-      font-size: 18px;
-    }
-
+    /* Cronômetro */
     #cronometro {
-      font-size: 32px;
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.4);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      display: none;
+      z-index: 20;
     }
 
+    /* Faixa superior e inferior embaçadas */
+    .blur-top,
+    .blur-bottom {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .blur-top { top: 0; }
+    .blur-bottom { bottom: 0; }
+
+    /* Botões */
     #confirmarAulaBtn {
-      font-size: 18px;
-      padding: 12px 22px;
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ffa500;
+      color: black;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      z-index: 30;
+    }
+
+    #confirmarAulaBtn:hover {
+      background-color: #ff8800;
     }
 
     #chamarAlunoBtn {
-      font-size: 18px;
-      padding: 14px 26px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: green;
+      color: white;
+      font-weight: bold;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 30;
     }
-  }
-</style>
+
+    #chamarAlunoBtn:hover {
+      background-color: darkgreen;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+      #localVideo {
+        width: 180px;
+        height: 135px;
+      }
+
+      #cronometro {
+        font-size: 26px;
+        padding: 8px 18px;
+      }
+
+      .blur-top,
+      .blur-bottom {
+        height: 140px;
+      }
+
+      #confirmarAulaBtn {
+        font-size: 18px;
+        padding: 12px 22px;
+      }
+
+      #chamarAlunoBtn {
+        font-size: 18px;
+        padding: 14px 26px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="info">
-    <div><strong>O seu ID:</strong> <span id="myId">Gerando...</span></div>
-    <div><strong>Status:</strong> <span id="status">Aguardando conexão...</span></div>
-    <div id="cronometro" style="display: none;">01:00</div>
-  </div>
-
-  <div>
-    <video id="localVideo" autoplay muted playsinline></video>
+  <div class="video-container">
     <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <div id="cronometro">01:00</div>
+
+    <div class="blur-top"></div>
+    <div class="blur-bottom"></div>
   </div>
 
   <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar o Aluno</button>
@@ -146,20 +161,6 @@
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
-      authDomain: "exap-8a935.firebaseapp.com",
-      projectId: "exap-8a935",
-      storageBucket: "exap-8a935.appspot.com",
-      messagingSenderId: "664710895978",
-      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
-
-  <script>
-    const myIdSpan = document.getElementById("myId");
-    const statusSpan = document.getElementById("status");
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
     const cronometro = document.getElementById("cronometro");
@@ -191,11 +192,9 @@
 
       peer.on("open", (id) => {
         meuPeerId = id;
-        myIdSpan.textContent = id;
       });
 
       peer.on("call", (call) => {
-        statusSpan.textContent = "📞 Recebendo chamada...";
         call.answer(localStream);
         handleCallEvents(call);
       });
@@ -209,13 +208,11 @@
     function handleCallEvents(call) {
       call.on("stream", (remoteStream) => {
         remoteVideo.srcObject = remoteStream;
-        statusSpan.textContent = "✅ Conectado!";
         iniciarCronometro();
       });
 
       call.on("close", () => {
-        statusSpan.textContent = "🔌 Conexão encerrada.";
-        confirmarAulaBtn.style.display = "inline-block"; // Garante visibilidade
+        confirmarAulaBtn.style.display = "inline-block";
       });
 
       call.on("error", (err) => {
@@ -266,46 +263,44 @@
         cronometro.textContent = `${minutos}:${segundos}`;
       }, 1000);
     }
-function encerrarChamada() {
-  if (currentCall) {
-    currentCall.close();
-    remoteVideo.srcObject = null;
-    statusSpan.textContent = "⏱️ Aula encerrada";
-  }
 
-  // Mostrar botão apenas ao encerrar a chamada
-  confirmarAulaBtn.style.display = "inline-block";
-}
-
-function registrarAula() {
-  const btn = document.getElementById("confirmarAulaBtn");
-  btn.disabled = true; 
-  btn.style.display = "none"; // desaparece logo após o clique
-
-  fetch("/registrar-aula", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      professor: email.trim().toLowerCase(),
-      aluno: aluno.trim().toLowerCase()
-    })
-  })
-  .then(res => {
-    if (res.ok) {
-      alert("✅ Aula registrada com sucesso!");
-    } else {
-      alert("⚠️ Falha ao registrar aula.");
-      btn.style.display = "inline-block"; // reaparece se falhar
-      btn.disabled = false;
+    function encerrarChamada() {
+      if (currentCall) {
+        currentCall.close();
+        remoteVideo.srcObject = null;
+      }
+      confirmarAulaBtn.style.display = "inline-block";
     }
-  })
-  .catch(err => {
-    console.error("Erro ao registrar aula:", err);
-    alert("Erro de conexão ao registrar aula.");
-    btn.style.display = "inline-block"; // reaparece se falhar
-    btn.disabled = false; 
-  });
-}
+
+    function registrarAula() {
+      const btn = document.getElementById("confirmarAulaBtn");
+      btn.disabled = true; 
+      btn.style.display = "none"; 
+
+      fetch("/registrar-aula", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          professor: email.trim().toLowerCase(),
+          aluno: aluno.trim().toLowerCase()
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("✅ Aula registrada com sucesso!");
+        } else {
+          alert("⚠️ Falha ao registrar aula.");
+          btn.style.display = "inline-block"; 
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        console.error("Erro ao registrar aula:", err);
+        alert("Erro de conexão ao registrar aula.");
+        btn.style.display = "inline-block"; 
+        btn.disabled = false; 
+      });
+    }
 
     startCamera().then(initPeer);
   </script>

@@ -230,16 +230,28 @@ textarea, select {
       </div>
     </div>
 
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-dadas')">📚 Relatório de Aulas</button>
-      <div class="section" id="aulas-dadas">
-        <button class="btn" onclick="carregarRelatorioAulas()">Atualizar</button>
-        <table id="tabela-aulas-dadas">
-          <thead><tr><th>Professor</th><th>Aluno</th><th>Aulas Dadas</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+   <div class="card">
+  <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-dadas')">📚 Relatório de Aulas</button>
+  <div class="section" id="aulas-dadas">
+    <!-- Div para exibir notificações -->
+    <div id="notificacoes" style="margin-bottom: 15px;"></div>
+
+    <!-- Botão para atualizar manualmente -->
+    <button class="btn" onclick="carregarRelatorioAulas()">Atualizar</button>
+
+    <!-- Tabela de relatório de aulas -->
+    <table id="tabela-aulas-dadas">
+      <thead>
+        <tr>
+          <th>Professor</th>
+          <th>Aluno</th>
+          <th>Aulas Dadas</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
     <div class="card">
       <button class="btn toggle-btn" onclick="alternarVisibilidade('enviar-mensagem')">✉️ Enviar Mensagem</button>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -18,7 +18,6 @@
     overflow: hidden;
   }
 
-  /* Container do vídeo remoto */
   .video-container {
     position: relative;
     width: 100vw;
@@ -29,7 +28,6 @@
     overflow: hidden;
   }
 
-  
   #remoteVideo {
     position: absolute;
     top: -10%;
@@ -39,7 +37,6 @@
     object-fit: cover;
   }
 
-  /* Faixas embaçadas em cima e embaixo */
   .blur-top, .blur-bottom {
     position: absolute;
     left: 0;
@@ -54,7 +51,6 @@
   .blur-top { top: 0; }
   .blur-bottom { bottom: 0; }
 
-  /* 🎥 Vídeo local padrão (PC) */
   #localVideo {
     position: absolute;
     bottom: 20px;
@@ -62,7 +58,6 @@
     width: 120px;
     height: 90px;
     border: 2px solid #fff;
-    border-radius: 0px;
     z-index: 3;
   }
 
@@ -75,32 +70,53 @@
     z-index: 4;
   }
 
-  
-  @media (min-width: 768px) {
-    #localVideo {
-      width: 180px;
-      height: 135px;
-      border: 2px solid #fff;
-      bottom: 30px;
-      right: 30px;
-    }
-
-    #status {
-      font-size: 18px;
-    }
+  /* Notificação de feedback */
+  #notificacao {
+    display: none;
+    position: absolute;
+    bottom: 120px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    z-index: 5;
   }
 
-  
-  @media (max-width: 767px) {
-    #localVideo {
-      top: auto;        
-      bottom: 40px;    
-      left: 15px;       
-      right: auto;      
-      width: 100px;
-      height: 70px;
-    }
+  #notificacao button {
+    margin: 5px;
+    padding: 8px 16px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
   }
+
+  #notificacao button#nao {
+    background: #dc3545;
+  }
+
+  #pagamento {
+    display: none;
+    position: absolute;
+    bottom: 50px;
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 6;
+    text-align: center;
+  }
+
+  #pagamento button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
 </style>
 </head>
 <body>
@@ -113,7 +129,17 @@
   <video id="localVideo" autoplay muted playsinline></video>
   <div id="status">🔎 Buscando chamada do professor...</div>
 
-  <!-- Firebase + PeerJS -->
+  <div id="notificacao">
+    <p>Está gostando da aula?</p>
+    <button id="sim">Sim</button>
+    <button id="nao">Não</button>
+  </div>
+
+  <div id="pagamento">
+    <p>Precisa fazer o pagamento para continuar com as aulas.</p>
+    <button id="fazerPagamento">Fazer pagamento</button>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
@@ -122,6 +148,11 @@
     const statusEl = document.getElementById("status");
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
+    const notificacao = document.getElementById("notificacao");
+    const pagamento = document.getElementById("pagamento");
+    const btnSim = document.getElementById("sim");
+    const btnNao = document.getElementById("nao");
+    const btnPagamento = document.getElementById("fazerPagamento");
 
     const aluno = "{{ aluno }}";
     const professor = "{{ professor }}";
@@ -143,7 +174,6 @@
 
     function initPeerAndConnect(peerIdDoProfessor) {
       peer = new Peer();
-
       peer.on("open", () => {
         statusEl.textContent = "🔗 Conectando ao professor...";
         const call = peer.call(peerIdDoProfessor, localStream);
@@ -173,17 +203,11 @@
       try {
         const resp = await fetch(`/registrar-chamada`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            aluno: aluno,
-            professor: professor
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ aluno: aluno, professor: professor })
         });
 
         const result = await resp.json();
-
         if (resp.ok && result.sala) {
           buscarPeerIdEDiscar();
         } else {
@@ -201,23 +225,60 @@
         const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
         const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
         const data = await res.json();
-
-        if (data.peer_id) {
-          initPeerAndConnect(data.peer_id);
-        } else {
-          statusEl.textContent = "⚠️ ID do professor não encontrado.";
-        }
+        if (data.peer_id) initPeerAndConnect(data.peer_id);
+        else statusEl.textContent = "⚠️ ID do professor não encontrado.";
       } catch (err) {
         console.error("Erro ao buscar o ID do professor:", err);
         statusEl.textContent = "❌ Erro ao buscar ID.";
       }
     }
 
-    startCamera().then((ok) => {
-      if (ok) {
+    async function verificarSeDeveMostrarPagamento() {
+      try {
+        const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);
+        const data = await res.json();
+        const aulas = data.aulas || 0;
+        return aulas > 0 && aulas % 12 === 0;
+      } catch (err) {
+        console.error("Erro ao obter número de aulas:", err);
+        return false;
+      }
+    }
+
+    async function iniciarCronometro() {
+      const mostrarPagamento = await verificarSeDeveMostrarPagamento();
+      if (!mostrarPagamento) return;
+
+      let segundos = 0;
+      const duracaoAula = 60; // 1 minuto
+      const intervalo = setInterval(() => {
+        segundos++;
+        if (segundos === 40) {
+          notificacao.style.display = "block";
+        }
+        if (segundos >= duracaoAula) clearInterval(intervalo);
+      }, 1000);
+    }
+
+    startCamera().then(ok => {
+      if(ok) {
         verificarPermissaoEConectar();
+        iniciarCronometro(); // inicia cronômetro somente se for aula múltipla de 12
       }
     });
+
+    btnSim.onclick = () => {
+      notificacao.style.display = "none";
+      pagamento.style.display = "block";
+    };
+
+    btnNao.onclick = () => {
+      notificacao.style.display = "none";
+    };
+
+    btnPagamento.onclick = () => {
+      window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
+    };
   </script>
 </body>
 </html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enviar Comprovativo</title>
+  <style>
+    body {
+      font-family: "Roboto", sans-serif;
+      background: #f4f4f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    p {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #555;
+    }
+
+    input[type="file"] {
+      margin: 10px 0 20px 0;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .mensagem {
+      margin-top: 15px;
+      font-size: 14px;
+      color: green;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Enviar Comprovativo de Pagamento</h1>
+    <p id="nomeAluno">Aluno: </p>
+
+    <form id="formComprovativo">
+      <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required>
+      <br>
+      <button type="submit">Enviar</button>
+    </form>
+
+    <p class="mensagem" id="mensagem"></p>
+  </div>
+
+  <script>
+    // Recuperar o nome do aluno da URL
+    const params = new URLSearchParams(window.location.search);
+    const alunoNome = params.get("aluno_nome");
+    document.getElementById("nomeAluno").textContent = `Aluno: ${alunoNome || "Desconhecido"}`;
+
+    const form = document.getElementById("formComprovativo");
+    const mensagem = document.getElementById("mensagem");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById("comprovativo");
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("aluno_nome", alunoNome);
+      formData.append("comprovativo", file);
+
+      try {
+        const res = await fetch("/upload_comprovativo", { // backend precisa tratar esta rota
+          method: "POST",
+          body: formData
+        });
+
+        if (res.ok) {
+          mensagem.textContent = "Comprovativo enviado com sucesso!";
+          fileInput.value = "";
+        } else {
+          mensagem.textContent = "Falha ao enviar o comprovativo.";
+          mensagem.style.color = "red";
+        }
+      } catch (err) {
+        console.error(err);
+        mensagem.textContent = "Erro na conexão com o servidor.";
+        mensagem.style.color = "red";
+      }
+    });
+  </script>
+
+</body>
+</html>

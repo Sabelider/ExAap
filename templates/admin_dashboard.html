@@ -431,17 +431,35 @@ textarea, select {
     });
   }
 
-  async function carregarRelatorioAulas() {
-    const res = await fetch("/relatorio-aulas");
-    const dados = await res.json();
-    const tbody = document.querySelector("#tabela-aulas-dadas tbody");
-    tbody.innerHTML = "";
-    dados.forEach(item => {
-      tbody.innerHTML += `
-        <tr><td>${item.professor}</td><td>${item.aluno}</td><td>${item.aulas_dadas}</td></tr>
-      `;
+ async function carregarRelatorioAulas() {
+  const res = await fetch("/relatorio-aulas");
+  const dados = await res.json();
+
+  // Atualiza tabela
+  const tbody = document.querySelector("#tabela-aulas-dadas tbody");
+  tbody.innerHTML = "";
+  dados.relatorio.forEach(item => {
+    tbody.innerHTML += `
+      <tr><td>${item.professor}</td><td>${item.aluno}</td><td>${item.aulas_dadas}</td></tr>
+    `;
+  });
+
+  // Mostra notificações
+  const notificacoesDiv = document.querySelector("#notificacoes");
+  notificacoesDiv.innerHTML = "";
+  if (dados.notificacoes.length > 0) {
+    dados.notificacoes.forEach(msg => {
+      const p = document.createElement("p");
+      p.textContent = msg;
+      p.style.fontWeight = "bold";
+      p.style.color = "green";
+      notificacoesDiv.appendChild(p);
     });
   }
+}
+
+// Chama a função ao carregar a página
+window.addEventListener("load", carregarRelatorioAulas);
 
   async function removerAluno(nome) {
     if (confirm(`Deseja mesmo remover o aluno "${nome}"?`)) {

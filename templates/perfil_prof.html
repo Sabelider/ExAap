@@ -107,45 +107,46 @@
     border-color: #218838;
   }
 
-.botao-padrao {
-  background: linear-gradient(135deg, #00c9ff, #92fe9d);
-  border: none;
-  border-radius: 16px;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: 0.2s ease;
-  text-align: center;
-  margin-top: 10px;
-  margin-right: 5px;
-}
+  .botao-padrao {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    border: none;
+    border-radius: 16px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #000;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s ease;
+    text-align: center;
+    margin-top: 10px;
+    margin-right: 5px;
+  }
 
-.botao-padrao:hover {
-  opacity: 0.85;
-}
+  .botao-padrao:hover {
+    opacity: 0.85;
+  }
   
-.logout-button {
-  position: fixed; 
-  top: 15px;
-  right: 20px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 13px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  z-index: 1000; 
-}
+  .logout-button {
+    position: fixed; 
+    top: 15px;
+    right: 20px;
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 1000; 
+  }
 
-.logout-button:hover {
-  background-color: #d9363e;
-}
+  .logout-button:hover {
+    background-color: #d9363e;
+  }
+
   .botao-menu {
     display: flex;
     justify-content: space-between;
@@ -173,8 +174,12 @@
     opacity: 0.85;
   }
 
+  /* Últimas aulas */
   .ultimas-aulas {
     padding: 20px;
+    max-height: 400px; /* limita a altura inicial */
+    overflow: hidden;
+    position: relative;
   }
 
   .ultimas-aulas h3 {
@@ -196,6 +201,24 @@
   .aula-item i {
     color: #007bff;
     margin-right: 10px;
+  }
+
+  /* Botão ver mais */
+  #ver-mais-btn {
+    display: block;
+    margin: 10px auto 0 auto;
+    padding: 10px 18px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: 0.3s;
+  }
+
+  #ver-mais-btn:hover {
+    background: #0056b3;
   }
 
   .bottom-nav {

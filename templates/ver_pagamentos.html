@@ -119,13 +119,14 @@
           }
 
           historico.forEach(p => {
+            const status = p.valor_pago ? 'Pago' : 'Pendente';
             const tr = document.createElement("tr");
             tr.innerHTML = `
               <td>${p.mes || "-"}</td>
               <td>${p.ano || "-"}</td>
-              <td>Kz ${p.valor?.toLocaleString("pt-PT") || "-"}</td>
-              <td class="${p.status?.toLowerCase() === 'pago' ? 'status-pago' : 'status-pendente'}">
-                ${p.status || "-"}
+              <td>Kz ${p.valor_pago?.toLocaleString("pt-PT") || "-"}</td>
+              <td class="${status.toLowerCase() === 'pago' ? 'status-pago' : 'status-pendente'}">
+                ${status}
               </td>
             `;
             tbody.appendChild(tr);

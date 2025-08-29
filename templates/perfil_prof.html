@@ -349,58 +349,6 @@
   </ul>
  <button id="ver-mais-btn">Ver mais</button>
 </div>
-
-<script>
-  const lista = document.getElementById("lista-ultimas-aulas");
-  const verMaisBtn = document.getElementById("ver-mais-btn");
-
-  let aulas = [];  // será preenchido com dados do backend
-  let limite = 5;  // começa mostrando 5
-
-  async function carregarAulas() {
-    try {
-      const response = await fetch("/ultimas-aulas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ professor_email: "professor@teste.com" }) // <-- aqui substitui dinamicamente
-      });
-
-      const data = await response.json();
-      aulas = data.ultimas_aulas || [];
-      renderizarLista();
-    } catch (err) {
-      console.error("Erro ao buscar aulas:", err);
-    }
-  }
-
-  function renderizarLista() {
-    lista.innerHTML = "";
-    aulas.slice(0, limite).forEach(aula => {
-      const li = document.createElement("li");
-      li.className = "aula-item";
-      li.innerHTML = `
-        <i class="fas fa-book"></i>
-        <strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}
-      `;
-      lista.appendChild(li);
-    });
-
-    // controla botão
-    if (limite >= aulas.length) {
-      verMaisBtn.style.display = "none";
-    } else {
-      verMaisBtn.style.display = "block";
-    }
-  }
-
-  verMaisBtn.addEventListener("click", () => {
-    limite += 13;
-    renderizarLista();
-  });
-
-  // carregar na entrada
-  carregarAulas();
-</script>
   
 <!-- Seções dinâmicas -->
 <div id="alunos-disponiveis" class="secao-dinamica">

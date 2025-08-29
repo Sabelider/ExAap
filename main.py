@@ -925,9 +925,99 @@ async def get_sala_virtual_aluno(
 
     return templates.TemplateResponse("sala_virtual_aluno.html", {
         "request": request,
-        "aluno": aluno.strip(),  # Mantemos o nome original para exibir corretamente no HTML
+        "aluno": aluno.strip(),  
         "professor": email_normalizado
     })
+
+
+MAX_TENTATIVAS = 3
+
+def verificar_pagamento_existente(nome_comprovativo: str, aluno_nome: str) -> bool:
+    doc_ref = db.collection("pagamentos_alunos").document(aluno_nome)
+    doc = doc_ref.get()
+    if doc.exists:
+        comprovativos = doc.to_dict().get("comprovativos", [])
+        return nome_comprovativo in comprovativos
+    return False
+
+def registrar_pagamento(nome_comprovativo: str, aluno_nome: str):
+    doc_ref = db.collection("pagamentos_alunos").document(aluno_nome)
+    doc = doc_ref.get()
+    if doc.exists:
+        comprovativos = doc.to_dict().get("comprovativos", [])
+    else:
+        comprovativos = []
+    comprovativos.append(nome_comprovativo)
+    doc_ref.set({"comprovativos": comprovativos})
+
+def atualizar_status_conta(aluno_nome: str, status: str):
+    alunos_ref = db.collection("alunos")
+    docs = alunos_ref.stream()
+    for doc in docs:
+        dados = doc.to_dict()
+        nome_banco = dados.get("nome", "").strip().lower()
+        if nome_banco == aluno_nome:
+            alunos_ref.document(doc.id).update({"ativacao_conta": status})
+
+def registrar_pagamento_mensal(aluno_nome: str):
+    """Armazena o pagamento na coleção 'alunos_professor' e zera valor_mensal_aluno"""
+    docs = db.collection("alunos_professor").where("aluno", "==", aluno_nome).stream()
+    for doc in docs:
+        ref = db.collection("alunos_professor").document(doc.id)
+        dados = doc.to_dict()
+        valor_atual = dados.get("valor_mensal_aluno", 0)
+        
+        # Registrar na lista paga_passado
+        paga_passado = dados.get("paga_passado", {})
+        proximo_indice = str(len(paga_passado))
+        now = datetime.now(timezone.utc)
+        paga_passado[proximo_indice] = {
+            "ano": now.year,
+            "mes": now.month,
+            "data_pagamento": now.strftime("%Y-%m-%d"),
+            "hora_pagamento": now.strftime("%H:%M:%S"),
+            "valor_pago": valor_atual
+        }
+        
+        # Atualizar documento
+        ref.update({
+            "valor_mensal_aluno": 0,
+            "paga_passado": paga_passado
+        })
+
+@app.post("/validar_pagamento")
+async def validar_pagamento(
+    aluno_nome: str = Form(...),
+    comprovativo: UploadFile = File(...),
+    tentativas: int = Form(default=0)
+):
+    aluno_normalizado = aluno_nome.strip().lower()
+    
+    # Validação do PDF
+    if comprovativo.content_type != "application/pdf":
+        return JSONResponse({"status": "erro", "mensagem": "Por favor, envie apenas ficheiros PDF."}, status_code=400)
+    
+    conteudo = await comprovativo.read()
+    tamanho_kb = len(conteudo) / 1024
+    if not 24 <= tamanho_kb <= 32:
+        return JSONResponse({"status": "erro", "mensagem": "O ficheiro deve ter entre 24 KB e 32 KB."}, status_code=400)
+    
+    # Verifica se comprovativo já existe
+    if verificar_pagamento_existente(comprovativo.filename, aluno_normalizado):
+        tentativas += 1
+        if tentativas >= MAX_TENTATIVAS:
+            atualizar_status_conta(aluno_normalizado, "Desativada")
+            return JSONResponse({"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."}, status_code=403)
+        return JSONResponse({"status": "erro", "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"}, status_code=400)
+    
+    # Registrar pagamento
+    registrar_pagamento(comprovativo.filename, aluno_normalizado)
+    registrar_pagamento_mensal(aluno_normalizado)
+    atualizar_status_conta(aluno_normalizado, "Ativada")
+    
+    # Redireciona para a sala virtual
+    sala = f"{aluno_normalizado}-aluno"
+    return JSONResponse({"status": "sucesso", "redirect": f"/sala_virtual_aluno/{sala}"})
 
 
 @app.get("/sala_virtual_aluno/{sala}")

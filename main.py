@@ -633,19 +633,20 @@ async def cadastrar_aluno(
     disciplina: str = Form(...),
     bilhete: str = Form(...),
     outra_disciplina: str = Form(None),
-    nivel_ingles: str = Form(...)  # ✅ CAMPO ADICIONADO
+    nivel_ingles: str = Form(...)
 ):
     alunos_ref = db.collection("alunos")
     nome_normalizado = nome.strip().lower()
 
+    # 🔎 Verifica se já existe aluno com esse nome
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
-
     if existente:
         return templates.TemplateResponse("cadastro-aluno.html", {
             "request": request,
             "erro": "Este nome já está cadastrado. Tente outro."
         })
 
+    # ✅ Gera ID único para o aluno
     aluno_id = str(uuid.uuid4())
     dados = {
         "nome": nome,
@@ -664,15 +665,24 @@ async def cadastrar_aluno(
         "disciplina": disciplina,
         "outra_disciplina": outra_disciplina,
         "bilhete": bilhete,
-        "nivel_ingles": nivel_ingles,  # ✅ agora capturado do formulário
+        "nivel_ingles": nivel_ingles,
         "progresso_ingles": 0,
         "online": False,
         "notificacao": False,
         "vinculado": False,
-        "horario": {}
+        "horario": {},
+        "paga_passado": []  # ✅ sempre inicia com lista vazia
     }
 
+    # Salva novo aluno
     db.collection("alunos").document(aluno_id).set(dados)
+
+    # 🔄 Atualiza todos os alunos antigos que ainda não têm "paga_passado"
+    alunos_antigos = alunos_ref.stream()
+    for aluno in alunos_antigos:
+        dados_aluno = aluno.to_dict()
+        if "paga_passado" not in dados_aluno:
+            alunos_ref.document(aluno.id).update({"paga_passado": []})
 
     return RedirectResponse(url="/login?sucesso=1", status_code=HTTP_303_SEE_OTHER)
 

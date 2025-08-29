@@ -174,151 +174,177 @@
     opacity: 0.85;
   }
 
-  /* --- Últimas Aulas --- */
-  .ultimas-aulas {
-    margin: 20px 15px;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
+ /* --- Últimas Aulas --- */
+.ultimas-aulas {
+  margin: 20px 15px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
 
-  .ultimas-aulas h3 {
-    margin: 0 0 18px 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #222;
-    text-align: left;
-  }
+.ultimas-aulas h3 {
+  margin: 0 0 18px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  text-align: left;
+}
 
-  #lista-ultimas-aulas {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+#lista-ultimas-aulas {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
+.aula-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f9fafc;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  transition: 0.2s ease;
+}
+
+.aula-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.aula-icon {
+  background: #e6f0ff;
+  padding: 10px;
+  border-radius: 8px;
+  color: #007bff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.aula-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  color: #444;
+}
+
+.aula-info span {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Botão Ver Mais */
+#ver-mais-btn {
+  display: block;
+  margin: 15px auto 0 auto;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  transition: 0.25s ease;
+}
+
+#ver-mais-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Botão Ocultar */
+#ocultar-btn {
+  display: block;
+  margin: 10px auto 0 auto;
+  padding: 10px 22px;
+  background: #f1f1f1;
+  color: #333;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+  transition: 0.25s ease;
+}
+
+#ocultar-btn:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
   .aula-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #f9fafc;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    transition: 0.2s ease;
-  }
-
-  .aula-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    font-size: 14px;
+    padding: 12px 14px;
   }
 
   .aula-icon {
-    background: #e6f0ff;
-    padding: 10px;
-    border-radius: 8px;
-    color: #007bff;
-    font-size: 18px;
-    flex-shrink: 0;
+    font-size: 16px;
+    padding: 8px;
   }
 
-  .aula-info {
-    display: flex;
-    flex-direction: column;
-    font-size: 15px;
-    color: #444;
+  #ver-mais-btn,
+  #ocultar-btn {
+    font-size: 14px;
+    padding: 9px 18px;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  z-index: 100;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #444;
+  cursor: pointer;
+}
+
+.secao-dinamica {
+  display: none;
+  padding: 20px;
+  margin: 10px 15px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.secao-dinamica h4 {
+  margin-bottom: 10px;
+  color: #00796b;
+}
+
+@media (max-width: 700px) {
+  .botao-menu {
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
-  .aula-info span {
-    font-size: 13px;
-    color: #666;
+  .botao-menu button {
+    min-width: 120px;
+    flex: 0 0 auto;
   }
+}
 
-  #ver-mais-btn {
-    display: block;
-    margin: 15px auto 0 auto;
-    padding: 10px 22px;
-    background: linear-gradient(135deg, #00c9ff, #92fe9d);
-    color: #000;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    transition: 0.25s ease;
-  }
-
-  #ver-mais-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 600px) {
-    .aula-item {
-      font-size: 14px;
-      padding: 12px 14px;
-    }
-
-    .aula-icon {
-      font-size: 16px;
-      padding: 8px;
-    }
-
-    #ver-mais-btn {
-      font-size: 14px;
-      padding: 9px 18px;
-    }
-  }
-
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-top: 1px solid #ccc;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    z-index: 100;
-  }
-
-  .bottom-nav button {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #444;
-    cursor: pointer;
-  }
-
-  .secao-dinamica {
-    display: none;
-    padding: 20px;
-    margin: 10px 15px;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-  }
-
-  .secao-dinamica h4 {
-    margin-bottom: 10px;
-    color: #00796b;
-  }
-
-  @media (max-width: 700px) {
-    .botao-menu {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-    }
-
-    .botao-menu button {
-      min-width: 120px;
-      flex: 0 0 auto;
-    }
-  }
 </style>
+
 </head>
  <!-- Botão de logout no canto superior direito -->
   <form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">

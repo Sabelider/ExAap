@@ -575,43 +575,53 @@ async function marcarPago(alunoId, temDivida) {
 
 
 async function carregarPagamentos() {
-    const res = await fetch("/listar-pagamentos");
-    const alunos = await res.json();
-    const tbody = document.querySelector("#tabela-pagamentos tbody");
-    tbody.innerHTML = "";
+    try {
+        const res = await fetch("/listar-pagamentos");
+        if (!res.ok) throw new Error(`Erro ${res.status} ao listar pagamentos`);
 
-    alunos.forEach(a => {
-        const temDivida = a.divida && Number(a.divida) > 0;
+        const alunos = await res.json();
+        const tbody = document.querySelector("#tabela-pagamentos tbody");
+        tbody.innerHTML = "";
 
-        const statusCor = temDivida ? "status-vermelho" : "status-verde";
-        const statusTexto = temDivida ? "Não paga" : "PAGA";
+        alunos.forEach(a => {
+            const temDivida = a.divida && Number(a.divida) > 0;
+            const statusCor = temDivida ? "status-vermelho" : "status-verde";
+            const statusTexto = temDivida ? "Não paga" : "PAGA";
 
-        // Mostrar último pagamento registrado em paga_passado (se existir)
-        let ultimoPagamento = "—";
-        if (a.paga_passado && a.paga_passado.length > 0) {
-            const ultimo = a.paga_passado[a.paga_passado.length - 1];
-            ultimoPagamento = `${ultimo.mes}/${ultimo.ano} - Kz ${ultimo.valor_pago},00`;
-        }
+            // Mostrar último pagamento registrado em paga_passado (se existir)
+            let ultimoPagamento = "—";
+            if (a.paga_passado && a.paga_passado.length > 0) {
+                const ultimo = a.paga_passado[a.paga_passado.length - 1];
+                // Garante valores padrão caso falte algum campo
+                const mes = ultimo.mes || "-";
+                const ano = ultimo.ano || "-";
+                const valor = ultimo.valor_pago != null ? Number(ultimo.valor_pago).toLocaleString("pt-AO") : "0";
+                ultimoPagamento = `${mes}/${ano} - Kz ${valor},00`;
+            }
 
-        tbody.innerHTML += `
-            <tr>
-              <td>${a.nome}</td>
-              <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
-              <td>Kz ${a.divida ? a.divida : 0},00</td>
-              <td>${ultimoPagamento}</td>
-              <td>
-                <button onclick="marcarPagoProf('${a.id}', ${temDivida}, '${a.professor}', ${a.divida ? a.divida : 0})" 
-                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
-                  PAGO
-                </button>
-                <button onclick="verPagamentos('${a.id}', '${a.nome}')" 
-                        style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
-                  Ver Pagamentos
-                </button>
-              </td>
-            </tr>
-        `;
-    });
+            tbody.innerHTML += `
+                <tr>
+                  <td>${a.nome}</td>
+                  <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
+                  <td>Kz ${a.divida ? a.divida : 0},00</td>
+                  <td>${ultimoPagamento}</td>
+                  <td>
+                    <button onclick="marcarPagoProf('${a.id}', ${temDivida}, '${a.professor || ''}', ${a.divida ? a.divida : 0})" 
+                            style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
+                      PAGO
+                    </button>
+                    <button onclick="verPagamentos('${a.nome}', '${a.nome}')" 
+                            style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
+                      Ver Pagamentos
+                    </button>
+                  </td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        console.error("Erro ao carregar pagamentos:", err);
+        alert("Erro ao carregar lista de pagamentos.");
+    }
 }
 
 async function verPagamentos(nomeAluno, nomeExibicao) {

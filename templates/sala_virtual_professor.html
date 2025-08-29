@@ -232,44 +232,46 @@
         cronometro.textContent = `${minutos}:${segundos}`;
       }, 1000);
     }
-
-    function encerrarChamada() {
-      if (currentCall) {
-        currentCall.close();
-        remoteVideo.srcObject = null;
-        statusSpan.textContent = "⏱️ Aula encerrada";
-      }
-
-     
-      confirmarAulaBtn.style.display = "inline-block";
-    }
-  function registrarAula() {
-    const btn = document.getElementById("confirmarAulaBtn");
-    btn.disabled = true; 
-
-    fetch("/registrar-aula", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        professor: email.trim().toLowerCase(),
-        aluno: aluno.trim().toLowerCase()
-      })
-    })
-    .then(res => {
-      if (res.ok) {
-        alert("✅ Aula registrada com sucesso!");
-        btn.style.display = "none"; 
-      } else {
-        alert("⚠️ Falha ao registrar aula.");
-        btn.disabled = false;
-      }
-    })
-    .catch(err => {
-      console.error("Erro ao registrar aula:", err);
-      alert("Erro de conexão ao registrar aula.");
-      btn.disabled = false; 
-    });
+function encerrarChamada() {
+  if (currentCall) {
+    currentCall.close();
+    remoteVideo.srcObject = null;
+    statusSpan.textContent = "⏱️ Aula encerrada";
   }
+
+  // Mostrar botão apenas ao encerrar a chamada
+  confirmarAulaBtn.style.display = "inline-block";
+}
+
+function registrarAula() {
+  const btn = document.getElementById("confirmarAulaBtn");
+  btn.disabled = true; 
+  btn.style.display = "none"; // desaparece logo após o clique
+
+  fetch("/registrar-aula", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      professor: email.trim().toLowerCase(),
+      aluno: aluno.trim().toLowerCase()
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert("✅ Aula registrada com sucesso!");
+    } else {
+      alert("⚠️ Falha ao registrar aula.");
+      btn.style.display = "inline-block"; // reaparece se falhar
+      btn.disabled = false;
+    }
+  })
+  .catch(err => {
+    console.error("Erro ao registrar aula:", err);
+    alert("Erro de conexão ao registrar aula.");
+    btn.style.display = "inline-block"; // reaparece se falhar
+    btn.disabled = false; 
+  });
+}
 
     startCamera().then(initPeer);
   </script>

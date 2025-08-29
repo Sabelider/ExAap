@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Conexão com o Professor</title>
- <style>
+<style> 
   body {
     margin: 0;
     background: #000;
@@ -29,7 +29,7 @@
     overflow: hidden;
   }
 
-  /* 🎥 Vídeo remoto ocupa mais espaço vertical */
+  
   #remoteVideo {
     position: absolute;
     top: -10%;
@@ -54,7 +54,7 @@
   .blur-top { top: 0; }
   .blur-bottom { bottom: 0; }
 
-  /* 🎥 Vídeo local padrão */
+  /* 🎥 Vídeo local padrão (PC) */
   #localVideo {
     position: absolute;
     bottom: 20px;
@@ -75,7 +75,7 @@
     z-index: 4;
   }
 
-  /* ===== Responsividade para PC (telas maiores) ===== */
+  
   @media (min-width: 768px) {
     #localVideo {
       width: 180px;
@@ -90,12 +90,13 @@
     }
   }
 
-  /* 📱 Mobile: vídeo local no canto superior direito */
+  
   @media (max-width: 767px) {
     #localVideo {
-      top: 15px;
-      right: 15px;
-      bottom: auto;
+      top: auto;        
+      bottom: 40px;    
+      left: 15px;       
+      right: auto;      
       width: 100px;
       height: 70px;
     }

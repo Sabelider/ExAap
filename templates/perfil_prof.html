@@ -350,12 +350,16 @@
 <div class="ultimas-aulas">
   <h3>📖 Últimas aulas dadas</h3>
   <ul id="lista-ultimas-aulas"></ul>
-  <button id="ver-mais-btn" style="display:none;">Ver mais</button>
+  <div style="margin-top: 10px; text-align: center;">
+    <button id="ver-mais-btn" style="display:none;">Ver mais</button>
+    <button id="ocultar-btn" style="display:none; background:#ccc; color:#333;">Ocultar</button>
+  </div>
 </div>
 
 <script>
   const lista = document.getElementById("lista-ultimas-aulas");
   const verMaisBtn = document.getElementById("ver-mais-btn");
+  const ocultarBtn = document.getElementById("ocultar-btn");
 
   let skip = 0;
   const limit = 5;
@@ -392,11 +396,15 @@
 
       skip += aulas.length;
 
-      // mostrar ou esconder botão
+      // mostrar ou esconder botões
       if (skip < total) {
-        verMaisBtn.style.display = "block";
+        verMaisBtn.style.display = "inline-block";
+        ocultarBtn.style.display = "none";
       } else {
         verMaisBtn.style.display = "none";
+        if (skip > limit) {
+          ocultarBtn.style.display = "inline-block";
+        }
       }
 
     } catch (err) {
@@ -405,7 +413,19 @@
     }
   }
 
+  // Função para ocultar as aulas extras
+  function ocultarAulas() {
+    const itens = lista.querySelectorAll("li");
+    itens.forEach((item, index) => {
+      if (index >= limit) item.remove();
+    });
+    skip = limit; // volta para o estado inicial
+    verMaisBtn.style.display = "inline-block";
+    ocultarBtn.style.display = "none";
+  }
+
   verMaisBtn.addEventListener("click", carregarAulas);
+  ocultarBtn.addEventListener("click", ocultarAulas);
 
   // Carrega as primeiras aulas
   carregarAulas();

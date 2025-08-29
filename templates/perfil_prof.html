@@ -347,27 +347,45 @@
       Carregando...
     </li>
   </ul>
-  <button id="ver-mais-btn">Ver mais</button>
+ <button id="ver-mais-btn">Ver mais</button>
 </div>
 
 <script>
   const lista = document.getElementById("lista-ultimas-aulas");
   const verMaisBtn = document.getElementById("ver-mais-btn");
 
-  
-  const aulas = Array.from({length: 50}, (_, i) => `Aula nº ${i+1}`);
+  let aulas = [];  // será preenchido com dados do backend
+  let limite = 5;  // começa mostrando 5
 
-  let limite = 5; 
+  async function carregarAulas() {
+    try {
+      const response = await fetch("/ultimas-aulas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professor_email: "professor@teste.com" }) // <-- aqui substitui dinamicamente
+      });
+
+      const data = await response.json();
+      aulas = data.ultimas_aulas || [];
+      renderizarLista();
+    } catch (err) {
+      console.error("Erro ao buscar aulas:", err);
+    }
+  }
+
   function renderizarLista() {
     lista.innerHTML = "";
     aulas.slice(0, limite).forEach(aula => {
       const li = document.createElement("li");
       li.className = "aula-item";
-      li.innerHTML = `<i class="fas fa-book"></i> ${aula}`;
+      li.innerHTML = `
+        <i class="fas fa-book"></i>
+        <strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}
+      `;
       lista.appendChild(li);
     });
 
-    
+    // controla botão
     if (limite >= aulas.length) {
       verMaisBtn.style.display = "none";
     } else {
@@ -375,14 +393,13 @@
     }
   }
 
-  
   verMaisBtn.addEventListener("click", () => {
-    limite += 13; // carrega +13
+    limite += 13;
     renderizarLista();
   });
 
-
-  renderizarLista();
+  // carregar na entrada
+  carregarAulas();
 </script>
   
 <!-- Seções dinâmicas -->

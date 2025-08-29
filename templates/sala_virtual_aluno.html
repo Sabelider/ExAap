@@ -70,7 +70,6 @@
     z-index: 4;
   }
 
-  /* Notificação de feedback */
   #notificacao {
     display: none;
     position: absolute;
@@ -116,7 +115,6 @@
     cursor: pointer;
     border-radius: 5px;
   }
-
 </style>
 </head>
 <body>
@@ -235,10 +233,13 @@
 
     async function verificarSeDeveMostrarPagamento() {
       try {
+        // Consulta a coleção alunos_professor e pega o número de aulas dadas
         const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);
         const data = await res.json();
         const aulas = data.aulas || 0;
-        return aulas > 0 && aulas % 12 === 0;
+
+        // Exibe na primeira aula ou se tiver 11 aulas (antes da 12ª)
+        return aulas === 0 || aulas === 11;
       } catch (err) {
         console.error("Erro ao obter número de aulas:", err);
         return false;
@@ -263,7 +264,7 @@
     startCamera().then(ok => {
       if(ok) {
         verificarPermissaoEConectar();
-        iniciarCronometro(); // inicia cronômetro somente se for aula múltipla de 12
+        iniciarCronometro();
       }
     });
 

@@ -43,6 +43,26 @@
       font-size: 16px;
       text-align: center;
     }
+
+    /* ===== Responsividade para PC (telas maiores) ===== */
+    @media (min-width: 768px) {
+      video {
+        max-width: 900px;
+        height: 70vh;
+      }
+
+      #localVideo {
+        width: 180px;
+        height: 135px;
+        border: 2px solid #fff;
+        bottom: 30px;
+        right: 30px;
+      }
+
+      #status {
+        font-size: 18px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -55,18 +75,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
-      authDomain: "exap-8a935.firebaseapp.com",
-      projectId: "exap-8a935",
-      storageBucket: "exap-8a935.appspot.com",
-      messagingSenderId: "664710895978",
-      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
 
   <script>
     const statusEl = document.getElementById("status");

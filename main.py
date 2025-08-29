@@ -2338,7 +2338,7 @@ async def ultimas_aulas(request: Request):
         lista_aulas.sort(key=parse_datetime, reverse=True)
 
         return {
-            "ultimas_aulas": lista_aulas[:20]  # retorna no máximo 20
+            "ultimas_aulas": lista_aulas[:12]
         }
 
     except Exception as e:

@@ -2304,6 +2304,8 @@ async def ultimas_aulas(request: Request):
     try:
         dados = await request.json()
         professor_email = dados.get("professor_email", "").strip().lower()
+        skip = int(dados.get("skip", 0))
+        limit = int(dados.get("limit", 5))
 
         if not professor_email:
             return JSONResponse(
@@ -2338,7 +2340,8 @@ async def ultimas_aulas(request: Request):
         lista_aulas.sort(key=parse_datetime, reverse=True)
 
         return {
-            "ultimas_aulas": lista_aulas[:13]
+            "ultimas_aulas": lista_aulas[skip:skip+limit],
+            "total": len(lista_aulas)
         }
 
     except Exception as e:

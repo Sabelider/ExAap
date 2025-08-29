@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -233,13 +233,10 @@
 
     async function verificarSeDeveMostrarPagamento() {
       try {
-        // Consulta a coleção alunos_professor e pega o número de aulas dadas
         const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);
         const data = await res.json();
         const aulas = data.aulas || 0;
-
-        // Exibe na primeira aula ou se tiver 11 aulas (antes da 12ª)
-        return aulas === 0 || aulas === 11;
+        return aulas === 0 || aulas === 11; // primeira aula ou antes da 12ª
       } catch (err) {
         console.error("Erro ao obter número de aulas:", err);
         return false;
@@ -254,7 +251,7 @@
       const duracaoAula = 60; // 1 minuto
       const intervalo = setInterval(() => {
         segundos++;
-        if (segundos === 40) {
+        if (segundos === 40) { // notificação aos 40 segundos
           notificacao.style.display = "block";
         }
         if (segundos >= duracaoAula) clearInterval(intervalo);

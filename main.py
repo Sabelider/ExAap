@@ -2075,16 +2075,26 @@ async def listar_chamadas():
 async def relatorio_aulas():
     relatorio_ref = db.collection("alunos_professor").stream()
     resultado = []
+    notificacoes = []
 
     for doc in relatorio_ref:
         dados = doc.to_dict()
+        aulas_dadas = dados.get("aulas_dadas", 0)
+        aluno_nome = dados.get("aluno", "")
+
+        # Notificações baseadas no número de aulas
+        if aulas_dadas == 12:
+            notificacoes.append(f"O aluno {aluno_nome} já completou 12 aulas.")
+        elif aulas_dadas == 72:
+            notificacoes.append(f"O aluno {aluno_nome} já completou o curso de 72 aulas.")
+
         resultado.append({
             "professor": dados.get("professor", ""),
-            "aluno": dados.get("aluno", ""),
-            "aulas_dadas": dados.get("aulas_dadas", 0)
+            "aluno": aluno_nome,
+            "aulas_dadas": aulas_dadas
         })
 
-    return resultado
+    return {"relatorio": resultado, "notificacoes": notificacoes}
 
 @app.get("/alunos-nao-vinculados")
 async def listar_alunos_nao_vinculados():

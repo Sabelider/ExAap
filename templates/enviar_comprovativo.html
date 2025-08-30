@@ -1,111 +1,150 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Enviar Comprovativo</title>
   <style>
     body {
-      font-family: "Roboto", sans-serif;
-      background: #f4f4f8;
-      margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f8;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-    }
-
-    .container {
-      background: #fff;
-      padding: 30px 40px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
+      padding: 40px 20px;
     }
 
     h1 {
-      font-size: 22px;
-      margin-bottom: 20px;
-      color: #333;
+      margin-bottom: 30px;
     }
 
-    p {
+    #upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input[type="file"], select, input[type="text"] {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: white;
       font-size: 16px;
-      margin-bottom: 15px;
+      width: 100%;
+    }
+
+    #submit-button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      background-color: #333;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 10px;
+    }
+
+    #submit-button:hover {
+      background-color: #000;
+    }
+
+    .iban-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .iban-label {
+      font-weight: bold;
+    }
+
+    .copy-icon {
+      cursor: pointer;
+      font-size: 18px;
       color: #555;
     }
 
-    input[type="file"], select {
-      margin: 10px 0 20px 0;
-      width: 100%;
-      padding: 8px;
+    .copy-icon:hover {
+      color: #000;
     }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #0056b3;
-    }
-
-    .mensagem {
-      margin-top: 15px;
-      font-size: 14px;
-      color: green;
-    }
-
   </style>
 </head>
 <body>
+  <h1>Envio de Comprovativo</h1>
 
-  <div class="container">
-    <h1>Enviar Comprovativo de Pagamento</h1>
-    <p id="nomeAluno">Aluno: </p>
+  <form id="comprovativo-form">
+    <div id="upload-section">
+      <label for="aluno">Nome do aluno:</label>
+      <!-- Aqui o campo já vem preenchido -->
+      <input type="text" id="aluno" name="aluno_nome" required value="{{ aluno_nome }}"/>
 
-    <form id="formComprovativo">
-      <label for="banco">Selecione o Banco:</label>
+      <label for="banco">Escolha o banco:</label>
       <select id="banco" name="banco" required>
-        <option value="">-- Escolha --</option>
-        <option value="bai">BAI</option>
-        <option value="bpc">BPC</option>
-        <option value="bni">BNI</option>
+        <option value="">Selecione...</option>
+        <option value="BAI">BAI</option>
+        <option value="BPC">BPC</option>
+        <option value="BNI">BNI</option>
       </select>
 
-      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required>
-      <br>
-      <button type="submit">Enviar</button>
-    </form>
+      <div class="iban-container">
+        <span class="iban-label">IBAN BAI:</span>
+        <span class="copy-icon" onclick="copiarIBAN()" title="Copiar IBAN">📋</span>
+      </div>
 
-    <p class="mensagem" id="mensagem"></p>
-  </div>
+      <label for="comprovativo">Enviar comprovativo (PDF):</label>
+      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required>
+    </div>
+
+    <button type="submit" id="submit-button">Enviar Comprovativo</button>
+  </form>
 
   <script>
-    // Recuperar o nome do aluno da URL
-    const params = new URLSearchParams(window.location.search);
-    const alunoNome = params.get("aluno_nome");
-    document.getElementById("nomeAluno").textContent = `Aluno: ${alunoNome || "Desconhecido"}`;
+    const fileInput = document.getElementById('comprovativo');
+    const bancoSelect = document.getElementById('banco');
+    const form = document.getElementById('comprovativo-form');
 
-    const form = document.getElementById("formComprovativo");
-    const mensagem = document.getElementById("mensagem");
+    const limitesKB = { BAI: 32, BPC: 31, BNI: 32 };
 
-    form.addEventListener("submit", async (e) => {
+    function copiarIBAN() {
+      const iban = '004000008230978610166';
+      navigator.clipboard.writeText(iban).then(() => {
+        alert("IBAN copiado com sucesso!");
+      }, () => {
+        alert("Erro ao copiar IBAN.");
+      });
+    }
+
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      const fileInput = document.getElementById("comprovativo");
-      const banco = document.getElementById("banco").value;
+
+      const alunoNome = document.getElementById("aluno").value.trim();
+      const banco = bancoSelect.value;
       const file = fileInput.files[0];
-      if (!file || !banco) {
-        mensagem.textContent = "Selecione o banco e o comprovativo.";
-        mensagem.style.color = "red";
+
+      if (!file || !banco || !alunoNome) {
+        alert("Por favor, preencha todos os campos.");
+        return;
+      }
+
+      const tamanhoKB = file.size / 1024;
+      const limite = limitesKB[banco];
+      if (tamanhoKB > limite) {
+        alert(`Comprovativo inválido. O tamanho máximo permitido para ${banco} é ${limite} KB.\nTamanho atual: ${tamanhoKB.toFixed(2)} KB`);
         return;
       }
 
@@ -113,31 +152,24 @@
       formData.append("aluno_nome", alunoNome);
       formData.append("banco", banco);
       formData.append("comprovativo", file);
-      formData.append("tentativas", 0); // opcional
 
       try {
-        const res = await fetch("/upload_comprovativo", {
+        const response = await fetch("/upload_comprovativo", {
           method: "POST",
           body: formData
         });
 
-        const data = await res.json();
-
-        if (res.ok) {
-          mensagem.textContent = data.mensagem || "Comprovativo enviado com sucesso!";
-          mensagem.style.color = "green";
-          fileInput.value = "";
+        const result = await response.json();
+        if (response.ok && result.status === "sucesso") {
+          alert("✅ " + result.mensagem);
+          window.location.href = result.redirect;
         } else {
-          mensagem.textContent = data.mensagem || "Falha ao enviar o comprovativo.";
-          mensagem.style.color = "red";
+          alert("❌ " + (result.mensagem || result.detail));
         }
-      } catch (err) {
-        console.error(err);
-        mensagem.textContent = "Erro na conexão com o servidor.";
-        mensagem.style.color = "red";
+      } catch (error) {
+        alert("❌ Erro na requisição: " + error.message);
       }
     });
   </script>
-
 </body>
 </html>

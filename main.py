@@ -930,27 +930,41 @@ async def get_sala_virtual_aluno(
     })
 
 
+import logging
+
 MAX_TENTATIVAS = 3
 
 def verificar_pagamento_existente(nome_comprovativo: str, aluno_nome: str) -> bool:
-    doc_ref = db.collection("pagamentos_alunos").document(aluno_nome)
+    """Verifica se o comprovativo já existe para o aluno no Firebase."""
+    doc_ref = db.collection("comprovativos_pagamento").document(aluno_nome)
     doc = doc_ref.get()
     if doc.exists:
         comprovativos = doc.to_dict().get("comprovativos", [])
         return nome_comprovativo in comprovativos
     return False
 
+
 def registrar_pagamento(nome_comprovativo: str, aluno_nome: str):
-    doc_ref = db.collection("pagamentos_alunos").document(aluno_nome)
-    doc = doc_ref.get()
-    if doc.exists:
-        comprovativos = doc.to_dict().get("comprovativos", [])
-    else:
-        comprovativos = []
-    comprovativos.append(nome_comprovativo)
-    doc_ref.set({"comprovativos": comprovativos})
+    """Registra o comprovativo no Firebase."""
+    try:
+        doc_ref = db.collection("comprovativos_pagamento").document(aluno_nome)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            dados = doc.to_dict()
+            comprovativos = dados.get("comprovativos", [])
+            comprovativos.append(nome_comprovativo)
+            doc_ref.update({"comprovativos": comprovativos})
+        else:
+            doc_ref.set({"comprovativos": [nome_comprovativo]})
+
+    except Exception as e:
+        logging.error(f"Erro ao registrar pagamento no Firebase: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao registrar pagamento no Firebase.")
+
 
 def atualizar_status_conta(aluno_nome: str, status: str):
+    """Ativa ou desativa a conta do aluno na coleção 'alunos'."""
     alunos_ref = db.collection("alunos")
     docs = alunos_ref.stream()
     for doc in docs:
@@ -959,15 +973,15 @@ def atualizar_status_conta(aluno_nome: str, status: str):
         if nome_banco == aluno_nome:
             alunos_ref.document(doc.id).update({"ativacao_conta": status})
 
+
 def registrar_pagamento_mensal(aluno_nome: str):
-    """Armazena o pagamento na coleção 'alunos_professor' e zera valor_mensal_aluno"""
+    """Armazena o pagamento na coleção 'alunos_professor' e zera valor_mensal_aluno."""
     docs = db.collection("alunos_professor").where("aluno", "==", aluno_nome).stream()
     for doc in docs:
         ref = db.collection("alunos_professor").document(doc.id)
         dados = doc.to_dict()
         valor_atual = dados.get("valor_mensal_aluno", 0)
         
-        # Registrar na lista paga_passado
         paga_passado = dados.get("paga_passado", {})
         proximo_indice = str(len(paga_passado))
         now = datetime.now(timezone.utc)
@@ -979,33 +993,10 @@ def registrar_pagamento_mensal(aluno_nome: str):
             "valor_pago": valor_atual
         }
         
-        # Atualizar documento
         ref.update({
             "valor_mensal_aluno": 0,
             "paga_passado": paga_passado
         })
-
-import logging
-
-MAX_TENTATIVAS = 3
-
-def registrar_pagamento(nome_comprovativo: str, aluno: str):
-    """Registra o comprovativo no Firebase."""
-    try:
-        pagamentos_ref = db.collection("comprovativos_pagamento").document(aluno)
-        doc = pagamentos_ref.get()
-
-        if doc.exists:
-            dados = doc.to_dict()
-            comprovativos = dados.get("comprovativos", [])
-            comprovativos.append(nome_comprovativo)
-            pagamentos_ref.update({"comprovativos": comprovativos})
-        else:
-            pagamentos_ref.set({"comprovativos": [nome_comprovativo]})
-
-    except Exception as e:
-        logging.error(f"Erro ao registrar pagamento no Firebase: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao registrar pagamento no Firebase.")
 
 
 @app.post("/upload_comprovativo")
@@ -1028,7 +1019,7 @@ async def upload_comprovativo(
         if comprovativo.content_type != "application/pdf":
             return JSONResponse({"status": "erro", "mensagem": "Apenas PDFs são aceites."}, status_code=400)
 
-        # Validar tamanho (ler apenas para validação)
+        # Validar tamanho
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
         if tamanho_kb > limites[banco_norm]:
@@ -1037,23 +1028,16 @@ async def upload_comprovativo(
                 detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
             )
 
-        # Após validar, descartamos o ficheiro
-        await comprovativo.close()
+        await comprovativo.close()  # descartamos o ficheiro
 
-        # Guardar apenas o nome
         nome_comprovativo = comprovativo.filename
 
-        # 🔹 Criar coleção caso não exista no Firebase
-        try:
-            pagamentos_ref = db.collection("comprovativos_pagamento")
-            doc_ref = pagamentos_ref.document(aluno_normalizado)
-            if not doc_ref.get().exists:
-                doc_ref.set({"comprovativos": []})  # inicializa a coleção
-        except Exception as e:
-            logging.error(f"Erro ao criar coleção no Firebase: {e}")
-            raise HTTPException(status_code=500, detail=f"Erro ao criar coleção: {str(e)}")
+        # 🔹 Criar coleção se não existir
+        doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
+        if not doc_ref.get().exists:
+            doc_ref.set({"comprovativos": []})
 
-        # 🔹 Verificar duplicado no Firebase
+        # 🔹 Verificar duplicado
         if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
@@ -1063,10 +1047,7 @@ async def upload_comprovativo(
                     status_code=403
                 )
             return JSONResponse(
-                {
-                    "status": "erro",
-                    "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"
-                },
+                {"status": "erro", "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"},
                 status_code=400
             )
 

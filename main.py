@@ -999,8 +999,9 @@ def registrar_pagamento_mensal(aluno_nome: str):
         })
 
 
-@app.post("/upload_comprovativo")
+@app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
+    request: Request,
     aluno_nome: str = Form(...),
     banco: str = Form(...),
     comprovativo: UploadFile = File(...),
@@ -1017,7 +1018,7 @@ async def upload_comprovativo(
 
         # Validar tipo do ficheiro
         if comprovativo.content_type != "application/pdf":
-            return JSONResponse({"status": "erro", "mensagem": "Apenas PDFs são aceites."}, status_code=400)
+            return HTMLResponse("<h3>Apenas PDFs são aceites.</h3>", status_code=400)
 
         # Validar tamanho
         conteudo = await comprovativo.read()
@@ -1042,32 +1043,149 @@ async def upload_comprovativo(
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
                 atualizar_status_conta(aluno_normalizado, "Desativada")
-                return JSONResponse(
-                    {"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."},
-                    status_code=403
-                )
-            return JSONResponse(
-                {"status": "erro", "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"},
-                status_code=400
-            )
+                return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
+            return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
         # 🔹 Registrar novo pagamento
         registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
 
-        # Redireciona para sala virtual do aluno
-        sala = f"{aluno_normalizado}-aluno"
-        return JSONResponse(
-            {
-                "status": "sucesso",
-                "aluno": aluno_normalizado,
-                "banco": banco_norm,
-                "ficheiro": nome_comprovativo,
-                "mensagem": "Comprovativo enviado e validado com sucesso!",
-                "redirect": f"/sala_virtual_aluno/{sala}"
-            }
-        )
+        # 🔹 Criar recibo HTML profissional
+        now = datetime.now(timezone.utc)
+        data_pagamento = now.strftime("%d/%m/%Y")
+        hora_pagamento = now.strftime("%H:%M:%S")
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="pt">
+        <head>
+            <meta charset="UTF-8">
+            <title>Recibo de Pagamento</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f8f9fa;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .recibo-container {{
+                    max-width: 700px;
+                    margin: 40px auto;
+                    background: #fff;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    display: flex;
+                    align-items: center;
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                }}
+                .header img {{
+                    height: 70px;
+                    margin-right: 20px;
+                }}
+                .empresa {{
+                    font-size: 18px;
+                    font-weight: bold;
+                }}
+                .recibo-title {{
+                    text-align: center;
+                    font-size: 22px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                td, th {{
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                }}
+                .btns {{
+                    text-align: center;
+                    margin-top: 20px;
+                }}
+                button {{
+                    padding: 10px 20px;
+                    margin: 5px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                }}
+                .download-btn {{ background: #28a745; color: #fff; }}
+                .perfil-btn {{ background: #007bff; color: #fff; }}
+            </style>
+        </head>
+        <body>
+            <div class="recibo-container" id="recibo">
+                <div class="header">
+                    <img src="/static/logo.png" alt="Logo">
+                    <div class="empresa">
+                        Nome da empresa: Sabi Lider <br>
+                        N.I.F nº 5002232529
+                    </div>
+                </div>
+
+                <div class="recibo-title">Recibo de Pagamento</div>
+
+                <table>
+                    <tr>
+                        <th>Aluno</th>
+                        <td>{aluno_nome}</td>
+                    </tr>
+                    <tr>
+                        <th>Banco</th>
+                        <td>{banco.upper()}</td>
+                    </tr>
+                    <tr>
+                        <th>Comprovativo</th>
+                        <td>{nome_comprovativo}</td>
+                    </tr>
+                    <tr>
+                        <th>Data</th>
+                        <td>{data_pagamento}</td>
+                    </tr>
+                    <tr>
+                        <th>Hora</th>
+                        <td>{hora_pagamento}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td style="color:green; font-weight:bold;">Pagamento Validado</td>
+                    </tr>
+                </table>
+
+                <div class="btns">
+                    <button class="download-btn" onclick="gerarPDF()">📄 Download PDF</button>
+                    <button class="perfil-btn" onclick="window.location.href='/perfil/{aluno_normalizado}'">🔙 Voltar ao Perfil</button>
+                </div>
+            </div>
+
+            <script>
+                function gerarPDF() {{
+                    const {{ jsPDF }} = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.html(document.querySelector('#recibo'), {{
+                        callback: function (pdf) {{
+                            pdf.save('recibo_{aluno_normalizado}.pdf');
+                        }},
+                        x: 10,
+                        y: 10
+                    }});
+                }}
+            </script>
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html_content)
 
     except HTTPException as e:
         logging.error(f"Erro HTTP ao processar comprovativo: {e.detail}")

@@ -1083,7 +1083,7 @@ async def upload_comprovativo(
         data_pagamento = now.strftime("%d/%m/%Y")
         hora_pagamento = now.strftime("%H:%M:%S")
 
-       html_content = f"""
+        html_content = f"""
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -1263,6 +1263,7 @@ async def upload_comprovativo(
     except Exception as e:
         logging.error(f"Erro inesperado: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
+
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)

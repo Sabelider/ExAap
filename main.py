@@ -999,6 +999,13 @@ def registrar_pagamento_mensal(aluno_nome: str):
         })
 
 
+import logging
+
+app = FastAPI()
+db = firestore.client()
+
+MAX_TENTATIVAS = 3
+
 @app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
     request: Request,
@@ -1011,7 +1018,7 @@ async def upload_comprovativo(
         aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
         banco_norm = banco.strip().lower()
 
-        # Definir limites de tamanho por banco (em KB)
+        # Limites de tamanho por banco (em KB)
         limites = {"bai": 32, "bni": 32, "bpc": 31}
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
@@ -1029,16 +1036,16 @@ async def upload_comprovativo(
                 detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
             )
 
-        await comprovativo.close()  # descartamos o ficheiro
-
+        # 🔹 DESCARTAR o ficheiro, guardamos apenas o nome
+        await comprovativo.close()
         nome_comprovativo = comprovativo.filename
 
-        # 🔹 Criar coleção se não existir
+        # Criar coleção no Firebase se não existir
         doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
         if not doc_ref.get().exists:
             doc_ref.set({"comprovativos": []})
 
-        # 🔹 Verificar duplicado
+        # Verificar duplicado
         if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
@@ -1046,12 +1053,12 @@ async def upload_comprovativo(
                 return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
             return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
-        # 🔹 Registrar novo pagamento
+        # Registrar novo pagamento
         registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
 
-        # 🔹 Criar recibo HTML profissional
+        # Criar recibo HTML
         now = datetime.now(timezone.utc)
         data_pagamento = now.strftime("%d/%m/%Y")
         hora_pagamento = now.strftime("%H:%M:%S")

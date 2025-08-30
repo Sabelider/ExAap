@@ -985,6 +985,9 @@ def registrar_pagamento_mensal(aluno_nome: str):
             "paga_passado": paga_passado
         })
 
+import logging
+
+
 MAX_TENTATIVAS = 3
 
 @app.post("/upload_comprovativo")
@@ -1003,10 +1006,11 @@ async def upload_comprovativo(
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
 
-        # Validar PDF
+        # Validar tipo do ficheiro
         if comprovativo.content_type != "application/pdf":
             return JSONResponse({"status": "erro", "mensagem": "Apenas PDFs são aceites."}, status_code=400)
 
+        # Validar tamanho
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
         if tamanho_kb > limites[banco_norm]:
@@ -1017,36 +1021,56 @@ async def upload_comprovativo(
 
         nome_comprovativo = comprovativo.filename
 
-        # Verifica duplicado no Firebase
+        # 🔹 Criar coleção caso não exista no Firebase
+        try:
+            pagamentos_ref = db.collection("comprovativos_pagamento")
+            doc_ref = pagamentos_ref.document(aluno_normalizado)
+            if not doc_ref.get().exists:
+                doc_ref.set({"comprovativos": []})  # inicializa a coleção
+        except Exception as e:
+            logging.error(f"Erro ao criar coleção no Firebase: {e}")
+            raise HTTPException(status_code=500, detail=f"Erro ao criar coleção: {str(e)}")
+
+        # 🔹 Verificar duplicado no Firebase
         if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
                 atualizar_status_conta(aluno_normalizado, "Desativada")
-                return JSONResponse({"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."}, status_code=403)
-            return JSONResponse({
-                "status": "erro",
-                "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"
-            }, status_code=400)
+                return JSONResponse(
+                    {"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."},
+                    status_code=403
+                )
+            return JSONResponse(
+                {
+                    "status": "erro",
+                    "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"
+                },
+                status_code=400
+            )
 
-        # Registrar novo pagamento
+        # 🔹 Registrar novo pagamento
         registrar_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
 
         # Redireciona para sala virtual do aluno
         sala = f"{aluno_normalizado}-aluno"
-        return JSONResponse({
-            "status": "sucesso",
-            "aluno": aluno_normalizado,
-            "banco": banco_norm,
-            "ficheiro": nome_comprovativo,
-            "mensagem": "Comprovativo enviado e validado com sucesso!",
-            "redirect": f"/sala_virtual_aluno/{sala}"
-        })
+        return JSONResponse(
+            {
+                "status": "sucesso",
+                "aluno": aluno_normalizado,
+                "banco": banco_norm,
+                "ficheiro": nome_comprovativo,
+                "mensagem": "Comprovativo enviado e validado com sucesso!",
+                "redirect": f"/sala_virtual_aluno/{sala}"
+            }
+        )
 
     except HTTPException as e:
+        logging.error(f"Erro HTTP ao processar comprovativo: {e.detail}")
         raise e
     except Exception as e:
+        logging.error(f"Erro inesperado: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
 
 

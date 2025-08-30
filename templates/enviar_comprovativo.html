@@ -119,7 +119,6 @@
   <form id="comprovativo-form">
     <div id="upload-section">
       <label for="aluno">Nome do aluno:</label>
-      <!-- Campo já preenchido automaticamente -->
       <input type="text" id="aluno" name="aluno_nome" required placeholder="Digite seu nome" value="{{ aluno_nome }}"/>
 
       <label for="banco">Escolha o banco:</label>
@@ -136,7 +135,6 @@
         <span class="copy-icon" onclick="copiarIBAN()" title="Copiar IBAN">📋</span>
       </div>
 
-      <!-- Seleção de meses -->
       <label>Meses a pagar:</label>
       <div class="meses-container">
         <button type="button" onclick="alterarMeses(-1)">−</button>
@@ -222,7 +220,6 @@
         return;
       }
 
-      // Enviar para a rota FastAPI
       const formData = new FormData();
       formData.append("aluno_nome", alunoNome);
       formData.append("banco", banco);
@@ -235,15 +232,22 @@
           body: formData
         });
 
-        const html = await response.text();
         if (response.ok) {
-          // 👉 Mostra o recibo HTML retornado pelo backend
+          const html = await response.text();
           document.open();
           document.write(html);
           document.close();
         } else {
-          alert("❌ Erro ao enviar comprovativo.");
+          let errorMsg = "Erro ao enviar comprovativo.";
+          try {
+            const err = await response.json();
+            errorMsg = err.detail || errorMsg;
+          } catch (_) {
+            errorMsg = await response.text();
+          }
+          alert("❌ " + errorMsg);
         }
+
       } catch (error) {
         alert("❌ Erro na requisição: " + error.message);
       }

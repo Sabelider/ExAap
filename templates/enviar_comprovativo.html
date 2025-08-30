@@ -38,8 +38,10 @@
       color: #555;
     }
 
-    input[type="file"] {
+    input[type="file"], select {
       margin: 10px 0 20px 0;
+      width: 100%;
+      padding: 8px;
     }
 
     button {
@@ -71,7 +73,15 @@
     <p id="nomeAluno">Aluno: </p>
 
     <form id="formComprovativo">
-      <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required>
+      <label for="banco">Selecione o Banco:</label>
+      <select id="banco" name="banco" required>
+        <option value="">-- Escolha --</option>
+        <option value="bai">BAI</option>
+        <option value="bpc">BPC</option>
+        <option value="bni">BNI</option>
+      </select>
+
+      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required>
       <br>
       <button type="submit">Enviar</button>
     </form>
@@ -91,24 +101,34 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const fileInput = document.getElementById("comprovativo");
+      const banco = document.getElementById("banco").value;
       const file = fileInput.files[0];
-      if (!file) return;
+      if (!file || !banco) {
+        mensagem.textContent = "Selecione o banco e o comprovativo.";
+        mensagem.style.color = "red";
+        return;
+      }
 
       const formData = new FormData();
       formData.append("aluno_nome", alunoNome);
+      formData.append("banco", banco);
       formData.append("comprovativo", file);
+      formData.append("tentativas", 0); // opcional
 
       try {
-        const res = await fetch("/upload_comprovativo", { // backend precisa tratar esta rota
+        const res = await fetch("/upload_comprovativo", {
           method: "POST",
           body: formData
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          mensagem.textContent = "Comprovativo enviado com sucesso!";
+          mensagem.textContent = data.mensagem || "Comprovativo enviado com sucesso!";
+          mensagem.style.color = "green";
           fileInput.value = "";
         } else {
-          mensagem.textContent = "Falha ao enviar o comprovativo.";
+          mensagem.textContent = data.mensagem || "Falha ao enviar o comprovativo.";
           mensagem.style.color = "red";
         }
       } catch (err) {

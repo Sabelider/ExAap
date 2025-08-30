@@ -944,8 +944,8 @@ def verificar_pagamento_existente(nome_comprovativo: str, aluno_nome: str) -> bo
     return False
 
 
-def registrar_pagamento(nome_comprovativo: str, aluno_nome: str):
-    """Registra o comprovativo no Firebase."""
+def registrar_comprovativo_pagamento(nome_comprovativo: str, aluno_nome: str):
+    """Registra o comprovativo no Firebase (somente nome)."""
     try:
         doc_ref = db.collection("comprovativos_pagamento").document(aluno_nome)
         doc = doc_ref.get()
@@ -959,8 +959,8 @@ def registrar_pagamento(nome_comprovativo: str, aluno_nome: str):
             doc_ref.set({"comprovativos": [nome_comprovativo]})
 
     except Exception as e:
-        logging.error(f"Erro ao registrar pagamento no Firebase: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao registrar pagamento no Firebase.")
+        logging.error(f"Erro ao registrar comprovativo no Firebase: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao registrar comprovativo no Firebase.")
 
 
 def atualizar_status_conta(aluno_nome: str, status: str):
@@ -1052,7 +1052,7 @@ async def upload_comprovativo(
             )
 
         # 🔹 Registrar novo pagamento
-        registrar_pagamento(nome_comprovativo, aluno_normalizado)
+        registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
 

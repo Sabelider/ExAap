@@ -82,6 +82,35 @@
     .copy-icon:hover {
       color: #000;
     }
+
+    .meses-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .meses-container button {
+      padding: 6px 12px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #333;
+      color: white;
+    }
+
+    .meses-container button:hover {
+      background-color: #000;
+    }
+
+    .valor-total {
+      font-weight: bold;
+      margin-top: 10px;
+      color: #222;
+    }
   </style>
 </head>
 <body>
@@ -107,6 +136,15 @@
         <span class="copy-icon" onclick="copiarIBAN()" title="Copiar IBAN">📋</span>
       </div>
 
+      <!-- Seleção de meses -->
+      <label>Meses a pagar:</label>
+      <div class="meses-container">
+        <button type="button" onclick="alterarMeses(-1)">−</button>
+        <input type="text" id="meses" name="meses" value="1" readonly style="text-align:center; width:50px;">
+        <button type="button" onclick="alterarMeses(1)">+</button>
+      </div>
+      <div class="valor-total" id="valorTotal">Valor total: 15.000,00 Kz</div>
+
       <label for="comprovativo">Enviar comprovativo (PDF):</label>
       <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required>
     </div>
@@ -118,6 +156,8 @@
     const fileInput = document.getElementById('comprovativo');
     const bancoSelect = document.getElementById('banco');
     const form = document.getElementById('comprovativo-form');
+    const mesesInput = document.getElementById('meses');
+    const valorTotalEl = document.getElementById('valorTotal');
 
     const limitesKB = {
       BAI: 32,
@@ -125,6 +165,27 @@
       BNI: 32,
       "Multicaixa Express": 33
     };
+
+    const valorMensal = 15000;
+    const descontoPorMes = 100;
+
+    function atualizarValorTotal() {
+      const meses = parseInt(mesesInput.value);
+      const desconto = meses * descontoPorMes;
+      const total = (meses * valorMensal) - desconto;
+      valorTotalEl.textContent = "Valor total: " + total.toLocaleString("pt-PT") + ",00 Kz";
+    }
+
+    function alterarMeses(delta) {
+      let meses = parseInt(mesesInput.value);
+      meses += delta;
+      if (meses < 1) meses = 1;
+      if (meses > 12) meses = 12;
+      mesesInput.value = meses;
+      atualizarValorTotal();
+    }
+
+    atualizarValorTotal();
 
     function copiarIBAN() {
       const iban = '004000008230978610166';
@@ -141,6 +202,7 @@
       const alunoNome = document.getElementById("aluno").value;
       const banco = bancoSelect.value;
       const file = fileInput.files[0];
+      const meses = parseInt(mesesInput.value);
 
       if (!file || !banco || !alunoNome) {
         alert("Por favor, preencha todos os campos.");
@@ -164,6 +226,7 @@
       const formData = new FormData();
       formData.append("aluno_nome", alunoNome);
       formData.append("banco", banco);
+      formData.append("meses", meses);
       formData.append("comprovativo", file);
 
       try {

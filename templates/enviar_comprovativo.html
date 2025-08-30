@@ -235,14 +235,14 @@
           body: formData
         });
 
-        const result = await response.json();
+        const html = await response.text();
         if (response.ok) {
-          alert("✅ " + result.mensagem);
-          if (result.redirect) {
-            window.location.href = result.redirect;
-          }
+          // 👉 Mostra o recibo HTML retornado pelo backend
+          document.open();
+          document.write(html);
+          document.close();
         } else {
-          alert("❌ Erro: " + (result.mensagem || result.detail));
+          alert("❌ Erro ao enviar comprovativo.");
         }
       } catch (error) {
         alert("❌ Erro na requisição: " + error.message);

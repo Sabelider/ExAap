@@ -1001,9 +1001,6 @@ def registrar_pagamento_mensal(aluno_nome: str):
 
 import logging
 
-app = FastAPI()
-db = firestore.client()
-
 MAX_TENTATIVAS = 3
 
 @app.post("/upload_comprovativo", response_class=HTMLResponse)

@@ -1008,6 +1008,7 @@ async def upload_comprovativo(
     request: Request,
     aluno_nome: str = Form(...),
     banco: str = Form(...),
+    meses: int = Form(...),  # 🔹 Novo campo vindo do formulário
     comprovativo: UploadFile = File(...),
     tentativas: int = Form(default=0)
 ):
@@ -1016,7 +1017,7 @@ async def upload_comprovativo(
         banco_norm = banco.strip().lower()
 
         # Limites de tamanho por banco (em KB)
-        limites = {"bai": 32, "bni": 32, "bpc": 31}
+        limites = {"bai": 32, "bni": 32, "bpc": 31, "multicaixa express": 33}
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
 
@@ -1027,7 +1028,13 @@ async def upload_comprovativo(
         # Validar tamanho
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
-        if tamanho_kb > limites[banco_norm]:
+        if banco_norm == "multicaixa express":
+            if tamanho_kb < 24 or tamanho_kb > 33:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"O comprovativo do {banco.upper()} deve ter entre 24 KB e 33 KB."
+                )
+        elif tamanho_kb > limites[banco_norm]:
             raise HTTPException(
                 status_code=400,
                 detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
@@ -1036,6 +1043,12 @@ async def upload_comprovativo(
         # 🔹 DESCARTAR o ficheiro, guardamos apenas o nome
         await comprovativo.close()
         nome_comprovativo = comprovativo.filename
+
+        # 🔹 Calcular valor da mensalidade
+        valor_mensal = 15000
+        desconto_por_mes = 100
+        desconto_total = meses * desconto_por_mes
+        valor_total = (meses * valor_mensal) - desconto_total
 
         # Criar coleção no Firebase se não existir
         doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
@@ -1050,30 +1063,38 @@ async def upload_comprovativo(
                 return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
             return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
-        # Registrar novo pagamento
+        # Registrar novo pagamento no Firebase
         registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
+
+        # 🔹 Atualizar Firebase com o valor da mensalidade
+        doc_ref.update({
+            "mensalidade": {
+                "meses": meses,
+                "valor_total": valor_total,
+                "valor_mensal": valor_mensal,
+                "desconto_total": desconto_total
+            }
+        })
 
         # Criar recibo HTML
         now = datetime.now(timezone.utc)
         data_pagamento = now.strftime("%d/%m/%Y")
         hora_pagamento = now.strftime("%H:%M:%S")
 
-               html_content = f"""
+        html_content = f"""
         <!DOCTYPE html>
         <html lang="pt">
         <head>
             <meta charset="UTF-8">
             <title>Recibo de Pagamento</title>
-            <!-- JS para gerar PDF -->
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-            
             <style>
                 body {{
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background: linear-gradient(135deg, #f0f4f8, #d9e4f5);
+                    background: #f8f9fa;
                     margin: 0;
                     padding: 20px;
                 }}
@@ -1084,11 +1105,6 @@ async def upload_comprovativo(
                     padding: 35px;
                     border-radius: 12px;
                     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-                    animation: fadeIn 0.8s ease-in-out;
-                }}
-                @keyframes fadeIn {{
-                    from {{ opacity: 0; transform: translateY(20px); }}
-                    to {{ opacity: 1; transform: translateY(0); }}
                 }}
                 .header {{
                     display: flex;
@@ -1104,7 +1120,6 @@ async def upload_comprovativo(
                 .empresa {{
                     font-size: 20px;
                     font-weight: bold;
-                    color: #333;
                 }}
                 .recibo-title {{
                     text-align: center;
@@ -1121,7 +1136,6 @@ async def upload_comprovativo(
                 td, th {{
                     padding: 12px;
                     border: 1px solid #ccc;
-                    font-size: 16px;
                 }}
                 th {{
                     background: #f8f9fa;
@@ -1138,22 +1152,9 @@ async def upload_comprovativo(
                     border-radius: 8px;
                     cursor: pointer;
                     font-size: 16px;
-                    transition: all 0.3s ease;
                 }}
-                .download-btn {{
-                    background: #28a745;
-                    color: #fff;
-                }}
-                .download-btn:hover {{
-                    background: #218838;
-                }}
-                .perfil-btn {{
-                    background: #007bff;
-                    color: #fff;
-                }}
-                .perfil-btn:hover {{
-                    background: #0056b3;
-                }}
+                .download-btn {{ background: #28a745; color: #fff; }}
+                .perfil-btn {{ background: #007bff; color: #fff; }}
             </style>
         </head>
         <body>
@@ -1171,6 +1172,10 @@ async def upload_comprovativo(
                 <table>
                     <tr><th>Aluno</th><td>{aluno_nome}</td></tr>
                     <tr><th>Banco</th><td>{banco.upper()}</td></tr>
+                    <tr><th>Meses</th><td>{meses}</td></tr>
+                    <tr><th>Mensalidade</th><td>{valor_mensal:,.0f} Kz</td></tr>
+                    <tr><th>Desconto</th><td>{desconto_total:,.0f} Kz</td></tr>
+                    <tr><th>Valor Total</th><td style="font-weight:bold;">{valor_total:,.0f} Kz</td></tr>
                     <tr><th>Comprovativo</th><td>{nome_comprovativo}</td></tr>
                     <tr><th>Data</th><td>{data_pagamento}</td></tr>
                     <tr><th>Hora</th><td>{hora_pagamento}</td></tr>
@@ -1179,7 +1184,7 @@ async def upload_comprovativo(
 
                 <div class="btns">
                     <button class="download-btn" onclick="gerarPDF()">📄 Download PDF</button>
-                    <button class="perfil-btn" onclick="voltarPerfil()">🔙 Voltar ao Perfil</button>
+                    <button class="perfil-btn" onclick="window.location.href='/perfil/{aluno_normalizado}'">🔙 Voltar ao Perfil</button>
                 </div>
             </div>
 
@@ -1189,16 +1194,11 @@ async def upload_comprovativo(
                     html2canvas(document.querySelector("#recibo")).then(canvas => {{
                         const imgData = canvas.toDataURL("image/png");
                         const pdf = new jsPDF("p", "mm", "a4");
-                        const imgProps = pdf.getImageProperties(imgData);
                         const pdfWidth = pdf.internal.pageSize.getWidth();
-                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                         pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
                         pdf.save("recibo_{aluno_normalizado}.pdf");
                     }});
-                }}
-
-                function voltarPerfil() {{
-                    window.location.href = "/perfil/{aluno_normalizado}";
                 }}
             </script>
         </body>

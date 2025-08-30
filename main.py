@@ -1060,71 +1060,100 @@ async def upload_comprovativo(
         data_pagamento = now.strftime("%d/%m/%Y")
         hora_pagamento = now.strftime("%H:%M:%S")
 
-        html_content = f"""
+               html_content = f"""
         <!DOCTYPE html>
         <html lang="pt">
         <head>
             <meta charset="UTF-8">
             <title>Recibo de Pagamento</title>
+            <!-- JS para gerar PDF -->
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+            
             <style>
                 body {{
-                    font-family: Arial, sans-serif;
-                    background: #f8f9fa;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: linear-gradient(135deg, #f0f4f8, #d9e4f5);
                     margin: 0;
-                    padding: 0;
+                    padding: 20px;
                 }}
                 .recibo-container {{
-                    max-width: 700px;
-                    margin: 40px auto;
+                    max-width: 750px;
+                    margin: auto;
                     background: #fff;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    padding: 35px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+                    animation: fadeIn 0.8s ease-in-out;
+                }}
+                @keyframes fadeIn {{
+                    from {{ opacity: 0; transform: translateY(20px); }}
+                    to {{ opacity: 1; transform: translateY(0); }}
                 }}
                 .header {{
                     display: flex;
                     align-items: center;
-                    border-bottom: 2px solid #007bff;
-                    padding-bottom: 10px;
-                    margin-bottom: 20px;
+                    border-bottom: 3px solid #007bff;
+                    padding-bottom: 15px;
+                    margin-bottom: 25px;
                 }}
                 .header img {{
-                    height: 70px;
+                    height: 80px;
                     margin-right: 20px;
                 }}
                 .empresa {{
-                    font-size: 18px;
+                    font-size: 20px;
                     font-weight: bold;
+                    color: #333;
                 }}
                 .recibo-title {{
                     text-align: center;
-                    font-size: 22px;
+                    font-size: 26px;
                     font-weight: bold;
-                    margin-bottom: 20px;
+                    margin-bottom: 25px;
+                    color: #007bff;
                 }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
+                    margin-bottom: 20px;
                 }}
                 td, th {{
-                    padding: 10px;
-                    border: 1px solid #ddd;
+                    padding: 12px;
+                    border: 1px solid #ccc;
+                    font-size: 16px;
+                }}
+                th {{
+                    background: #f8f9fa;
+                    text-align: left;
                 }}
                 .btns {{
                     text-align: center;
-                    margin-top: 20px;
+                    margin-top: 25px;
                 }}
                 button {{
-                    padding: 10px 20px;
-                    margin: 5px;
+                    padding: 12px 24px;
+                    margin: 8px;
                     border: none;
-                    border-radius: 6px;
+                    border-radius: 8px;
                     cursor: pointer;
                     font-size: 16px;
+                    transition: all 0.3s ease;
                 }}
-                .download-btn {{ background: #28a745; color: #fff; }}
-                .perfil-btn {{ background: #007bff; color: #fff; }}
+                .download-btn {{
+                    background: #28a745;
+                    color: #fff;
+                }}
+                .download-btn:hover {{
+                    background: #218838;
+                }}
+                .perfil-btn {{
+                    background: #007bff;
+                    color: #fff;
+                }}
+                .perfil-btn:hover {{
+                    background: #0056b3;
+                }}
             </style>
         </head>
         <body>
@@ -1140,49 +1169,36 @@ async def upload_comprovativo(
                 <div class="recibo-title">Recibo de Pagamento</div>
 
                 <table>
-                    <tr>
-                        <th>Aluno</th>
-                        <td>{aluno_nome}</td>
-                    </tr>
-                    <tr>
-                        <th>Banco</th>
-                        <td>{banco.upper()}</td>
-                    </tr>
-                    <tr>
-                        <th>Comprovativo</th>
-                        <td>{nome_comprovativo}</td>
-                    </tr>
-                    <tr>
-                        <th>Data</th>
-                        <td>{data_pagamento}</td>
-                    </tr>
-                    <tr>
-                        <th>Hora</th>
-                        <td>{hora_pagamento}</td>
-                    </tr>
-                    <tr>
-                        <th>Status</th>
-                        <td style="color:green; font-weight:bold;">Pagamento Validado</td>
-                    </tr>
+                    <tr><th>Aluno</th><td>{aluno_nome}</td></tr>
+                    <tr><th>Banco</th><td>{banco.upper()}</td></tr>
+                    <tr><th>Comprovativo</th><td>{nome_comprovativo}</td></tr>
+                    <tr><th>Data</th><td>{data_pagamento}</td></tr>
+                    <tr><th>Hora</th><td>{hora_pagamento}</td></tr>
+                    <tr><th>Status</th><td style="color:green; font-weight:bold;">Pagamento Validado</td></tr>
                 </table>
 
                 <div class="btns">
                     <button class="download-btn" onclick="gerarPDF()">📄 Download PDF</button>
-                    <button class="perfil-btn" onclick="window.location.href='/perfil/{aluno_normalizado}'">🔙 Voltar ao Perfil</button>
+                    <button class="perfil-btn" onclick="voltarPerfil()">🔙 Voltar ao Perfil</button>
                 </div>
             </div>
 
             <script>
                 function gerarPDF() {{
                     const {{ jsPDF }} = window.jspdf;
-                    const doc = new jsPDF();
-                    doc.html(document.querySelector('#recibo'), {{
-                        callback: function (pdf) {{
-                            pdf.save('recibo_{aluno_normalizado}.pdf');
-                        }},
-                        x: 10,
-                        y: 10
+                    html2canvas(document.querySelector("#recibo")).then(canvas => {{
+                        const imgData = canvas.toDataURL("image/png");
+                        const pdf = new jsPDF("p", "mm", "a4");
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+                        pdf.save("recibo_{aluno_normalizado}.pdf");
                     }});
+                }}
+
+                function voltarPerfil() {{
+                    window.location.href = "/perfil/{aluno_normalizado}";
                 }}
             </script>
         </body>

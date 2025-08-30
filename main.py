@@ -985,39 +985,69 @@ def registrar_pagamento_mensal(aluno_nome: str):
             "paga_passado": paga_passado
         })
 
-@app.post("/validar_pagamento")
-async def validar_pagamento(
+MAX_TENTATIVAS = 3
+
+@app.post("/upload_comprovativo")
+async def upload_comprovativo(
     aluno_nome: str = Form(...),
+    banco: str = Form(...),
     comprovativo: UploadFile = File(...),
     tentativas: int = Form(default=0)
 ):
-    aluno_normalizado = aluno_nome.strip().lower()
-    
-    # Validação do PDF
-    if comprovativo.content_type != "application/pdf":
-        return JSONResponse({"status": "erro", "mensagem": "Por favor, envie apenas ficheiros PDF."}, status_code=400)
-    
-    conteudo = await comprovativo.read()
-    tamanho_kb = len(conteudo) / 1024
-    if not 24 <= tamanho_kb <= 32:
-        return JSONResponse({"status": "erro", "mensagem": "O ficheiro deve ter entre 24 KB e 32 KB."}, status_code=400)
-    
-    # Verifica se comprovativo já existe
-    if verificar_pagamento_existente(comprovativo.filename, aluno_normalizado):
-        tentativas += 1
-        if tentativas >= MAX_TENTATIVAS:
-            atualizar_status_conta(aluno_normalizado, "Desativada")
-            return JSONResponse({"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."}, status_code=403)
-        return JSONResponse({"status": "erro", "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"}, status_code=400)
-    
-    # Registrar pagamento
-    registrar_pagamento(comprovativo.filename, aluno_normalizado)
-    registrar_pagamento_mensal(aluno_normalizado)
-    atualizar_status_conta(aluno_normalizado, "Ativada")
-    
-    # Redireciona para a sala virtual
-    sala = f"{aluno_normalizado}-aluno"
-    return JSONResponse({"status": "sucesso", "redirect": f"/sala_virtual_aluno/{sala}"})
+    try:
+        aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
+        banco_norm = banco.strip().lower()
+
+        # Definir limites de tamanho por banco (em KB)
+        limites = {"bai": 32, "bni": 32, "bpc": 31}
+        if banco_norm not in limites:
+            raise HTTPException(status_code=400, detail="Banco inválido.")
+
+        # Validar PDF
+        if comprovativo.content_type != "application/pdf":
+            return JSONResponse({"status": "erro", "mensagem": "Apenas PDFs são aceites."}, status_code=400)
+
+        conteudo = await comprovativo.read()
+        tamanho_kb = len(conteudo) / 1024
+        if tamanho_kb > limites[banco_norm]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
+            )
+
+        nome_comprovativo = comprovativo.filename
+
+        # Verifica duplicado no Firebase
+        if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
+            tentativas += 1
+            if tentativas >= MAX_TENTATIVAS:
+                atualizar_status_conta(aluno_normalizado, "Desativada")
+                return JSONResponse({"status": "erro", "mensagem": "Comprovativo já existe. Conta desativada."}, status_code=403)
+            return JSONResponse({
+                "status": "erro",
+                "mensagem": f"Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}"
+            }, status_code=400)
+
+        # Registrar novo pagamento
+        registrar_pagamento(nome_comprovativo, aluno_normalizado)
+        registrar_pagamento_mensal(aluno_normalizado)
+        atualizar_status_conta(aluno_normalizado, "Ativada")
+
+        # Redireciona para sala virtual do aluno
+        sala = f"{aluno_normalizado}-aluno"
+        return JSONResponse({
+            "status": "sucesso",
+            "aluno": aluno_normalizado,
+            "banco": banco_norm,
+            "ficheiro": nome_comprovativo,
+            "mensagem": "Comprovativo enviado e validado com sucesso!",
+            "redirect": f"/sala_virtual_aluno/{sala}"
+        })
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)
@@ -1137,6 +1167,7 @@ async def enviar_comprovativo(aluno_nome: str):
     </html>
     """
     return HTMLResponse(html)
+
 
 
 @app.get("/sala_virtual_aluno/{sala}")

@@ -90,8 +90,8 @@
   <form id="comprovativo-form">
     <div id="upload-section">
       <label for="aluno">Nome do aluno:</label>
-      <!-- Aqui o campo já vem preenchido -->
-      <input type="text" id="aluno" name="aluno_nome" required value="{{ aluno_nome }}"/>
+      <!-- Campo já preenchido automaticamente -->
+      <input type="text" id="aluno" name="aluno_nome" required placeholder="Digite seu nome" value="{{ aluno_nome }}"/>
 
       <label for="banco">Escolha o banco:</label>
       <select id="banco" name="banco" required>
@@ -99,6 +99,7 @@
         <option value="BAI">BAI</option>
         <option value="BPC">BPC</option>
         <option value="BNI">BNI</option>
+        <option value="Multicaixa Express">Multicaixa Express</option>
       </select>
 
       <div class="iban-container">
@@ -118,7 +119,12 @@
     const bancoSelect = document.getElementById('banco');
     const form = document.getElementById('comprovativo-form');
 
-    const limitesKB = { BAI: 32, BPC: 31, BNI: 32 };
+    const limitesKB = {
+      BAI: 32,
+      BPC: 31,
+      BNI: 32,
+      "Multicaixa Express": 33
+    };
 
     function copiarIBAN() {
       const iban = '004000008230978610166';
@@ -132,7 +138,7 @@
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const alunoNome = document.getElementById("aluno").value.trim();
+      const alunoNome = document.getElementById("aluno").value;
       const banco = bancoSelect.value;
       const file = fileInput.files[0];
 
@@ -143,11 +149,18 @@
 
       const tamanhoKB = file.size / 1024;
       const limite = limitesKB[banco];
-      if (tamanhoKB > limite) {
+
+      if (banco === "Multicaixa Express" && (tamanhoKB < 24 || tamanhoKB > 33)) {
+        alert(`Comprovativo inválido. O tamanho permitido para ${banco} deve estar entre 24 KB e 33 KB.\nTamanho atual: ${tamanhoKB.toFixed(2)} KB`);
+        return;
+      }
+
+      if (banco !== "Multicaixa Express" && tamanhoKB > limite) {
         alert(`Comprovativo inválido. O tamanho máximo permitido para ${banco} é ${limite} KB.\nTamanho atual: ${tamanhoKB.toFixed(2)} KB`);
         return;
       }
 
+      // Enviar para a rota FastAPI
       const formData = new FormData();
       formData.append("aluno_nome", alunoNome);
       formData.append("banco", banco);
@@ -160,11 +173,13 @@
         });
 
         const result = await response.json();
-        if (response.ok && result.status === "sucesso") {
+        if (response.ok) {
           alert("✅ " + result.mensagem);
-          window.location.href = result.redirect;
+          if (result.redirect) {
+            window.location.href = result.redirect;
+          }
         } else {
-          alert("❌ " + (result.mensagem || result.detail));
+          alert("❌ Erro: " + (result.mensagem || result.detail));
         }
       } catch (error) {
         alert("❌ Erro na requisição: " + error.message);

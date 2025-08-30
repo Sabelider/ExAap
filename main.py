@@ -989,6 +989,25 @@ import logging
 
 MAX_TENTATIVAS = 3
 
+def registrar_pagamento(nome_comprovativo: str, aluno: str):
+    """Registra o comprovativo no Firebase."""
+    try:
+        pagamentos_ref = db.collection("comprovativos_pagamento").document(aluno)
+        doc = pagamentos_ref.get()
+
+        if doc.exists:
+            dados = doc.to_dict()
+            comprovativos = dados.get("comprovativos", [])
+            comprovativos.append(nome_comprovativo)
+            pagamentos_ref.update({"comprovativos": comprovativos})
+        else:
+            pagamentos_ref.set({"comprovativos": [nome_comprovativo]})
+
+    except Exception as e:
+        logging.error(f"Erro ao registrar pagamento no Firebase: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao registrar pagamento no Firebase.")
+
+
 @app.post("/upload_comprovativo")
 async def upload_comprovativo(
     aluno_nome: str = Form(...),

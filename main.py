@@ -987,7 +987,6 @@ def registrar_pagamento_mensal(aluno_nome: str):
 
 import logging
 
-
 MAX_TENTATIVAS = 3
 
 @app.post("/upload_comprovativo")
@@ -1010,7 +1009,7 @@ async def upload_comprovativo(
         if comprovativo.content_type != "application/pdf":
             return JSONResponse({"status": "erro", "mensagem": "Apenas PDFs são aceites."}, status_code=400)
 
-        # Validar tamanho
+        # Validar tamanho (ler apenas para validação)
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
         if tamanho_kb > limites[banco_norm]:
@@ -1019,6 +1018,10 @@ async def upload_comprovativo(
                 detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
             )
 
+        # Após validar, descartamos o ficheiro
+        await comprovativo.close()
+
+        # Guardar apenas o nome
         nome_comprovativo = comprovativo.filename
 
         # 🔹 Criar coleção caso não exista no Firebase

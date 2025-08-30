@@ -232,20 +232,14 @@
           body: formData
         });
 
+        const html = await response.text(); // lê apenas uma vez
+
         if (response.ok) {
-          const html = await response.text();
           document.open();
           document.write(html);
           document.close();
         } else {
-          let errorMsg = "Erro ao enviar comprovativo.";
-          try {
-            const err = await response.json();
-            errorMsg = err.detail || errorMsg;
-          } catch (_) {
-            errorMsg = await response.text();
-          }
-          alert("❌ " + errorMsg);
+          alert("❌ Erro ao enviar comprovativo:\n" + html);
         }
 
       } catch (error) {

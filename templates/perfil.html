@@ -230,9 +230,100 @@ p a {
       <i>📘</i>
       <span>Ver Aulas</span>
     </div>
-    <div class="acao" onclick="verNotificacao()">
-      <i>🔔👨‍🏫</i>
-      <span>Sala de aula</span>
+    <div class="acao" id="btn-notificacao" onclick="verNotificacao()">
+  <i id="icone-sino">🔔👨‍🏫</i>
+  <span id="texto-sala">Sala de aula</span>
+</div>
+
+<style>
+ 
+  @keyframes tremer {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-15deg); }
+    40% { transform: rotate(15deg); }
+    60% { transform: rotate(-10deg); }
+    80% { transform: rotate(10deg); }
+  }
+
+  /* estilo quando há notificação */
+  .notificacao-ativa {
+    color: red; /* 🔴 fica vermelho */
+    animation: tremer 0.6s infinite; /* treme sem parar */
+    font-weight: bold;
+  }
+</style>
+
+<script>
+  window.verNotificacao = async function () {
+    try {
+      const response = await fetch("/verificar-notificacao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aluno: nomeAluno })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      const notificacaoEl = document.getElementById("notificacao-mensagem");
+      const contadorAulas = document.getElementById("contador-aulas");
+      const iconeSino = document.getElementById("icone-sino");
+      const textoSala = document.getElementById("texto-sala");
+
+      if (data.notificacao === true) {
+        window.professorEmailAtual = data.professor_email;
+
+        notificacaoEl.innerHTML = `
+          A tua aula irá começar
+          <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Vista</button>
+        `;
+        notificacaoEl.style.display = "block";
+        contadorAulas.innerText = "(1)";
+
+        // 🔔 ativa o destaque visual no sino e no texto
+        iconeSino.classList.add("notificacao-ativa");
+        textoSala.classList.add("notificacao-ativa");
+      } else {
+        notificacaoEl.style.display = "none";
+        contadorAulas.innerText = "";
+
+        // 🔔 remove o destaque visual
+        iconeSino.classList.remove("notificacao-ativa");
+        textoSala.classList.remove("notificacao-ativa");
+      }
+    } catch (e) {
+      console.error("Erro verNotificacao:", e);
+    }
+  };
+
+  window.desativarNotificacaoERedirecionar = async function () {
+    try {
+      await fetch("/desativar-notificacao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aluno: nomeAluno })
+      });
+      document.getElementById("notificacao-mensagem").style.display = "none";
+      document.getElementById("contador-aulas").innerText = "";
+
+      // 🔔 ao clicar em "Vista", remove destaque
+      document.getElementById("icone-sino").classList.remove("notificacao-ativa");
+      document.getElementById("texto-sala").classList.remove("notificacao-ativa");
+
+      if (window.professorEmailAtual) {
+        const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
+        window.location.href = `/sala_virtual_aluno/${sala}`;
+      }
+    } catch (e) {
+      console.error("Erro desativarNotificacaoERedirecionar:", e);
+    }
+  };
+
+  // 🚀 chamada automática
+  window.addEventListener("DOMContentLoaded", () => {
+    verNotificacao();
+    setInterval(verNotificacao, 5000);
+  });
+</script>
     </div>
     <div class="acao" onclick="verHorario()">
       <i>📅</i>
@@ -495,64 +586,6 @@ function abrirPagamentos() {
       container.style.display = "block";
     }
   };
-
-  window.verNotificacao = async function () {
-    try {
-      const response = await fetch("/verificar-notificacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: nomeAluno })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      const notificacaoEl = document.getElementById("notificacao-mensagem");
-      const contadorAulas = document.getElementById("contador-aulas");
-
-      if (data.notificacao === true) {
-        window.professorEmailAtual = data.professor_email;
-
-        notificacaoEl.innerHTML = `
-          A tua aula irá começar
-          <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Vista</button>
-        `;
-        notificacaoEl.style.display = "block";
-        contadorAulas.innerText = "(1)";
-      } else {
-        notificacaoEl.style.display = "none";
-        contadorAulas.innerText = "";
-      }
-    } catch (e) {
-      console.error("Erro verNotificacao:", e);
-    }
-  };
-
-  window.desativarNotificacaoERedirecionar = async function () {
-    try {
-      await fetch("/desativar-notificacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: nomeAluno })
-      });
-      document.getElementById("notificacao-mensagem").style.display = "none";
-      document.getElementById("contador-aulas").innerText = "";
-
-      if (window.professorEmailAtual) {
-        const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
-        window.location.href = `/sala_virtual_aluno/${sala}`;
-      }
-    } catch (e) {
-      console.error("Erro desativarNotificacaoERedirecionar:", e);
-    }
-  };
-
-  // 🚀 Faz a chamada automática
-  window.addEventListener("DOMContentLoaded", () => {
-    // primeira chamada logo que abre a página
-    verNotificacao();
-
-    // continuar verificando a cada 5 segundos
-    setInterval(verNotificacao, 5000);
-  });
 
   function toggleDesafio() {
     const desafio = document.getElementById('container-desafio');

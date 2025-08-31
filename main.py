@@ -740,13 +740,17 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
     })
 
 
+from starlette.status import HTTP_303_SEE_OTHER 
+from fastapi.responses import RedirectResponse, HTMLResponse
+from datetime import datetime
+
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
-    # Nota: mantive a assinatura e a lógica superior iguais ao teu código que já funciona.
     try:
         nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
+        # Buscar aluno na coleção "alunos" pelo nome_normalizado
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -758,7 +762,7 @@ async def profil(request: Request, nome: str):
         for doc in query:
             dados = doc.to_dict()
             aluno = {
-                "nome": dados.get("nome", nome),
+                "nome": dados.get("nome", nome),  # <- nome real do aluno
                 "bilhete": dados.get("bilhete", "Não informado"),
                 "nivel_ingles": dados.get("nivel_ingles", "N/A"),
                 "telefone": dados.get("telefone", "N/A"),
@@ -770,7 +774,7 @@ async def profil(request: Request, nome: str):
         if not aluno or not doc_id:
             return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
 
-        # Atualizar status online com timestamp
+        # Atualizar status online
         db.collection("alunos").document(doc_id).update({
             "online": True,
             "ultimo_ping": datetime.utcnow().isoformat()
@@ -781,14 +785,14 @@ async def profil(request: Request, nome: str):
         aulas_dadas = 0
         vinculo_id = None
 
+        # 🔹 Buscar vínculo em alunos_professor pelo nome real do aluno
         alunos_prof_ref = db.collection("alunos_professor") \
-            .where("aluno", "==", nome_normalizado) \
+            .where("aluno", "==", aluno["nome"]) \
             .limit(1) \
             .stream()
 
         for vinculo_doc in alunos_prof_ref:
             vinculo_data = vinculo_doc.to_dict()
-            # garantir inteiro seguro
             try:
                 aulas_dadas = int(vinculo_data.get("aulas_dadas", 0) or 0)
             except Exception:
@@ -796,6 +800,7 @@ async def profil(request: Request, nome: str):
             vinculo_id = vinculo_doc.id
             break
 
+        # 🔹 Buscar valor_total em comprovativos_pagamento/{nome_normalizado}
         valor_total = 0
         comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
         if comp_doc.exists:
@@ -803,7 +808,6 @@ async def profil(request: Request, nome: str):
             mensalidade = comp_data.get("mensalidade") or {}
             raw_valor_total = mensalidade.get("valor_total", 0)
 
-            # tentar converter para inteiro de forma robusta
             try:
                 valor_total = int(raw_valor_total)
             except Exception:
@@ -812,18 +816,16 @@ async def profil(request: Request, nome: str):
                 except Exception:
                     valor_total = 0
 
-       
+        # 🔹 Calcular saldo
         total_gasto = valor_total - (aulas_dadas * 1250)
         if total_gasto < 0:
             total_gasto = 0
 
-        # 4) atualizar campo auxiliar no vínculo (se existir)
+        # 🔹 Atualizar campo auxiliar no vínculo (se existir)
         if vinculo_id:
             db.collection("alunos_professor").document(vinculo_id).update({
                 "valor_mensal_aluno": total_gasto
             })
-
-    
 
         return templates.TemplateResponse("perfil.html", {
             "request": request,

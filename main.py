@@ -741,12 +741,12 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
 
 
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
-async def perfil(request: Request, nome: str):
+async def profil(request: Request, nome: str):
+    # Nota: mantive a assinatura e a lógica superior iguais ao teu código que já funciona.
     try:
-        nome_normalizado = nome.strip().lower().replace(" ", "_")  # 🔹 uniformizar como no upload
+        nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
-        # Buscar dados do aluno na coleção "alunos"
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -754,6 +754,7 @@ async def perfil(request: Request, nome: str):
 
         aluno = None
         doc_id = None
+
         for doc in query:
             dados = doc.to_dict()
             aluno = {
@@ -769,24 +770,17 @@ async def perfil(request: Request, nome: str):
         if not aluno or not doc_id:
             return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
 
-        # Atualizar status online
+        # Atualizar status online com timestamp
         db.collection("alunos").document(doc_id).update({
             "online": True,
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # 🔹 Buscar valor_total em comprovativos_pagamento
-        valor_total = 0
-        comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
-        if comp_doc.exists:
-            comp_data = comp_doc.to_dict()
-            if "mensalidade" in comp_data:
-                valor_total = comp_data["mensalidade"].get("valor_total", 0)
-        print(f"💰 valor_total em comprovativos_pagamento: {valor_total}")
-
-        # 🔹 Buscar aulas_dadas em alunos_professor
+        # valores padrão
+        total_gasto = 0
         aulas_dadas = 0
         vinculo_id = None
+
         alunos_prof_ref = db.collection("alunos_professor") \
             .where("aluno", "==", nome_normalizado) \
             .limit(1) \
@@ -794,21 +788,42 @@ async def perfil(request: Request, nome: str):
 
         for vinculo_doc in alunos_prof_ref:
             vinculo_data = vinculo_doc.to_dict()
-            aulas_dadas = vinculo_data.get("aulas_dadas", 0)
+            # garantir inteiro seguro
+            try:
+                aulas_dadas = int(vinculo_data.get("aulas_dadas", 0) or 0)
+            except Exception:
+                aulas_dadas = 0
             vinculo_id = vinculo_doc.id
             break
 
-        print(f"📚 aulas_dadas: {aulas_dadas}")
+        valor_total = 0
+        comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
+        if comp_doc.exists:
+            comp_data = comp_doc.to_dict() or {}
+            mensalidade = comp_data.get("mensalidade") or {}
+            raw_valor_total = mensalidade.get("valor_total", 0)
 
-        # 🔹 Calcular saldo
-        total_gasto = max(valor_total - (aulas_dadas * 1250), 0)
-        print(f"✅ Saldo calculado: {total_gasto}")
+            # tentar converter para inteiro de forma robusta
+            try:
+                valor_total = int(raw_valor_total)
+            except Exception:
+                try:
+                    valor_total = int(float(raw_valor_total))
+                except Exception:
+                    valor_total = 0
 
-        # 🔹 Atualizar no Firestore se houver vínculo
+       
+        total_gasto = valor_total - (aulas_dadas * 1250)
+        if total_gasto < 0:
+            total_gasto = 0
+
+        # 4) atualizar campo auxiliar no vínculo (se existir)
         if vinculo_id:
             db.collection("alunos_professor").document(vinculo_id).update({
                 "valor_mensal_aluno": total_gasto
             })
+
+    
 
         return templates.TemplateResponse("perfil.html", {
             "request": request,

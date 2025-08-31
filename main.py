@@ -746,7 +746,7 @@ async def profil(request: Request, nome: str):
         nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
-       
+        # Buscar aluno na coleção "alunos" pelo nome_normalizado
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -781,9 +781,9 @@ async def profil(request: Request, nome: str):
         aulas_dadas = 0
         vinculo_id = None
 
-        # 1) Buscar o vínculo em alunos_professor (aqui usamos o nome real do aluno)
+        # 1) Buscar o vínculo em alunos_professor pelo nome_normalizado
         alunos_prof_ref = db.collection("alunos_professor") \
-            .where("aluno", "==", aluno["nome"]) \
+            .where("aluno", "==", nome_normalizado) \
             .limit(1) \
             .stream()
 
@@ -796,7 +796,7 @@ async def profil(request: Request, nome: str):
             vinculo_id = vinculo_doc.id
             break
 
-       
+        # 2) Buscar valor_total em comprovativos_pagamento/{nome_com_underscore}
         valor_total = 0
         doc_id_comprovativo = nome_normalizado.replace(" ", "_")
         comp_doc = db.collection("comprovativos_pagamento").document(doc_id_comprovativo).get()
@@ -824,7 +824,6 @@ async def profil(request: Request, nome: str):
                 "valor_mensal_aluno": total_gasto
             })
 
-        
 
         return templates.TemplateResponse("perfil.html", {
             "request": request,

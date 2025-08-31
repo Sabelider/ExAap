@@ -746,7 +746,7 @@ async def profil(request: Request, nome: str):
         nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
-        # Buscar aluno na coleção "alunos" pelo nome_normalizado
+       
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -758,7 +758,7 @@ async def profil(request: Request, nome: str):
         for doc in query:
             dados = doc.to_dict()
             aluno = {
-                "nome": dados.get("nome", nome),  # <- nome real do aluno
+                "nome": dados.get("nome", nome),  # nome real do aluno
                 "bilhete": dados.get("bilhete", "Não informado"),
                 "nivel_ingles": dados.get("nivel_ingles", "N/A"),
                 "telefone": dados.get("telefone", "N/A"),
@@ -776,8 +776,28 @@ async def profil(request: Request, nome: str):
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # 🔹 Buscar valor_total em comprovativos_pagamento/{nome_com_underscore}
-        saldo = 0
+
+        total_gasto = 0
+        aulas_dadas = 0
+        vinculo_id = None
+
+        # 1) Buscar o vínculo em alunos_professor (aqui usamos o nome real do aluno)
+        alunos_prof_ref = db.collection("alunos_professor") \
+            .where("aluno", "==", aluno["nome"]) \
+            .limit(1) \
+            .stream()
+
+        for vinculo_doc in alunos_prof_ref:
+            vinculo_data = vinculo_doc.to_dict()
+            try:
+                aulas_dadas = int(vinculo_data.get("aulas_dadas", 0) or 0)
+            except Exception:
+                aulas_dadas = 0
+            vinculo_id = vinculo_doc.id
+            break
+
+       
+        valor_total = 0
         doc_id_comprovativo = nome_normalizado.replace(" ", "_")
         comp_doc = db.collection("comprovativos_pagamento").document(doc_id_comprovativo).get()
         if comp_doc.exists:
@@ -786,18 +806,30 @@ async def profil(request: Request, nome: str):
             raw_valor_total = mensalidade.get("valor_total", 0)
 
             try:
-                saldo = int(raw_valor_total)
+                valor_total = int(raw_valor_total)
             except Exception:
                 try:
-                    saldo = int(float(raw_valor_total))
+                    valor_total = int(float(raw_valor_total))
                 except Exception:
-                    saldo = 0
+                    valor_total = 0
 
-        # Renderizar perfil com saldo vindo diretamente do Firestore
+        # 3) Calcular saldo
+        total_gasto = valor_total - (aulas_dadas * 1250)
+        if total_gasto < 0:
+            total_gasto = 0
+
+        # 4) Atualizar campo auxiliar no vínculo (se existir)
+        if vinculo_id:
+            db.collection("alunos_professor").document(vinculo_id).update({
+                "valor_mensal_aluno": total_gasto
+            })
+
+        
+
         return templates.TemplateResponse("perfil.html", {
             "request": request,
             "aluno": aluno,
-            "total_gasto": saldo  # saldo = valor_total puro
+            "total_gasto": total_gasto
         })
 
     except Exception as e:

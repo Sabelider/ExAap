@@ -740,10 +740,6 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
     })
 
 
-from starlette.status import HTTP_303_SEE_OTHER 
-from fastapi.responses import RedirectResponse, HTMLResponse
-from datetime import datetime
-
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:
@@ -780,9 +776,10 @@ async def profil(request: Request, nome: str):
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # 🔹 Buscar valor_total em comprovativos_pagamento/{nome_normalizado}
+        # 🔹 Buscar valor_total em comprovativos_pagamento/{nome_com_underscore}
         saldo = 0
-        comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
+        doc_id_comprovativo = nome_normalizado.replace(" ", "_")
+        comp_doc = db.collection("comprovativos_pagamento").document(doc_id_comprovativo).get()
         if comp_doc.exists:
             comp_data = comp_doc.to_dict() or {}
             mensalidade = comp_data.get("mensalidade") or {}

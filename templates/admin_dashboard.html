@@ -14,7 +14,7 @@ body {
   line-height: 1.6;
 }
 
-/* 🔹 Navbar */
+
 .navbar {
   background: linear-gradient(135deg, #0061a8, #00b4d8);
   padding: 18px 20px;
@@ -26,7 +26,7 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* 🔑 Login */
+
 .login-form {
   max-width: 400px;
   margin: 80px auto;
@@ -80,7 +80,7 @@ body {
   margin: 0 auto;
 }
 
-/* 📦 Cards */
+
 .card {
   flex: 1 1 360px;
   background: #fff;
@@ -92,7 +92,7 @@ body {
 .card:hover { transform: translateY(-4px); }
 .card h2 { font-size: 18px; margin-bottom: 12px; color: #0061a8; }
 
-/* 🔘 Botões */
+
 .btn {
   padding: 10px 16px;
   background: linear-gradient(135deg, #0078d7, #00b4d8);
@@ -116,7 +116,7 @@ body {
   font-weight: 600;
 }
 
-/* 📊 Tabelas */
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -138,7 +138,7 @@ th {
 }
 tr:hover td { background: #f9fcff; }
 
-/* 🔹 Status */
+
 .status-circulo {
   width: 12px;
   height: 12px;
@@ -149,7 +149,7 @@ tr:hover td { background: #f9fcff; }
 .status-verde { background-color: #2ecc71; }
 .status-vermelho { background-color: #e74c3c; }
 
-/* Inputs extras */
+
 textarea, select {
   width: 100%;
   padding: 10px;
@@ -159,7 +159,7 @@ textarea, select {
   font-size: 14px;
 }
 
-/* 📱 Responsividade */
+
 @media (max-width: 768px) {
   .container { flex-direction: column; padding: 15px; }
   .card { flex: 1 1 100%; }
@@ -584,15 +584,16 @@ async function carregarPagamentos() {
         tbody.innerHTML = "";
 
         alunos.forEach(a => {
-            const temDivida = a.divida && Number(a.divida) > 0;
-            const statusCor = temDivida ? "status-vermelho" : "status-verde";
-            const statusTexto = temDivida ? "Não paga" : "PAGA";
+            const temValor = a.divida && Number(a.divida) > 0;
+            
+            // comportamento inverso:
+            const statusCor = temValor ? "status-verde" : "status-vermelho";
+            const statusTexto = temValor ? "Pago" : "Não Pago";
 
             // Mostrar último pagamento registrado em paga_passado (se existir)
             let ultimoPagamento = "—";
             if (a.paga_passado && a.paga_passado.length > 0) {
                 const ultimo = a.paga_passado[a.paga_passado.length - 1];
-                // Garante valores padrão caso falte algum campo
                 const mes = ultimo.mes || "-";
                 const ano = ultimo.ano || "-";
                 const valor = ultimo.valor_pago != null ? Number(ultimo.valor_pago).toLocaleString("pt-AO") : "0";
@@ -606,7 +607,7 @@ async function carregarPagamentos() {
                   <td>Kz ${a.divida ? a.divida : 0},00</td>
                   <td>${ultimoPagamento}</td>
                   <td>
-                    <button onclick="marcarPagoProf('${a.id}', ${temDivida}, '${a.professor || ''}', ${a.divida ? a.divida : 0})" 
+                    <button onclick="marcarPagoProf('${a.id}', ${temValor}, '${a.professor || ''}', ${a.divida ? a.divida : 0})" 
                             style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
                       PAGO
                     </button>

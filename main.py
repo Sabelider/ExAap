@@ -780,28 +780,8 @@ async def profil(request: Request, nome: str):
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # valores padrão
-        total_gasto = 0
-        aulas_dadas = 0
-        vinculo_id = None
-
-        # 🔹 Buscar vínculo em alunos_professor pelo nome real do aluno
-        alunos_prof_ref = db.collection("alunos_professor") \
-            .where("aluno", "==", aluno["nome"]) \
-            .limit(1) \
-            .stream()
-
-        for vinculo_doc in alunos_prof_ref:
-            vinculo_data = vinculo_doc.to_dict()
-            try:
-                aulas_dadas = int(vinculo_data.get("aulas_dadas", 0) or 0)
-            except Exception:
-                aulas_dadas = 0
-            vinculo_id = vinculo_doc.id
-            break
-
         # 🔹 Buscar valor_total em comprovativos_pagamento/{nome_normalizado}
-        valor_total = 0
+        saldo = 0
         comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
         if comp_doc.exists:
             comp_data = comp_doc.to_dict() or {}
@@ -809,36 +789,26 @@ async def profil(request: Request, nome: str):
             raw_valor_total = mensalidade.get("valor_total", 0)
 
             try:
-                valor_total = int(raw_valor_total)
+                saldo = int(raw_valor_total)
             except Exception:
                 try:
-                    valor_total = int(float(raw_valor_total))
+                    saldo = int(float(raw_valor_total))
                 except Exception:
-                    valor_total = 0
+                    saldo = 0
 
-        # 🔹 Calcular saldo
-        total_gasto = valor_total - (aulas_dadas * 1250)
-        if total_gasto < 0:
-            total_gasto = 0
-
-        # 🔹 Atualizar campo auxiliar no vínculo (se existir)
-        if vinculo_id:
-            db.collection("alunos_professor").document(vinculo_id).update({
-                "valor_mensal_aluno": total_gasto
-            })
-
+        # Renderizar perfil com saldo vindo diretamente do Firestore
         return templates.TemplateResponse("perfil.html", {
             "request": request,
             "aluno": aluno,
-            "total_gasto": total_gasto
+            "total_gasto": saldo  # saldo = valor_total puro
         })
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return HTMLResponse(content=f"Erro ao carregar perfil: {str(e)}", status_code=500)
-        
 
+        
 from slugify import slugify
 
 

@@ -437,7 +437,7 @@ function abrirPagamentos() {
     }
   });
 
-  // ---- Ações principais (torna-as globais) ----
+
   window.toggleAulas = async function () {
     const div = document.getElementById("sec-aula");
     const aulasDadas = document.getElementById("aulas-dadas");
@@ -602,11 +602,6 @@ function fecharDesafio() {
     }
   };
 
-  // ---------------------------
-  // JOGO DE INGLÊS (TODAS AS FUNÇÕES SÃO GLOBAIS)
-  // ---------------------------
-
-  // estado
   window.perguntas = [];
   window.perguntaAtual = 0;
   window.nivelAtual = ("{{ aluno.nivel_ingles }}" || "iniciante").toLowerCase();
@@ -620,7 +615,7 @@ function fecharDesafio() {
     fluente: "fluente"
   };
 
-  // Carrega primeira pergunta / atualiza UI
+ 
   window.carregarPerguntas = async function () {
     try {
       const nivelBusca = window.mapaNiveis[window.nivelAtual] || window.nivelAtual;

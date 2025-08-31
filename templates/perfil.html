@@ -728,19 +728,19 @@ function fecharDesafio() {
 
         notificacaoEl.innerHTML = `
           A tua aula irá começar
-          <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Vista</button>
+          <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Entrar</button>
         `;
         notificacaoEl.style.display = "block";
         contadorAulas.innerText = "(1)";
 
-        // 🔔 ativa o destaque visual no sino e no texto
+       
         iconeSino.classList.add("notificacao-ativa");
         textoSala.classList.add("notificacao-ativa");
       } else {
         notificacaoEl.style.display = "none";
         contadorAulas.innerText = "";
 
-        // 🔔 remove o destaque visual
+        
         iconeSino.classList.remove("notificacao-ativa");
         textoSala.classList.remove("notificacao-ativa");
       }
@@ -759,7 +759,7 @@ function fecharDesafio() {
       document.getElementById("notificacao-mensagem").style.display = "none";
       document.getElementById("contador-aulas").innerText = "";
 
-      // 🔔 ao clicar em "Vista", remove destaque
+      
       document.getElementById("icone-sino").classList.remove("notificacao-ativa");
       document.getElementById("texto-sala").classList.remove("notificacao-ativa");
 
@@ -772,13 +772,13 @@ function fecharDesafio() {
     }
   };
 
-  // 🚀 chamada automática
+
   window.addEventListener("DOMContentLoaded", () => {
     verNotificacao();
     setInterval(verNotificacao, 5000);
   });
   
-  // A função chamada pelo botão "Verificar"
+  
   window.verificarResposta = async function () {
     const respostaInput = document.getElementById('resposta-input');
     const btnVerificar = document.getElementById('btn-verificar');

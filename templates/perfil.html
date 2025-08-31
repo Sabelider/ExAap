@@ -507,10 +507,10 @@ function abrirPagamentos() {
       const data = await response.json();
       const notificacaoEl = document.getElementById("notificacao-mensagem");
       const contadorAulas = document.getElementById("contador-aulas");
+
       if (data.notificacao === true) {
         window.professorEmailAtual = data.professor_email;
-        // trocar onclick inline por data-action para robustez poderia ser melhor,
-        // mas mantemos compatibilidade com desativarNotificacaoERedirecionar global.
+
         notificacaoEl.innerHTML = `
           A tua aula irá começar
           <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Vista</button>
@@ -535,6 +535,7 @@ function abrirPagamentos() {
       });
       document.getElementById("notificacao-mensagem").style.display = "none";
       document.getElementById("contador-aulas").innerText = "";
+
       if (window.professorEmailAtual) {
         const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
         window.location.href = `/sala_virtual_aluno/${sala}`;
@@ -543,6 +544,15 @@ function abrirPagamentos() {
       console.error("Erro desativarNotificacaoERedirecionar:", e);
     }
   };
+
+  // 🚀 Faz a chamada automática
+  window.addEventListener("DOMContentLoaded", () => {
+    // primeira chamada logo que abre a página
+    verNotificacao();
+
+    // continuar verificando a cada 5 segundos
+    setInterval(verNotificacao, 5000);
+  });
 
   function toggleDesafio() {
     const desafio = document.getElementById('container-desafio');

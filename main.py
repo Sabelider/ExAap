@@ -743,7 +743,7 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def perfil(request: Request, nome: str):
     try:
-        nome_normalizado = nome.strip().lower()
+        nome_normalizado = nome.strip().lower().replace(" ", "_")  # 🔹 uniformizar como no upload
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
         # Buscar dados do aluno na coleção "alunos"
@@ -775,16 +775,18 @@ async def perfil(request: Request, nome: str):
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # 🔹 Buscar valor_total da coleção comprovativos_pagamento
+        # 🔹 Buscar valor_total em comprovativos_pagamento
         valor_total = 0
-        comp_ref = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
-        if comp_ref.exists:
-            comp_data = comp_ref.to_dict()
-            mensalidade_info = comp_data.get("mensalidade", {})
-            valor_total = mensalidade_info.get("valor_total", 0)
+        comp_doc = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
+        if comp_doc.exists:
+            comp_data = comp_doc.to_dict()
+            if "mensalidade" in comp_data:
+                valor_total = comp_data["mensalidade"].get("valor_total", 0)
+        print(f"💰 valor_total em comprovativos_pagamento: {valor_total}")
 
-        # 🔹 Buscar aulas_dadas da coleção alunos_professor
+        # 🔹 Buscar aulas_dadas em alunos_professor
         aulas_dadas = 0
+        vinculo_id = None
         alunos_prof_ref = db.collection("alunos_professor") \
             .where("aluno", "==", nome_normalizado) \
             .limit(1) \
@@ -793,14 +795,18 @@ async def perfil(request: Request, nome: str):
         for vinculo_doc in alunos_prof_ref:
             vinculo_data = vinculo_doc.to_dict()
             aulas_dadas = vinculo_data.get("aulas_dadas", 0)
+            vinculo_id = vinculo_doc.id
             break
 
-        # 🔹 Calcular saldo
-        total_gasto = max(valor_total - (aulas_dadas * 1250), 0)  # nunca negativo
+        print(f"📚 aulas_dadas: {aulas_dadas}")
 
-        # 🔹 (Opcional) Atualizar campo auxiliar no Firestore
-        if aulas_dadas:
-            db.collection("alunos_professor").document(vinculo_doc.id).update({
+        # 🔹 Calcular saldo
+        total_gasto = max(valor_total - (aulas_dadas * 1250), 0)
+        print(f"✅ Saldo calculado: {total_gasto}")
+
+        # 🔹 Atualizar no Firestore se houver vínculo
+        if vinculo_id:
+            db.collection("alunos_professor").document(vinculo_id).update({
                 "valor_mensal_aluno": total_gasto
             })
 
@@ -811,8 +817,10 @@ async def perfil(request: Request, nome: str):
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return HTMLResponse(content=f"Erro ao carregar perfil: {str(e)}", status_code=500)
-
+        
 
 from slugify import slugify
 

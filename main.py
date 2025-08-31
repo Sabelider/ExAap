@@ -740,14 +740,13 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
     })
 
 
-from starlette.status import HTTP_303_SEE_OTHER
-
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def perfil(request: Request, nome: str):
     try:
         nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
+        # Buscar dados do aluno na coleção "alunos"
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -755,7 +754,6 @@ async def perfil(request: Request, nome: str):
 
         aluno = None
         doc_id = None
-
         for doc in query:
             dados = doc.to_dict()
             aluno = {
@@ -771,14 +769,22 @@ async def perfil(request: Request, nome: str):
         if not aluno or not doc_id:
             return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
 
-        # Atualizar status online com timestamp
+        # Atualizar status online
         db.collection("alunos").document(doc_id).update({
             "online": True,
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-        # Buscar dados da coleção alunos_professor
-        total_gasto = 0
+        # 🔹 Buscar valor_total da coleção comprovativos_pagamento
+        valor_total = 0
+        comp_ref = db.collection("comprovativos_pagamento").document(nome_normalizado).get()
+        if comp_ref.exists:
+            comp_data = comp_ref.to_dict()
+            mensalidade_info = comp_data.get("mensalidade", {})
+            valor_total = mensalidade_info.get("valor_total", 0)
+
+        # 🔹 Buscar aulas_dadas da coleção alunos_professor
+        aulas_dadas = 0
         alunos_prof_ref = db.collection("alunos_professor") \
             .where("aluno", "==", nome_normalizado) \
             .limit(1) \
@@ -787,13 +793,16 @@ async def perfil(request: Request, nome: str):
         for vinculo_doc in alunos_prof_ref:
             vinculo_data = vinculo_doc.to_dict()
             aulas_dadas = vinculo_data.get("aulas_dadas", 0)
-            total_gasto = aulas_dadas * 1250
+            break
 
-            # ✅ Atualizar valor_mensal_aluno com o valor calculado
+        # 🔹 Calcular saldo
+        total_gasto = max(valor_total - (aulas_dadas * 1250), 0)  # nunca negativo
+
+        # 🔹 (Opcional) Atualizar campo auxiliar no Firestore
+        if aulas_dadas:
             db.collection("alunos_professor").document(vinculo_doc.id).update({
                 "valor_mensal_aluno": total_gasto
             })
-            break
 
         return templates.TemplateResponse("perfil.html", {
             "request": request,

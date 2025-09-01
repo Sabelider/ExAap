@@ -11,6 +11,7 @@ import uuid
 import re
 import pytz
 import unicodedata
+import firebase_admin
 from google.cloud.firestore_v1.base_query import FieldFilter
 from collections import OrderedDict
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,21 +21,23 @@ from reportlab.lib.pagesizes import A4
 from datetime import datetime, timedelta, timezone
 from fpdf import FPDF
 from pydantic import BaseModel
-import firebase_admin
 from firebase_admin import credentials, firestore
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
-# Caminhos locais (se usar JSONs no projeto)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROFESSORES_JSON = os.path.join(BASE_DIR, "professores.json")
 ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 
-# Inicialização do Firebase com variável de ambiente (Render → FIREBASE_KEY)
+
 firebase_json = os.environ.get("FIREBASE_KEY")
 
 if firebase_json and not firebase_admin._apps:
     try:
         firebase_info = json.loads(firebase_json)
-        # Corrige as quebras de linha da private_key
+        
         if "private_key" in firebase_info:
             firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
 
@@ -44,9 +47,9 @@ if firebase_json and not firebase_admin._apps:
     except Exception as e:
         raise RuntimeError(f"Erro ao inicializar Firebase: {e}")
 else:
-    db = None  # Evita quebrar se não estiver configurado
+    db = None  
 
-# Criação do app FastAPI
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -1035,12 +1038,13 @@ import logging
 
 MAX_TENTATIVAS = 3
 
+
 @app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
     request: Request,
     aluno_nome: str = Form(...),
     banco: str = Form(...),
-    meses: int = Form(...),  # 🔹 Novo campo vindo do formulário
+    meses: int = Form(...),
     comprovativo: UploadFile = File(...),
     tentativas: int = Form(default=0)
 ):
@@ -1048,46 +1052,38 @@ async def upload_comprovativo(
         aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
         banco_norm = banco.strip().lower()
 
-        # Limites de tamanho por banco (em KB)
+        # Limites de tamanho
         limites = {"bai": 32, "bni": 32, "bpc": 31, "multicaixa express": 33}
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
 
-        # Validar tipo do ficheiro
+        # Validar tipo PDF
         if comprovativo.content_type != "application/pdf":
             return HTMLResponse("<h3>Apenas PDFs são aceites.</h3>", status_code=400)
 
-        # Validar tamanho
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
+
         if banco_norm == "multicaixa express":
             if tamanho_kb < 24 or tamanho_kb > 33:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"O comprovativo do {banco.upper()} deve ter entre 24 KB e 33 KB."
-                )
+                raise HTTPException(status_code=400, detail="Comprovativo inválido para Multicaixa Express.")
         elif tamanho_kb > limites[banco_norm]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"O comprovativo excede o limite para {banco.upper()} ({limites[banco_norm]} KB)."
-            )
+            raise HTTPException(status_code=400, detail=f"O comprovativo excede o limite para {banco.upper()}.")
 
-        # 🔹 DESCARTAR o ficheiro, guardamos apenas o nome
         await comprovativo.close()
         nome_comprovativo = comprovativo.filename
 
-        # 🔹 Calcular valor da mensalidade
+        # Cálculo financeiro
         valor_mensal = 15000
         desconto_por_mes = 100
         desconto_total = meses * desconto_por_mes
         valor_total = (meses * valor_mensal) - desconto_total
 
-        # Criar coleção no Firebase se não existir
+        # Registrar no Firebase (mantive tua lógica)
         doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
         if not doc_ref.get().exists:
             doc_ref.set({"comprovativos": []})
 
-        # Verificar duplicado
         if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
@@ -1095,12 +1091,10 @@ async def upload_comprovativo(
                 return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
             return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
-        # Registrar novo pagamento no Firebase
         registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
         atualizar_status_conta(aluno_normalizado, "Ativada")
 
-        # 🔹 Atualizar Firebase com o valor da mensalidade
         doc_ref.update({
             "mensalidade": {
                 "meses": meses,
@@ -1110,192 +1104,92 @@ async def upload_comprovativo(
             }
         })
 
-        # Criar recibo HTML
-        now = datetime.now(timezone.utc)
-        data_pagamento = now.strftime("%d/%m/%Y")
-        hora_pagamento = now.strftime("%H:%M:%S")
+        # Criar PDF no servidor
+        pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
+        doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elementos = []
 
+        elementos.append(Paragraph("<b>Sabi Lider</b> - N.I.F nº 5002232529", styles["Title"]))
+        elementos.append(Spacer(1, 12))
+        elementos.append(Paragraph("<b>Recibo de Pagamento</b>", styles["Heading2"]))
+        elementos.append(Spacer(1, 20))
+
+        dados = [
+            ["Aluno", aluno_nome],
+            ["Banco", banco.upper()],
+            ["Meses", str(meses)],
+            ["Mensalidade", f"{valor_mensal:,.0f} Kz"],
+            ["Desconto", f"{desconto_total:,.0f} Kz"],
+            ["Valor Total", f"{valor_total:,.0f} Kz"],
+            ["Comprovativo", nome_comprovativo],
+        ]
+
+        tabela = Table(dados, hAlign="LEFT")
+        tabela.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.grey),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
+            ("ALIGN", (0,0), (-1,-1), "LEFT"),
+            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+            ("BACKGROUND", (0,1), (-1,-1), colors.beige),
+        ]))
+
+        elementos.append(tabela)
+        doc.build(elementos)
+
+        # Retornar HTML com botão de download
         html_content = f"""
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Recibo de Pagamento</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            margin: 0;
-            padding: 15px;
-        }}
-        .recibo-container {{
-            max-width: 750px;
-            margin: auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-        }}
-        .header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }}
-        .header img {{
-            height: 70px;
-        }}
-        .empresa {{
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-        }}
-        .recibo-title {{
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #007bff;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 15px;
-        }}
-        td, th {{
-            padding: 10px;
-            border: 1px solid #ddd;
-        }}
-        th {{
-            background: #f1f3f5;
-            text-align: left;
-        }}
-        tr:nth-child(even) {{
-            background-color: #fafafa;
-        }}
-        .btns {{
-            text-align: center;
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }}
-        button {{
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: 0.3s;
-        }}
-        .download-btn {{ background: #28a745; color: #fff; }}
-        .download-btn:hover {{ background: #218838; }}
-        .perfil-btn {{ background: #007bff; color: #fff; }}
-        .perfil-btn:hover {{ background: #0056b3; }}
-
-        /* 🔹 Responsividade para telas pequenas */
-        @media (max-width: 600px) {{
-            body {{
-                padding: 10px;
-            }}
-            .recibo-container {{
-                padding: 15px;
-            }}
-            .header {{
-                flex-direction: column;
-                align-items: flex-start;
-            }}
-            .header img {{
-                height: 60px;
-                margin-bottom: 10px;
-            }}
-            .empresa {{
-                font-size: 16px;
-            }}
-            .recibo-title {{
-                font-size: 20px;
-            }}
-            table {{
-                font-size: 14px;
-            }}
-            td, th {{
-                padding: 8px;
-            }}
-            button {{
-                width: 100%;
-                font-size: 14px;
-            }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="recibo-container" id="recibo">
-        <div class="header">
-            <img src="/static/logo.png" alt="Logo">
-            <div class="empresa">
-                Nome da empresa: <b>Sabi Lider</b><br>
-                N.I.F nº 5002232529
-            </div>
-        </div>
-
-        <div class="recibo-title">Recibo de Pagamento</div>
-
-        <table>
-            <tr><th>Aluno</th><td>{aluno_nome}</td></tr>
-            <tr><th>Banco</th><td>{banco.upper()}</td></tr>
-            <tr><th>Meses</th><td>{meses}</td></tr>
-            <tr><th>Mensalidade</th><td>{valor_mensal:,.0f} Kz</td></tr>
-            <tr><th>Desconto</th><td>{desconto_total:,.0f} Kz</td></tr>
-            <tr><th>Valor Total</th><td style="font-weight:bold; color:#28a745;">{valor_total:,.0f} Kz</td></tr>
-            <tr><th>Comprovativo</th><td>{nome_comprovativo}</td></tr>
-            <tr><th>Data</th><td>{data_pagamento}</td></tr>
-            <tr><th>Hora</th><td>{hora_pagamento}</td></tr>
-            <tr><th>Status</th><td style="color:green; font-weight:bold;">Pagamento Validado</td></tr>
-        </table>
-
-        <div class="btns">
-            <button class="download-btn" onclick="gerarPDF()">📄 Download PDF</button>
-            <button class="perfil-btn" onclick="window.location.href='/perfil/{aluno_normalizado}'">🔙 Voltar ao Perfil</button>
-        </div>
-    </div>
-
-    <script>
-        function gerarPDF() {{
-            const {{ jsPDF }} = window.jspdf;
-            html2canvas(document.querySelector("#recibo"), {{
-                scale: 2,  // 🔹 Melhor qualidade para PDF
-                useCORS: true
-            }}).then(canvas => {{
-                const imgData = canvas.toDataURL("image/png");
-                const pdf = new jsPDF("p", "mm", "a4");
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-                pdf.save("recibo_{aluno_normalizado}.pdf");
-            }});
-        }}
-    </script>
-</body>
-</html>
-"""
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Recibo Gerado</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f4f4f8;
+                    padding: 20px;
+                    text-align: center;
+                }}
+                .btn {{
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    text-decoration: none;
+                    margin: 10px;
+                    display: inline-block;
+                }}
+                .download {{
+                    background: #28a745;
+                    color: white;
+                }}
+                .perfil {{
+                    background: #007bff;
+                    color: white;
+                }}
+                @media(max-width:600px) {{
+                    body {{
+                        padding: 10px;
+                    }}
+                    .btn {{
+                        width: 100%;
+                        font-size: 14px;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <h2>✅ Recibo Gerado com Sucesso!</h2>
+            <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>📄 Baixar Recibo PDF</a>
+            <a href="/perfil/{aluno_normalizado}" class="btn perfil">🔙 Voltar ao Perfil</a>
+        </body>
+        </html>
+        """
 
         return HTMLResponse(content=html_content)
 
-    except HTTPException as e:
-        logging.error(f"Erro HTTP ao processar comprovativo: {e.detail}")
-        raise e
     except Exception as e:
         logging.error(f"Erro inesperado: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
-
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)

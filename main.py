@@ -2274,8 +2274,8 @@ async def registrar_aula(data: dict = Body(...)):
         doc_data = doc.to_dict()
         aulas_anteriores = doc_data.get("aulas_dadas", 0)
         lista_aulas = doc_data.get("aulas", [])
-        aulas_passadas = doc_data.get("aulas_passadas", [])  # histórico de aulas
-        valor_passado = doc_data.get("valor_passado", [])    # histórico de valores
+        aulas_passadas = doc_data.get("aulas_passadas", [])  
+        valor_passado = doc_data.get("valor_passado", [])    
 
         agora = datetime.now()
         nova_aula = {

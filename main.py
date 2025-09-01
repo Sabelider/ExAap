@@ -158,7 +158,7 @@ async def vincular_aluno(item: VinculoIn):
             'online': True,
             'notificacao': False,
             'aulas_dadas': 0,
-            'total_aulas': 24,
+            'total_aulas': 12,
             'aulas': [],
             'horario': {},        
             'datas_aulas': []      

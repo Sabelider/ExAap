@@ -2296,12 +2296,12 @@ async def registrar_aula(data: dict = Body(...)):
         registro_passado = None
         registro_valor = None
 
-        # 🔹 Quando completar 7 aulas -> transferir e zerar ciclo
-        if novo_total >= 7:
+        # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
+        if novo_total >= 12:
             registro_passado = {
                 "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
                 "mes": agora.strftime("%Y-%m"),
-                "total_aulas": 7
+                "total_aulas": 12
             }
 
             registro_valor = {
@@ -2335,10 +2335,10 @@ async def registrar_aula(data: dict = Body(...)):
             salario_info = prof_data.get("salario", {})
 
             # soma ao saldo atual existente
-            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 7 else 0)
+            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 12 else 0)
 
-            # se completou 7 aulas, transfere todo valor e zera o acumulado no aluno-professor
-            if novo_total >= 7:
+            # se completou 12 aulas, transfere todo valor e zera o acumulado no aluno-professor
+            if novo_total >= 12:
                 saldo_atual = int(salario_info.get("saldo_atual", 0)) + registro_valor["valor_pago"]
 
             prof_doc_ref.update({

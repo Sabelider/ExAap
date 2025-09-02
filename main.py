@@ -115,6 +115,7 @@ class VinculoIn(BaseModel):
     professor_email: str
     aluno_nome: str
 
+
 def vinculo_existe(prof_email: str, aluno_nome: str) -> bool:
     prof_normalizado = prof_email.strip().lower()
     aluno_normalizado = aluno_nome.strip().lower()
@@ -126,13 +127,14 @@ def vinculo_existe(prof_email: str, aluno_nome: str) -> bool:
 
     return next(docs, None) is not None
 
+
 @app.post('/vincular-aluno', status_code=201)
 async def vincular_aluno(item: VinculoIn):
     try:
         prof = item.professor_email.strip().lower()
         aluno_nome_input = item.aluno_nome.strip().lower()
 
-        # Buscar todos os alunos e comparar nome normalizado
+        # Buscar aluno pelo nome normalizado
         alunos = db.collection("alunos").stream()
         aluno_doc = None
         for doc in alunos:
@@ -149,14 +151,24 @@ async def vincular_aluno(item: VinculoIn):
             raise HTTPException(status_code=409, detail="Vínculo já existe")
 
         dados_aluno = aluno_doc.to_dict()
-        for campo in ['senha', 'telefone', 'localizacao']:
+
+        # Remove campos sensíveis que não devem ir para alunos_professor
+        for campo in ['senha']:
             dados_aluno.pop(campo, None)
 
-        # Criação do documento com os campos necessários, incluindo o novo campo `datas_aulas`
+        # Criação do documento com os dados do aluno + vínculo
         db.collection('alunos_professor').add({
             'professor': prof,
             'aluno': aluno_nome_input,
-            'dados_aluno': dados_aluno,
+            'dados_aluno': {
+                'nome': dados_aluno.get('nome', ''),
+                'disciplina': dados_aluno.get('disciplina', ''),
+                'progresso_ingles': dados_aluno.get('progresso_ingles', 0),
+                'provincia': dados_aluno.get('provincia', '').strip(),
+                'municipio': dados_aluno.get('municipio', '').strip(),
+                'bairro': dados_aluno.get('bairro', '').strip(),
+                'telefone': dados_aluno.get('telefone', '').strip(),
+            },
             'vinculado_em': datetime.now(timezone.utc).isoformat(),
             'online': True,
             'notificacao': False,
@@ -264,7 +276,12 @@ async def alunos_disponiveis(prof_email: str):
         aluno_data = aluno.to_dict()
         disponiveis.append({
             'nome': aluno_data.get('nome', ''),
-            'disciplina': aluno_data.get('disciplina', '')
+            'disciplina': aluno_data.get('disciplina', ''),
+            'progresso_ingles': aluno_data.get('progresso_ingles', 0),
+            'provincia': aluno_data.get('provincia', '').strip(),
+            'municipio': aluno_data.get('municipio', '').strip(),
+            'bairro': aluno_data.get('bairro', '').strip(),
+            'telefone': aluno_data.get('telefone', '').strip()
         })
 
     return disponiveis

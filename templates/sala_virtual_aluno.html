@@ -26,30 +26,33 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    background: #000; /* fallback */
   }
 
   #remoteVideo {
-    position: absolute;
-    top: -10%;
-    left: 0;
+    position: relative;
     width: 100%;
-    height: 120%;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain; /* vídeo completo sem cortes */
+    z-index: 1;
   }
 
-  .blur-top, .blur-bottom {
+  /* camada fusca só embaixo */
+  .blur-bottom {
     position: absolute;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 15%;
-    backdrop-filter: blur(15px) brightness(0.8);
-    -webkit-backdrop-filter: blur(15px) brightness(0.8);
+    height: 20%; /* tamanho da faixa fusca */
+    background: inherit;
+    backdrop-filter: blur(20px) brightness(0.7);
+    -webkit-backdrop-filter: blur(20px) brightness(0.7);
     pointer-events: none;
     z-index: 2;
   }
 
-  .blur-top { top: 0; }
-  .blur-bottom { bottom: 0; }
+  /* não precisamos mais de fusco em cima */
+  .blur-top { display: none; }
 
   #localVideo {
     position: absolute;
@@ -58,6 +61,7 @@
     width: 120px;
     height: 90px;
     border: 2px solid #fff;
+    border-radius: 8px;
     z-index: 3;
   }
 
@@ -68,6 +72,8 @@
     text-align: center;
     font-size: 16px;
     z-index: 4;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(0,0,0,0.8);
   }
 
   #notificacao {
@@ -105,6 +111,7 @@
     border-radius: 8px;
     z-index: 6;
     text-align: center;
+    color: #fff;
   }
 
   #pagamento button {
@@ -193,7 +200,7 @@
 
       peer.on("error", (err) => {
         console.error("Erro PeerJS:", err);
-        statusEl.textContent = "❌ Erro no PeerJS.";
+        statusEl.textContent = "❌ Professor ausente.";
       });
     }
 
@@ -218,37 +225,38 @@
       }
     }
 
-   async function buscarPeerIdEDiscar() {
-     try {
-       const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+  async function buscarPeerIdEDiscar() {
+  try {
+    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
 
-       let tentativas = 0;
-       const maxTentativas = 12; 
+    let tentativas = 0;
+    const maxTentativas = 30; 
 
-       statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
+    statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
 
-       while (tentativas < maxTentativas) {
-         const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-         const data = await res.json();
+    while (tentativas < maxTentativas) {
+      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+      const data = await res.json();
 
-         if (data.peer_id) {
-           statusEl.textContent = "✅ ID do professor encontrado, conectando...";
-           initPeerAndConnect(data.peer_id);
-           return;
-         }
-
-      
-         await new Promise(resolve => setTimeout(resolve, 1000));
-         tentativas++;
+      if (data.peer_id) {
+        statusEl.textContent = "✅ ID do professor encontrado, conectando...";
+        initPeerAndConnect(data.peer_id);
+        return;
       }
 
-      statusEl.textContent = "⚠️ Não foi possível encontrar o ID do professor. Tente novamente.";
-    } catch (err) {
-      console.error("Erro ao buscar o ID do professor:", err);
-      statusEl.textContent = "❌ Erro ao buscar ID.";
+   
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      tentativas++;
     }
+
+    // só aparece após todas as tentativas falharem
+    statusEl.textContent = "❌ Professor ausente.";
+  } catch (err) {
+    console.error("Erro ao buscar o ID do professor:", err);
+    statusEl.textContent = "⚠️ Erro ao buscar ID.";
   }
-    
+}
+
     async function verificarSeDeveMostrarPagamento() {
       try {
         const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);

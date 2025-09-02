@@ -177,34 +177,32 @@
       }
     }
 
-    function initPeerAndConnect(peerIdDoProfessor) {
-      peer = new Peer();
-      peer.on("open", () => {
-        statusEl.textContent = "🔗 Conectando ao professor...";
-        const call = peer.call(peerIdDoProfessor, localStream);
+   function initPeerAndConnect(peerIdDoProfessor) {
+  peer = new Peer();
+  peer.on("open", () => {
+    statusEl.textContent = "🔗 Conectando ao professor...";
+    const call = peer.call(peerIdDoProfessor, localStream);
 
-        call.on("stream", (remoteStream) => {
-          remoteVideo.srcObject = remoteStream;
-          statusEl.textContent = "✅ Conectado com o professor!";
-        });
+    call.on("stream", (remoteStream) => {
+      remoteVideo.srcObject = remoteStream;
+      statusEl.textContent = "✅ Conectado com o professor!";
+    });
 
-        call.on("close", () => {
-          statusEl.textContent = "🔌 Conexão encerrada.";
-        });
+    call.on("close", () => {
+      statusEl.textContent = "🔌 Conexão encerrada.";
+    });
 
-        call.on("error", (err) => {
-          console.error("Erro na chamada:", err);
-          statusEl.textContent = "⚠️ Erro na chamada.";
-        });
-      });
+    call.on("error", (err) => {
+      console.error("Erro na chamada:", err);
+      // não atualizar status aqui → deixar o loop decidir
+    });
+  });
 
-      peer.on("error", (err) => {
-        console.error("Erro PeerJS:", err);
-        // removido "Professor ausente" daqui
-        statusEl.textContent = "⚠️ Falha temporária na conexão.";
-      });
-    }
-
+  peer.on("error", (err) => {
+    console.error("Erro PeerJS:", err);
+    // não atualizar status aqui → deixar o loop decidir
+  });
+}
     async function verificarPermissaoEConectar() {
       try {
         const resp = await fetch(`/registrar-chamada`, {
@@ -226,37 +224,37 @@
       }
     }
 
-    async function buscarPeerIdEDiscar() {
-      try {
-        const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+   async function buscarPeerIdEDiscar() {
+  try {
+    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
 
-        let tentativas = 0;
-        const maxTentativas = 30; // 1 minuto (30 x 2s = 60s)
+    let tentativas = 0;
+    const maxTentativas = 30; // 30 tentativas (2s cada = ~1 minuto)
 
-        statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
+    statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
 
-        while (tentativas < maxTentativas) {
-          const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-          const data = await res.json();
+    while (tentativas < maxTentativas) {
+      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+      const data = await res.json();
 
-          if (data.peer_id) {
-            statusEl.textContent = "✅ ID do professor encontrado, conectando...";
-            initPeerAndConnect(data.peer_id);
-            return;
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          tentativas++;
-        }
-
-        // Só aparece após TODAS as tentativas falharem
-        statusEl.textContent = "❌ Professor ausente.";
-      } catch (err) {
-        console.error("Erro ao buscar o ID do professor:", err);
-        statusEl.textContent = "⚠️ Erro ao buscar ID.";
+      if (data.peer_id) {
+        statusEl.textContent = "✅ ID do professor encontrado, conectando...";
+        initPeerAndConnect(data.peer_id);
+        return;
       }
+
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      tentativas++;
     }
 
+    // só mostra após todas as tentativas falharem
+    statusEl.textContent = "❌ Professor ausente.";
+  } catch (err) {
+    console.error("Erro ao buscar o ID do professor:", err);
+    statusEl.textContent = "⚠️ Erro ao buscar ID.";
+  }
+}
     async function verificarSeDeveMostrarPagamento() {
       try {
         const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);

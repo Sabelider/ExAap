@@ -234,7 +234,45 @@
   font-size: 13px;
   color: #666;
 }
+/* Botão Informações estilizado */
+.btn-info {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffb347, #ffcc33);
+  color: #222;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-info:hover {
+  background: linear-gradient(135deg, #ffaa00, #ff8800);
+  transform: scale(1.05);
+}
 
+
+.aluno-info {
+  display: none;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 10px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  font-size: 0.9rem;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 #ver-mais-btn {
   display: block;
@@ -795,12 +833,27 @@ async function listarMeusAlunos() {
       const statusClass = aluno.online ? 'online' : 'offline';
       const statusText = aluno.online ? 'Online' : 'Offline';
 
+      const infoId = `info-${aluno.nome.replace(/\s+/g, "-")}`;
+
       card.innerHTML = `
         <div class="aluno-header" style="display: flex; justify-content: space-between; align-items: center;">
           <span><strong>${aluno.nome}</strong> - ${aluno.disciplina}</span>
-          <div class="status">
+          <div class="status" style="display:flex; align-items:center; gap:10px;">
             <span>${statusText}</span>
             <span class="status-dot ${statusClass}"></span>
+            <button onclick="toggleInfo('${infoId}')" class="btn-info">
+              ℹ️ Informações
+            </button>
+          </div>
+        </div>
+
+        <div id="${infoId}" class="aluno-info">
+          <div class="info-grid">
+            <div><strong>📞 Telefone:</strong> ${aluno.telefone || '-'}</div>
+            <div><strong>🌍 Província:</strong> ${aluno.provincia || '-'}</div>
+            <div><strong>🏙 Município:</strong> ${aluno.municipio || '-'}</div>
+            <div><strong>📌 Bairro:</strong> ${aluno.bairro || '-'}</div>
+            <div><strong>🇬🇧 Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</div>
           </div>
         </div>
       `;
@@ -851,6 +904,12 @@ async function listarMeusAlunos() {
     console.error("Erro ao buscar alunos:", error);
     alert("Erro ao buscar alunos.");
   }
+}
+
+
+function toggleInfo(id) {
+  const el = document.getElementById(id);
+  el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
 }
 
 async function verAulasDadas(nomeAluno) {

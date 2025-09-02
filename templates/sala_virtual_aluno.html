@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Conexão com o Professor</title>
-<style> 
+<style>
   body {
     margin: 0;
     background: #000;
@@ -18,6 +18,7 @@
     overflow: hidden;
   }
 
+  /* 🎥 Container dos vídeos */
   .video-container {
     position: relative;
     width: 100vw;
@@ -26,34 +27,40 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #000; /* fallback */
   }
 
+  /* Vídeo remoto ocupa mais da tela para preencher */
   #remoteVideo {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* vídeo completo sem cortes */
-    z-index: 1;
-  }
-
-  /* camada fusca só embaixo */
-  .blur-bottom {
     position: absolute;
-    bottom: 0;
+    top: -10%;
     left: 0;
     width: 100%;
-    height: 20%; /* tamanho da faixa fusca */
-    background: inherit;
-    backdrop-filter: blur(20px) brightness(0.7);
-    -webkit-backdrop-filter: blur(20px) brightness(0.7);
+    height: 120%;
+    object-fit: cover;
+  }
+
+  /* Efeitos de desfoque superior/inferior */
+  .blur-top,
+  .blur-bottom {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 5%;
+    backdrop-filter: blur(15px) brightness(0.8);
+    -webkit-backdrop-filter: blur(15px) brightness(0.8);
     pointer-events: none;
     z-index: 2;
   }
 
-  /* não precisamos mais de fusco em cima */
-  .blur-top { display: none; }
+  .blur-top {
+    top: 0;
+  }
 
+  .blur-bottom {
+    bottom: 0;
+  }
+
+  /* Vídeo local (miniatura) */
   #localVideo {
     position: absolute;
     bottom: 20px;
@@ -61,10 +68,10 @@
     width: 120px;
     height: 90px;
     border: 2px solid #fff;
-    border-radius: 8px;
     z-index: 3;
   }
 
+  /* Mensagens de status */
   #status {
     position: absolute;
     top: 10px;
@@ -72,15 +79,14 @@
     text-align: center;
     font-size: 16px;
     z-index: 4;
-    color: #fff;
-    text-shadow: 0 0 6px rgba(0,0,0,0.8);
   }
 
+  /* Notificação (40s) */
   #notificacao {
     display: none;
     position: absolute;
     bottom: 120px;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.8);
     color: #fff;
     padding: 15px;
     border-radius: 8px;
@@ -102,16 +108,16 @@
     background: #dc3545;
   }
 
+  /* Pagamento */
   #pagamento {
     display: none;
     position: absolute;
     bottom: 50px;
-    background: rgba(0,0,0,0.9);
+    background: rgba(0, 0, 0, 0.9);
     padding: 15px;
     border-radius: 8px;
     z-index: 6;
     text-align: center;
-    color: #fff;
   }
 
   #pagamento button {

@@ -322,33 +322,31 @@ async def meus_alunos(prof_email: str):
 async def meus_alunos_status(prof_email: str):
     try:
         docs = db.collection('alunos_professor') \
-                 .where('professor', '==', prof_email.strip()).stream()
+                 .where('professor', '==', prof_email.strip().lower()).stream()
 
         alunos = []
         for doc in docs:
             d = doc.to_dict()
             dados = d.get('dados_aluno', {})
-            nome_aluno = dados.get('nome', d.get('aluno'))
-
-            # Verificar status real na coleção "alunos"
-            aluno_query = db.collection("alunos").where("nome", "==", nome_aluno).limit(1).stream()
-            aluno_doc = next(aluno_query, None)
-
-            online = False
-            if aluno_doc and aluno_doc.exists:
-                aluno_data = aluno_doc.to_dict()
-                online = aluno_data.get("online", False)
 
             alunos.append({
-                'nome': nome_aluno,
-                'disciplina': dados.get('disciplina'),
-                'online': online
+                'nome': dados.get('nome', d.get('aluno', '')),
+                'disciplina': dados.get('disciplina', ''),
+                'telefone': dados.get('telefone', ''),
+                'provincia': dados.get('provincia', ''),
+                'municipio': dados.get('municipio', ''),
+                'bairro': dados.get('bairro', ''),
+                'nivel_ingles': dados.get('nivel_ingles', ''),  # já pega o nível direto
+                'online': d.get('online', False)
             })
 
         return alunos
 
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": "Erro ao buscar status dos alunos", "erro": str(e)})
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro ao buscar status dos alunos", "erro": str(e)}
+        )
 
 
 @app.get("/alunos-status-completo/{prof_email}")

@@ -910,44 +910,56 @@ async function carregarUltimasAulas(professorEmail) {
   const professorEmail = "{{ professor.email }}";
   carregarUltimasAulas(professorEmail);
   
- async function buscarAlunosDisponiveis() {
-    const email = "{{ professor.email }}";
-    try {
-      const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
-      const lista = await res.json();
-      const container = document.getElementById('alunos-disponiveis');
-      container.innerHTML = '<h2>Alunos Disponíveis</h2>';
+async function buscarAlunosDisponiveis() {
+  const email = "{{ professor.email }}";
+  try {
+    const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
+    const lista = await res.json();
+    const container = document.getElementById('alunos-disponiveis');
+    container.innerHTML = '<h2>Alunos Disponíveis</h2>';
 
-      if (lista.length === 0) {
-        container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
-        return;
-      }
+    if (lista.length === 0) {
+      container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
+      return;
+    }
 
-      lista.forEach(aluno => {
-        const card = document.createElement('div');
-        card.className = 'aluno-card';
+    lista.forEach(aluno => {
+      const card = document.createElement('div');
+      card.className = 'aluno-card';
 
-        const nomeAluno = aluno.nome;
-        const disciplina = aluno.disciplina;
+      const nomeAluno = aluno.nome;
+      const disciplina = aluno.disciplina;
+      const progressoIngles = aluno.progresso_ingles ?? 0;
+      const provincia = aluno.provincia || "Não informado";
+      const municipio = aluno.municipio || "Não informado";
+      const bairro = aluno.bairro || "Não informado";
+      const telefone = aluno.telefone || "Não informado";
 
-        card.innerHTML = `
+      card.innerHTML = `
+        <div style="border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <strong>${nomeAluno}</strong> - ${disciplina}
+              <strong>${nomeAluno}</strong> - ${disciplina}<br>
+              <small>📚 Inglês: ${progressoIngles}%</small><br>
+              <small>🌍 Província: ${provincia}</small><br>
+              <small>🏙️ Município: ${municipio}</small><br>
+              <small>🏘️ Bairro: ${bairro}</small><br>
+              <small>📞 Tel: ${telefone}</small>
             </div>
             <button class="notificar-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
               Vincular
             </button>
           </div>
-        `;
+        </div>
+      `;
 
-        container.appendChild(card);
-      });
-    } catch (error) {
-      console.error("Erro ao buscar alunos disponíveis:", error);
-      alert("Erro ao buscar alunos disponíveis.");
-    }
+      container.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Erro ao buscar alunos disponíveis:", error);
+    alert("Erro ao buscar alunos disponíveis.");
   }
+}
 
   async function vincularAluno(nomeAluno, professorEmail) {
     try {

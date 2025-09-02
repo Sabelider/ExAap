@@ -200,7 +200,8 @@
 
       peer.on("error", (err) => {
         console.error("Erro PeerJS:", err);
-        statusEl.textContent = "❌ Professor ausente.";
+        // removido "Professor ausente" daqui
+        statusEl.textContent = "⚠️ Falha temporária na conexão.";
       });
     }
 
@@ -225,37 +226,36 @@
       }
     }
 
-  async function buscarPeerIdEDiscar() {
-  try {
-    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+    async function buscarPeerIdEDiscar() {
+      try {
+        const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
 
-    let tentativas = 0;
-    const maxTentativas = 30; 
+        let tentativas = 0;
+        const maxTentativas = 30; // 1 minuto (30 x 2s = 60s)
 
-    statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
+        statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
 
-    while (tentativas < maxTentativas) {
-      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-      const data = await res.json();
+        while (tentativas < maxTentativas) {
+          const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+          const data = await res.json();
 
-      if (data.peer_id) {
-        statusEl.textContent = "✅ ID do professor encontrado, conectando...";
-        initPeerAndConnect(data.peer_id);
-        return;
+          if (data.peer_id) {
+            statusEl.textContent = "✅ ID do professor encontrado, conectando...";
+            initPeerAndConnect(data.peer_id);
+            return;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          tentativas++;
+        }
+
+        // Só aparece após TODAS as tentativas falharem
+        statusEl.textContent = "❌ Professor ausente.";
+      } catch (err) {
+        console.error("Erro ao buscar o ID do professor:", err);
+        statusEl.textContent = "⚠️ Erro ao buscar ID.";
       }
-
-   
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      tentativas++;
     }
-
-    // só aparece após todas as tentativas falharem
-    statusEl.textContent = "❌ Professor ausente.";
-  } catch (err) {
-    console.error("Erro ao buscar o ID do professor:", err);
-    statusEl.textContent = "⚠️ Erro ao buscar ID.";
-  }
-}
 
     async function verificarSeDeveMostrarPagamento() {
       try {
@@ -285,7 +285,7 @@
     }
 
     startCamera().then(ok => {
-      if(ok) {
+      if (ok) {
         verificarPermissaoEConectar();
         iniciarCronometro();
       }
@@ -303,6 +303,6 @@
     btnPagamento.onclick = () => {
       window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
     };
-  </script>
+</script>
 </body>
 </html>

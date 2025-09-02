@@ -183,7 +183,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
-  <script>
+ <script>
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
     const cronometro = document.getElementById("cronometro");
@@ -197,8 +197,9 @@
     let peer;
     let currentCall;
     let meuPeerId = "";
-    let tempoRestante = 60;
+    let tempoRestante = 3600; // 1 hora em segundos
     let intervalo;
+    let mensagemMostrada = false; // controle para mostrar só uma vez
 
     async function startCamera() {
       try {
@@ -270,7 +271,7 @@
 
     function iniciarCronometro() {
       cronometro.style.display = "block";
-      tempoRestante = 60;
+      tempoRestante = 3600; // reinicia 1h
 
       intervalo = setInterval(() => {
         if (tempoRestante <= 0) {
@@ -281,6 +282,13 @@
         }
 
         tempoRestante--;
+
+        // mostrar mensagem aos 55 minutos
+        if (tempoRestante === 300 && !mensagemMostrada) { 
+          alert("📢 Está a gostar da aula?");
+          mensagemMostrada = true;
+        }
+
         let minutos = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
         let segundos = (tempoRestante % 60).toString().padStart(2, '0');
         cronometro.textContent = `${minutos}:${segundos}`;
@@ -326,6 +334,6 @@
     }
 
     startCamera().then(initPeer);
-  </script>
+</script>
 </body>
 </html>

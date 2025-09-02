@@ -11,6 +11,10 @@
     font-family: "Roboto", sans-serif;
     color: #fff;
     overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .video-container {
@@ -21,19 +25,22 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    background: #000;
   }
 
-  /* 🎥 Vídeo remoto ocupa mais que 100% para cobrir melhor */
+  /* 🎥 Vídeo remoto completo visível */
   #remoteVideo {
     position: absolute;
-    top: -10%;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 120%;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain; /* garante que não corte o vídeo */
+    background: #000;
+    z-index: 1;
   }
 
-  /* 🎥 Vídeo local padrão: canto inferior direito */
+  /* 🎥 Miniatura do vídeo local */
   #localVideo {
     position: absolute;
     bottom: 20px;
@@ -42,128 +49,122 @@
     height: 90px;
     border: 2px solid #fff;
     border-radius: 8px;
-    z-index: 10;
+    z-index: 3;
+    background: #000;
   }
 
-  /* Cronômetro */
-  #cronometro {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.4);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 22px;
-    font-weight: bold;
-    display: none;
-    z-index: 20;
-  }
-
-  /* Faixa superior e inferior embaçadas */
-  .blur-top,
+  /* 🟡 Faixa fusca inferior */
   .blur-bottom {
     position: absolute;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 70px; 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    z-index: 5;
+    height: 15%; 
+    backdrop-filter: blur(12px) brightness(0.7);
+    -webkit-backdrop-filter: blur(12px) brightness(0.7);
     pointer-events: none;
+    z-index: 2;
   }
 
-  .blur-top { top: 0; }
-  .blur-bottom { bottom: 0; }
+  /* Não usamos a fusca superior */
+  .blur-top { display: none; }
 
-  /* Botões */
-  #confirmarAulaBtn {
+  /* Status de conexão */
+  #status {
+    position: absolute;
+    top: 15px;
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(0,0,0,0.8);
+    z-index: 4;
+  }
+
+  /* Notificação de pagamento */
+  #notificacao {
     display: none;
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #ffa500;
-    color: black;
-    font-weight: bold;
-    padding: 10px 18px;
+    position: absolute;
+    bottom: 120px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 15px 20px;
     border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
+    text-align: center;
+    z-index: 5;
+  }
+
+  #notificacao button {
+    margin: 6px;
+    padding: 10px 18px;
+    font-size: 15px;
+    background: #28a745;
+    color: #fff;
     border: none;
-    z-index: 30;
-  }
-
-  #confirmarAulaBtn:hover {
-    background-color: #ff8800;
-  }
-
-  #chamarAlunoBtn {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: green;
-    color: white;
+    cursor: pointer;
+    border-radius: 6px;
     font-weight: bold;
+  }
+
+  #notificacao button#nao {
+    background: #dc3545;
+  }
+
+  /* Pagamento */
+  #pagamento {
+    display: none;
+    position: absolute;
+    bottom: 50px;
+    background: rgba(0,0,0,0.9);
+    padding: 18px;
+    border-radius: 10px;
+    z-index: 6;
+    text-align: center;
+    color: #fff;
+  }
+
+  #pagamento button {
     padding: 12px 22px;
+    background: #007bff;
+    color: #fff;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
     cursor: pointer;
-    z-index: 30;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
   }
 
-  #chamarAlunoBtn:hover {
-    background-color: darkgreen;
-  }
-
- 
+  /* 📱 Responsividade */
   @media (min-width: 768px) {
-    #remoteVideo {
-      top: -15%;     
-      height: 130%;   
-    }
-
     #localVideo {
       width: 180px;
       height: 135px;
     }
 
-    #cronometro {
-      font-size: 26px;
-      padding: 8px 18px;
-    }
-
-    .blur-top,
     .blur-bottom {
-      height: 90px; 
+      height: 12%; 
     }
 
-    #confirmarAulaBtn {
-      font-size: 18px;
-      padding: 12px 22px;
-    }
-
-    #chamarAlunoBtn {
-      font-size: 18px;
-      padding: 14px 26px;
+    #status {
+      font-size: 20px;
     }
   }
 
-  
   @media (max-width: 767px) {
     #localVideo {
-      top: 15px;
-      right: 15px;
-      bottom: auto;
       width: 100px;
-      height: 70px;
+      height: 75px;
+      bottom: 15px;
+      right: 15px;
     }
 
-    .blur-top,
     .blur-bottom {
-      height: 60px; 
+      height: 18%;
+    }
+
+    #status {
+      font-size: 15px;
     }
   }
 </style>

@@ -218,19 +218,37 @@
       }
     }
 
-    async function buscarPeerIdEDiscar() {
-      try {
-        const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
-        const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-        const data = await res.json();
-        if (data.peer_id) initPeerAndConnect(data.peer_id);
-        else statusEl.textContent = "⚠️ ID do professor não encontrado.";
-      } catch (err) {
-        console.error("Erro ao buscar o ID do professor:", err);
-        statusEl.textContent = "❌ Erro ao buscar ID.";
-      }
-    }
+   async function buscarPeerIdEDiscar() {
+     try {
+       const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
 
+       let tentativas = 0;
+       const maxTentativas = 12; 
+
+       statusEl.textContent = "⏳ Aguardando o professor iniciar a chamada...";
+
+       while (tentativas < maxTentativas) {
+         const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+         const data = await res.json();
+
+         if (data.peer_id) {
+           statusEl.textContent = "✅ ID do professor encontrado, conectando...";
+           initPeerAndConnect(data.peer_id);
+           return;
+         }
+
+      
+         await new Promise(resolve => setTimeout(resolve, 1000));
+         tentativas++;
+      }
+
+      statusEl.textContent = "⚠️ Não foi possível encontrar o ID do professor. Tente novamente.";
+    } catch (err) {
+      console.error("Erro ao buscar o ID do professor:", err);
+      statusEl.textContent = "❌ Erro ao buscar ID.";
+    }
+  }
+    
     async function verificarSeDeveMostrarPagamento() {
       try {
         const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);

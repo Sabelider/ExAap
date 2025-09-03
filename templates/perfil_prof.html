@@ -414,18 +414,24 @@
     <button type="submit" class="logout-button">Sair</button>
   </form>  
 
-  <div class="header-bai">
-    <img src="/static/perfil.png" alt="Foto Perfil">
-    <div class="info">
-      <h2>Olá, {{ professor.nome_completo }} 👋</h2>
-      <p>Nº B.I: {{ professor.bilhete }}</p>
-      <p class="saldo">
-        Saldo: 
-        <span id="saldo">Kz ******</span>
-        <span class="saldo-toggle" onclick="toggleSaldo()">👁️</span>
-      </p>
-    </div>
+ <div class="header-bai">
+  <img src="/static/perfil.png" alt="Foto Perfil">
+  <div class="info">
+    <h2>Olá, {{ professor.nome_completo }} <i class="fa-solid fa-hand-wave"></i></h2>
+    <p>Nº B.I: {{ professor.bilhete }}</p>
+    <p class="saldo">
+      Saldo: 
+      <span id="saldo">Kz ******</span>
+      <span class="saldo-toggle" onclick="toggleSaldo()">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+    </p>
   </div>
+</div>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <!-- Botões principais -->
 <div class="botao-menu">
@@ -436,13 +442,17 @@
 </div>
 
 <div class="ultimas-aulas">
-  <h3>📖 Últimas aulas dadas</h3>
+  <h3><i class="fa-solid fa-book-open"></i> Últimas aulas dadas</h3>
   <ul id="lista-ultimas-aulas"></ul>
   <div style="margin-top: 10px; text-align: center;">
     <button id="ver-mais-btn" style="display:none;">Ver mais</button>
     <button id="ocultar-btn" style="display:none; background:#ccc; color:#333;">Ocultar</button>
   </div>
 </div>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <script>
   const lista = document.getElementById("lista-ultimas-aulas");
@@ -567,35 +577,46 @@
   <h3 style="margin-top:0; color:#333;">Bem-vindo(a) à Sabi Líder!</h3>
   <p>O seu centro de formação online, onde pode lecionar de forma flexível, segura e eficiente — sem sair de casa.</p>
 
-  <h4 style="margin-top:15px; color:#444;">🌟 Vantagens das aulas online</h4>
-  <ul style="padding-left:20px; line-height:1.6;">
-    <li>Flexibilidade de horários: ensine quando quiser.</li>
-    <li>Sem deslocamentos: economize tempo e custos.</li>
-    <li>Conexão direta com os alunos: interações em tempo real.</li>
-    <li>Ambiente organizado: histórico, chamadas e relatórios num só lugar.</li>
-    <li>Privacidade e segurança de dados garantidos.</li>
-  </ul>
+ <h4 style="margin-top:15px; color:#444;">
+  <i class="fa-solid fa-star"></i> Vantagens das aulas online
+</h4>
+<ul style="padding-left:20px; line-height:1.6;">
+  <li>Flexibilidade de horários: ensine quando quiser.</li>
+  <li>Sem deslocamentos: economize tempo e custos.</li>
+  <li>Conexão direta com os alunos: interações em tempo real.</li>
+  <li>Ambiente organizado: histórico, chamadas e relatórios num só lugar.</li>
+  <li>Privacidade e segurança de dados garantidos.</li>
+</ul>
 
-  <h4 style="margin-top:15px; color:#444;">🔐 Políticas de Privacidade</h4>
-  <ul style="padding-left:20px; line-height:1.6;">
-    <li>Todos os dados são protegidos e armazenados com segurança.</li>
-    <li>O uso da plataforma está sujeito à autorização de acesso individual.</li>
-    <li>O professor compromete-se a manter a ética e o respeito nas aulas.</li>
-    <li>O conteúdo gerado é de responsabilidade do educador.</li>
-  </ul>
+<h4 style="margin-top:15px; color:#444;">
+  <i class="fa-solid fa-lock"></i> Políticas de Privacidade
+</h4>
+<ul style="padding-left:20px; line-height:1.6;">
+  <li>Todos os dados são protegidos e armazenados com segurança.</li>
+  <li>O uso da plataforma está sujeito à autorização de acesso individual.</li>
+  <li>O professor compromete-se a manter a ética e o respeito nas aulas.</li>
+  <li>O conteúdo gerado é de responsabilidade do educador.</li>
+</ul>
 
-  <h4 style="margin-top:15px; color:#444;">🧾 Modo de Uso</h4>
-  <ul style="padding-left:20px; line-height:1.6;">
-    <li>Use o menu inferior para navegar entre alunos, salários e aulas.</li>
-    <li>Consulte sua agenda semanal com um clique.</li>
-    <li>Ao iniciar uma aula, garanta boa conexão e ambiente tranquilo.</li>
-    <li>Comunique-se com clareza e esteja sempre disponível nos horários acordados.</li>
-  </ul>
+<h4 style="margin-top:15px; color:#444;">
+  <i class="fa-solid fa-file-invoice"></i> Modo de Uso
+</h4>
+<ul style="padding-left:20px; line-height:1.6;">
+  <li>Use o menu inferior para navegar entre alunos, salários e aulas.</li>
+  <li>Consulte sua agenda semanal com um clique.</li>
+  <li>Ao iniciar uma aula, garanta boa conexão e ambiente tranquilo.</li>
+  <li>Comunique-se com clareza e esteja sempre disponível nos horários acordados.</li>
+</ul>
 
-  <div style="text-align:right; margin-top:20px;">
-    <button onclick="fecharMenuResumo()" style="background:#dc3545; color:#fff; border:none; padding:8px 12px; border-radius:5px;">Fechar</button>
-  </div>
+<div style="text-align:right; margin-top:20px;">
+  <button onclick="fecharMenuResumo()" style="background:#dc3545; color:#fff; border:none; padding:8px 12px; border-radius:5px;">
+    <i class="fa-solid fa-xmark"></i> Fechar
+  </button>
 </div>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <!-- Navegação inferior -->
 <div class="bottom-nav">
@@ -759,7 +780,7 @@ async function mostrarAulasDaSemana() {
   lista.innerHTML = "";
 
   if (dados.aulas && typeof dados.aulas === "object" && Object.keys(dados.aulas).length > 0) {
-    // ✅ Ordem corrigida conforme backend com OrderedDict
+    
     const diasOrdenados = [
       "Domingo", "Segunda-feira", "Terça-feira",
       "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"
@@ -817,7 +838,7 @@ async function mostrarAulasDaSemana() {
         })
       });
 
-      // ✅ Definir status como "ok"
+      
       await fetch("/definir-status-ok", {
         method: "POST",
         headers: {
@@ -1022,30 +1043,25 @@ async function buscarAlunosDisponiveis() {
       const telefone = aluno.telefone || "Não informado";
 
       card.innerHTML = `
-        <div style="border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <strong>${nomeAluno}</strong> - ${disciplina}<br>
-              <small>📚 Inglês: ${progressoIngles}%</small><br>
-              <small>🌍 Província: ${provincia}</small><br>
-              <small>🏙️ Município: ${municipio}</small><br>
-              <small>🏘️ Bairro: ${bairro}</small><br>
-              <small>📞 Tel: ${telefone}</small>
-            </div>
-            <button class="vincular-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
-              Vincular
-            </button>
-          </div>
-        </div>
-      `;
+  <div style="border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong>${nomeAluno}</strong> - ${disciplina}<br>
+        <small><i class="fa-solid fa-book"></i> Inglês: ${progressoIngles}%</small><br>
+        <small><i class="fa-solid fa-earth-americas"></i> Província: ${provincia}</small><br>
+        <small><i class="fa-solid fa-city"></i> Município: ${municipio}</small><br>
+        <small><i class="fa-solid fa-house"></i> Bairro: ${bairro}</small><br>
+        <small><i class="fa-solid fa-phone"></i> Tel: ${telefone}</small>
+      </div>
+      <button class="vincular-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
+        Vincular
+      </button>
+    </div>
+  </div>
+`;
 
-      container.appendChild(card);
-    });
-  } catch (error) {
-    console.error("Erro ao buscar alunos disponíveis:", error);
-    alert("Erro ao buscar alunos disponíveis.");
-  }
-}
+container.appendChild(card);
+
 
   async function vincularAluno(nomeAluno, professorEmail) {
     try {

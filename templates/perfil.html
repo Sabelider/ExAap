@@ -272,30 +272,36 @@
     </div>
   </div>
 
-  <div class="acoes">
-    <div class="acao" onclick="toggleAulas()">
-      <i>📘</i>
-      <span>Ver Aulas</span>
-    </div>
-    <div class="acao" id="btn-notificacao" onclick="verNotificacao()">
-  <i id="icone-sino">🔔👨‍🏫</i>
-  <span id="texto-sala">Sala de aula</span>
-    </div>
-    <div class="acao" onclick="verHorario()">
-      <i>📅</i>
-      <span>Ver Horário</span>
-    </div>
-    <div class="acao" id="btn-aulas-ativas">
+ <div class="acoes">
+  <div class="acao" onclick="toggleAulas()">
+    <i class="fa-solid fa-book"></i>
+    <span>Ver Aulas</span>
+  </div>
+
+  <div class="acao" id="btn-notificacao" onclick="verNotificacao()">
+    <i id="icone-sino" class="fa-solid fa-bell"></i>
+    <span id="texto-sala">Sala de aula</span>
+  </div>
+
+  <div class="acao" onclick="verHorario()">
+    <i class="fa-solid fa-calendar-days"></i>
+    <span>Ver Horário</span>
+  </div>
+
+  <div class="acao" id="btn-aulas-ativas">
     <i id="icone-aulas" class="fa-solid fa-chalkboard-teacher"></i>
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
-    <div class="acao" onclick="toggleProfessor()">
-      <i>👨‍🏫</i>
-      <span>Ver Professor</span>
-    </div>
+
+  <div class="acao" onclick="toggleProfessor()">
+    <i class="fa-solid fa-user-tie"></i>
+    <span>Ver Professor</span>
   </div>
+</div>
+
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <!-- Botão para abrir o desafio (centralizado) -->
 <div style="display: flex; justify-content: center; margin: 10px 0; background: url('/static/fundo.jpg') no-repeat center center; background-size: cover; padding: 15px 0;">

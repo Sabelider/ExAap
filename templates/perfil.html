@@ -543,6 +543,47 @@ function abrirPagamentos() {
     }
   };
 
+  // Normaliza o nome do aluno para consulta
+  const aluno = nomeAluno.trim().toLowerCase().replace(/\s+/g, "");
+
+  async function verificarAulaAtiva() {
+    try {
+      const res = await fetch(`/buscar-id-professor?aluno=${aluno}`);
+      const data = await res.json();
+
+      const icone = document.getElementById("icone-aulas");
+      const texto = document.getElementById("texto-aulas");
+      const infoBox = document.getElementById("info-aula");
+
+      if (data.peer_id) {
+        // Aula encontrada
+        icone.classList.add("active");
+        texto.textContent = "Aula Ativa";
+        document.getElementById("btn-aulas-ativas").classList.add("active");
+
+        // Mostrar info extra
+        const hora = new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        infoBox.innerHTML = `<b>Aula a decorrer</b> — ${hora}<br>👨‍🏫 Professor: ${data.professor || "Desconhecido"}`;
+        infoBox.classList.add("active");
+      } else {
+        // Nenhuma aula
+        icone.classList.remove("active");
+        texto.textContent = "Aulas Ativas";
+        document.getElementById("btn-aulas-ativas").classList.remove("active");
+        infoBox.classList.remove("active");
+      }
+    } catch (err) {
+      console.error("Erro ao verificar aula ativa:", err);
+    }
+  }
+
+ 
+  setInterval(verificarAulaAtiva, 2000);
+  
   function toggleDesafio() {
     const desafio = document.getElementById('container-desafio');
     desafio.style.display = (desafio.style.display === 'none' || desafio.style.display === '') 

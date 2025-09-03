@@ -79,63 +79,35 @@
     background-color: #1abc9c;
   }
 
-  
-  .btn-entrar {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 10px 18px;
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    text-decoration: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease-in-out;
+  .acoes {
+    display: flex;
+    justify-content: space-around;
+    background: #ecf0f1;
+    padding: 15px 0;
+    flex-wrap: wrap;
   }
 
-  .btn-entrar:hover {
-    background: linear-gradient(135deg, #00f2fe, #4facfe);
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  .acao {
+    width: 70px;
+    height: 70px;
+    background: #d0f0ef;
+    border-radius: 15px;
+    text-align: center;
+    padding-top: 8px;
+    margin: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
 
- .acoes {
-  display: flex;
-  justify-content: center;  
-  gap: 8px;                  
-  background: #ecf0f1;
-  padding: 10px 0;
-  flex-wrap: wrap;           
-}
+  .acao i {
+    font-size: 20px;
+    display: block;
+    color: #16a085;
+  }
 
-.acao {
-  flex: 0 1 auto;            
-  min-width: 60px;          
-  height: 65px;              
-  background: #d0f0ef;
-  border-radius: 12px;
-  text-align: center;
-  padding: 6px 4px;
-  margin: 2px;               
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.acao i {
-  font-size: 18px;          
-  display: block;
-  color: #16a085;
-  margin-bottom: 2px;
-}
-
-.acao span {
-  font-size: 11px;           
-  color: #000000;
-  display: block;
-  line-height: 1.1;
-}
+  .acao span {
+    font-size: 12px;
+    color: #000000; /* preto */
+  }
 
   .ultimas-aulas {
     background: #ffffff;
@@ -301,38 +273,29 @@
   </div>
 
   <div class="acoes">
-  <div class="acao" onclick="toggleAulas()">
-    <i class="fa-solid fa-book"></i>
-    <span>Ver Aulas</span>
-  </div>
-
-  <div class="acao" id="btn-notificacao" onclick="verNotificacao()">
-    <i id="icone-sino" class="fa-solid fa-bell"></i>
-    <span id="texto-sala">Sala de aula</span>
-  </div>
-
-  <div class="acao" onclick="verHorario()">
-    <i class="fa-solid fa-calendar-days"></i>
-    <span>Ver Horário</span>
-  </div>
-
-  <div class="acao" id="btn-aulas-ativas">
+    <div class="acao" onclick="toggleAulas()">
+      <i>📘</i>
+      <span>Ver Aulas</span>
+    </div>
+    <div class="acao" id="btn-notificacao" onclick="verNotificacao()">
+  <i id="icone-sino">🔔👨‍🏫</i>
+  <span id="texto-sala">Sala de aula</span>
+    </div>
+    <div class="acao" onclick="verHorario()">
+      <i>📅</i>
+      <span>Ver Horário</span>
+    </div>
+    <div class="acao" id="btn-aulas-ativas">
     <i id="icone-aulas" class="fa-solid fa-chalkboard-teacher"></i>
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
-
-    <div id="info-aula" class="info-box"></div>
-</div>
-
-  <div class="acao" onclick="toggleProfessor()">
-    <i class="fa-solid fa-user-tie"></i>
-    <span>Ver Professor</span>
+    <div class="acao" onclick="toggleProfessor()">
+      <i>👨‍🏫</i>
+      <span>Ver Professor</span>
+    </div>
   </div>
-</div>
-
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 
 <!-- Botão para abrir o desafio (centralizado) -->
 <div style="display: flex; justify-content: center; margin: 10px 0; background: url('/static/fundo.jpg') no-repeat center center; background-size: cover; padding: 15px 0;">
@@ -580,10 +543,10 @@ function abrirPagamentos() {
     }
   };
 
-
+  // Normaliza o nome do aluno para consulta
   const aluno = nomeAluno.trim().toLowerCase().replace(/\s+/g, "");
 
- async function verificarAulaAtiva() {
+  async function verificarAulaAtiva() {
     try {
       const res = await fetch(`/buscar-id-professor?aluno=${aluno}`);
       const data = await res.json();
@@ -598,19 +561,13 @@ function abrirPagamentos() {
         texto.textContent = "Aula Ativa";
         document.getElementById("btn-aulas-ativas").classList.add("active");
 
+        // Mostrar info extra
         const hora = new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit'
         });
 
-        // Botão "Entrar" direciona para sala_virtual_aluno
-        const linkEntrar = `/sala_virtual_aluno?email=${encodeURIComponent(data.professor)}&aluno=${encodeURIComponent(aluno)}`;
-
-        infoBox.innerHTML = `
-          <b>Aula a decorrer</b> — ${hora}<br>
-          👨‍🏫 Professor: ${data.professor || "Desconhecido"} <br>
-          <a href="${linkEntrar}" class="btn-entrar">Entrar</a>
-        `;
+        infoBox.innerHTML = `<b>Aula a decorrer</b> — ${hora}<br>👨‍🏫 Professor: ${data.professor || "Desconhecido"}`;
         infoBox.classList.add("active");
       } else {
         // Nenhuma aula
@@ -618,14 +575,14 @@ function abrirPagamentos() {
         texto.textContent = "Aulas Ativas";
         document.getElementById("btn-aulas-ativas").classList.remove("active");
         infoBox.classList.remove("active");
-        infoBox.innerHTML = "";
       }
     } catch (err) {
       console.error("Erro ao verificar aula ativa:", err);
     }
   }
 
-  setInterval(verificarAulaAtiva, 5000);
+ 
+  setInterval(verificarAulaAtiva, 2000);
   
   function toggleDesafio() {
     const desafio = document.getElementById('container-desafio');

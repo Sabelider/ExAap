@@ -904,7 +904,7 @@ async def get_sala_virtual_professor(
         email = email.strip().lower()
         aluno_normalizado = aluno.strip().lower() if aluno else None
 
-        # 🔍 Busca o documento do professor (status online)
+        # 🔍 Busca o documento do professor
         doc_ref = db.collection("professores_online2").document(email)
         doc = doc_ref.get()
 
@@ -913,16 +913,18 @@ async def get_sala_virtual_professor(
 
         professor = doc.to_dict()
 
-        # 🧪 Se aluno foi enviado, valida vínculo com o professor
+        # 🧪 Valida vínculo com o aluno, se fornecido
         if aluno:
+            # Buscar todos os documentos do professor na coleção alunos_professor
             docs = db.collection('alunos_professor') \
                 .where('professor', '==', email).stream()
 
             vinculo_encontrado = False
             for d in docs:
                 data = d.to_dict()
-                aluno_db = data.get("aluno", "").strip().lower()
-                if aluno_db == aluno_normalizado:
+                dados_aluno = data.get("dados_aluno", {})
+                nome_no_banco = dados_aluno.get("nome", "").strip().lower()
+                if nome_no_banco == aluno_normalizado:
                     vinculo_encontrado = True
                     break
 
@@ -932,26 +934,11 @@ async def get_sala_virtual_professor(
                     status_code=403
                 )
 
-            # 🔄 Adiciona o aluno na sala já existente (ou cria se não existir)
-            sala_ref = db.collection("chamadas_ao_vivo").document(email)
-            sala_doc = sala_ref.get()
+        # 🔑 Gera ID da sala
+        def slug(texto):
+            return slugify(texto)
 
-            if not sala_doc.exists:
-                sala_ref.set({
-                    "professor": email,
-                    "sala": f"sala-{email.replace(' ', '_')}",
-                    "status": "ao_vivo",
-                    "alunos": [aluno_normalizado]
-                })
-            else:
-                dados_sala = sala_doc.to_dict()
-                alunos_conectados = dados_sala.get("alunos", [])
-                if aluno_normalizado not in alunos_conectados:
-                    alunos_conectados.append(aluno_normalizado)
-                    sala_ref.update({"alunos": alunos_conectados})
-
-        # 🔑 Sala única do professor
-        sala_id = f"sala-{email.replace(' ', '_')}"
+        sala_id = f"{slug(email)}-{slug(aluno_normalizado)}" if aluno else slug(email)
 
         return templates.TemplateResponse("sala_virtual_professor.html", {
             "request": request,
@@ -976,55 +963,20 @@ async def get_sala_virtual_aluno(
     email_normalizado = email.strip().lower()
     aluno_normalizado = aluno.strip().lower()
 
-    # 🔍 Verifica se o aluno está vinculado ao professor
-    docs = db.collection('alunos_professor') \
-        .where('professor', '==', email_normalizado).stream()
-
-    vinculo_encontrado = False
-    for d in docs:
-        data = d.to_dict()
-        aluno_db = data.get("aluno", "").strip().lower()
-        if aluno_db == aluno_normalizado:
-            vinculo_encontrado = True
-            break
-
-    if not vinculo_encontrado:
+    # Verifica se o aluno está vinculado ao professor
+    aluno_data = vinculo_existe(email_normalizado, aluno_normalizado)
+    if not aluno_data:
         return HTMLResponse("<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>", status_code=403)
 
-    # 🔍 Verifica se o professor existe
-    professor_doc = db.collection("professores_online2").document(email_normalizado).get()
-    if not professor_doc.exists:
+    # Verifica se o professor existe
+    professor = buscar_professor_por_email(email_normalizado)
+    if not professor:
         return HTMLResponse("<h2 style='color:red'>Professor não encontrado.</h2>", status_code=404)
 
-    professor = professor_doc.to_dict()
-
-    # 🔑 Documento da sala única do professor
-    sala_ref = db.collection("chamadas_ao_vivo").document(email_normalizado)
-    sala_doc = sala_ref.get()
-
-    nome_sala = f"sala-{email_normalizado.replace(' ', '_')}"
-
-    if not sala_doc.exists:
-        # Cria a sala se ainda não existir
-        sala_ref.set({
-            "professor": email_normalizado,
-            "sala": nome_sala,
-            "status": "ao_vivo",
-            "alunos": [aluno_normalizado]
-        })
-    else:
-        dados_sala = sala_doc.to_dict()
-        alunos_conectados = dados_sala.get("alunos", [])
-        if aluno_normalizado not in alunos_conectados:
-            alunos_conectados.append(aluno_normalizado)
-            sala_ref.update({"alunos": alunos_conectados})
-
-    # 🔗 Renderiza a sala do aluno
     return templates.TemplateResponse("sala_virtual_aluno.html", {
         "request": request,
-        "aluno": aluno.strip(),
-        "professor": email_normalizado,
-        "sala_id": nome_sala
+        "aluno": aluno.strip(),  
+        "professor": email_normalizado
     })
 
 
@@ -1997,6 +1949,9 @@ async def verificar_notificacao(request: Request):
         return JSONResponse(content={"erro": str(e)}, status_code=500)
 
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):
     try:
@@ -2010,9 +1965,9 @@ async def registrar_chamada(request: Request):
         # Normalização
         aluno_normalizado = str(aluno_raw).strip().lower().replace(" ", "")
         professor_normalizado = str(professor_raw).strip().lower()
-        nome_sala = f"sala-{professor_normalizado.replace(' ', '_')}"  # 🔑 sala única do professor
+        nome_sala = f"{professor_normalizado.replace(' ', '_')}-{aluno_normalizado}"
 
-        # Verificar vínculo (se o aluno realmente está vinculado ao professor)
+        # Verificar vínculo
         vinculo_docs = db.collection("alunos_professor") \
                          .where("professor", "==", professor_normalizado) \
                          .stream()
@@ -2031,45 +1986,62 @@ async def registrar_chamada(request: Request):
                 status_code=403
             )
 
-        # Documento da sala do professor
-        doc_ref = db.collection("chamadas_ao_vivo").document(professor_normalizado)
+        # Verificar ou criar o documento de chamada
+        doc_ref = db.collection("chamadas_ao_vivo").document(aluno_normalizado)
         doc = doc_ref.get()
 
         if not doc.exists:
-            # Criar a sala do professor e adicionar o primeiro aluno
+            # 🔧 Se não existir, cria automaticamente com status 'aceito'
             doc_ref.set({
+                "aluno": aluno_normalizado,
                 "professor": professor_normalizado,
-                "sala": nome_sala,
-                "status": "ao_vivo",
-                "alunos": [aluno_normalizado]  # lista de alunos conectados
-            })
+                "status": "aceito",
+                "sala": nome_sala
+            }, merge=True)
+
             return JSONResponse(
                 content={
-                    "mensagem": "Sala criada e aluno conectado.",
+                    "mensagem": "Conexão autorizada - documento criado.",
                     "sala": nome_sala
                 },
                 status_code=200
             )
-        else:
-            # Atualizar sala já existente, adicionando aluno se não estiver presente
-            dados_atuais = doc.to_dict()
-            alunos_conectados = dados_atuais.get("alunos", [])
 
-            if aluno_normalizado not in alunos_conectados:
-                alunos_conectados.append(aluno_normalizado)
+        # Verificar status existente
+        dados_atuais = doc.to_dict() or {}
+        status_atual = dados_atuais.get("status", "")
 
-            doc_ref.update({
-                "alunos": alunos_conectados,
-                "status": "ao_vivo"
-            })
+        if status_atual == "aceito":
+            doc_ref.set({
+                "aluno": aluno_normalizado,
+                "professor": professor_normalizado,
+                "sala": nome_sala
+            }, merge=True)
 
             return JSONResponse(
                 content={
-                    "mensagem": f"Aluno {aluno_normalizado} conectado à sala.",
-                    "sala": nome_sala,
-                    "alunos": alunos_conectados
+                    "mensagem": "Conexão autorizada com status 'aceito'.",
+                    "sala": nome_sala
                 },
                 status_code=200
+            )
+
+        elif status_atual == "pendente":
+            return JSONResponse(
+                content={"erro": "Aguardando o aluno aceitar a chamada..."},
+                status_code=403
+            )
+
+        elif status_atual == "recusado":
+            return JSONResponse(
+                content={"erro": "O aluno recusou a chamada."},
+                status_code=403
+            )
+
+        else:
+            return JSONResponse(
+                content={"erro": f"Status de chamada desconhecido: '{status_atual}'"},
+                status_code=403
             )
 
     except Exception as e:
@@ -2078,7 +2050,6 @@ async def registrar_chamada(request: Request):
             content={"erro": f"Erro interno ao registrar chamada: {str(e)}"},
             status_code=500
         )
-
 
 
 app.add_middleware(
@@ -2153,29 +2124,23 @@ async def enviar_id_aula(request: Request):
     dados = await request.json()
     peer_id = dados.get("peer_id")
     email_professor = dados.get("email")
+    nome_aluno_raw = dados.get("aluno")
 
-    if not peer_id or not email_professor:
+    if not peer_id or not email_professor or not nome_aluno_raw:
         return JSONResponse(status_code=400, content={"erro": "Dados incompletos"})
 
     try:
-        email_professor = email_professor.strip().lower()
-
-        # Documento único da sala do professor
-        doc_ref = db.collection("chamadas_ao_vivo").document(email_professor)
-
-        # 🔄 Atualiza (ou cria) a sala com o ID da chamada do professor
+        nome_aluno = nome_aluno_raw.strip().lower().replace(" ", "")
+        doc_ref = db.collection("alunos").document(nome_aluno)
         doc_ref.set({
-            "professor": email_professor,
-            "sala": f"sala-{email_professor.replace(' ', '_')}",
-            "peer_id": peer_id,
-            "status": "ao_vivo"
+            "id_chamada": peer_id,
+            "professor_chamada": email_professor.strip().lower()
         }, merge=True)
 
-        return JSONResponse(content={"status": "ID enviado com sucesso", "peer_id": peer_id})
+        return JSONResponse(content={"status": "ID enviado com sucesso"})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"erro": str(e)})
-
 
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):
@@ -2186,31 +2151,11 @@ async def buscar_id_professor(aluno: str):
 
         if doc.exists:
             data = doc.to_dict()
-            peer_id = data.get("id_chamada")
-            professor = data.get("professor_chamada")
-
-            if peer_id:
-                return JSONResponse(content={
-                    "status": "ID encontrado",
-                    "peer_id": peer_id,
-                    "professor_chamada": professor
-                })
-            else:
-                return JSONResponse(content={
-                    "status": "Nenhum ID registrado",
-                    "peer_id": None,
-                    "professor_chamada": professor
-                })
+            return {"peer_id": data.get("id_chamada")}
         else:
-            return JSONResponse(content={
-                "status": "Aluno não encontrado",
-                "peer_id": None,
-                "professor_chamada": None
-            })
-
+            return {"peer_id": None}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"erro": str(e)})
-
+        return {"erro": str(e)}
 
 from datetime import datetime
 from fastapi import Body, HTTPException

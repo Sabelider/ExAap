@@ -1949,9 +1949,6 @@ async def verificar_notificacao(request: Request):
         return JSONResponse(content={"erro": str(e)}, status_code=500)
 
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):
     try:
@@ -1965,9 +1962,9 @@ async def registrar_chamada(request: Request):
         # Normalização
         aluno_normalizado = str(aluno_raw).strip().lower().replace(" ", "")
         professor_normalizado = str(professor_raw).strip().lower()
-        nome_sala = f"{professor_normalizado.replace(' ', '_')}-{aluno_normalizado}"
+        nome_sala = f"sala-{professor_normalizado.replace(' ', '_')}"  # 🔑 sala única do professor
 
-        # Verificar vínculo
+        # Verificar vínculo (se o aluno realmente está vinculado ao professor)
         vinculo_docs = db.collection("alunos_professor") \
                          .where("professor", "==", professor_normalizado) \
                          .stream()
@@ -1986,62 +1983,45 @@ async def registrar_chamada(request: Request):
                 status_code=403
             )
 
-        # Verificar ou criar o documento de chamada
-        doc_ref = db.collection("chamadas_ao_vivo").document(aluno_normalizado)
+        # Documento da sala do professor
+        doc_ref = db.collection("chamadas_ao_vivo").document(professor_normalizado)
         doc = doc_ref.get()
 
         if not doc.exists:
-            # 🔧 Se não existir, cria automaticamente com status 'aceito'
+            # Criar a sala do professor e adicionar o primeiro aluno
             doc_ref.set({
-                "aluno": aluno_normalizado,
                 "professor": professor_normalizado,
-                "status": "aceito",
-                "sala": nome_sala
-            }, merge=True)
-
+                "sala": nome_sala,
+                "status": "ao_vivo",
+                "alunos": [aluno_normalizado]  # lista de alunos conectados
+            })
             return JSONResponse(
                 content={
-                    "mensagem": "Conexão autorizada - documento criado.",
+                    "mensagem": "Sala criada e aluno conectado.",
                     "sala": nome_sala
                 },
                 status_code=200
             )
-
-        # Verificar status existente
-        dados_atuais = doc.to_dict() or {}
-        status_atual = dados_atuais.get("status", "")
-
-        if status_atual == "aceito":
-            doc_ref.set({
-                "aluno": aluno_normalizado,
-                "professor": professor_normalizado,
-                "sala": nome_sala
-            }, merge=True)
-
-            return JSONResponse(
-                content={
-                    "mensagem": "Conexão autorizada com status 'aceito'.",
-                    "sala": nome_sala
-                },
-                status_code=200
-            )
-
-        elif status_atual == "pendente":
-            return JSONResponse(
-                content={"erro": "Aguardando o aluno aceitar a chamada..."},
-                status_code=403
-            )
-
-        elif status_atual == "recusado":
-            return JSONResponse(
-                content={"erro": "O aluno recusou a chamada."},
-                status_code=403
-            )
-
         else:
+            # Atualizar sala já existente, adicionando aluno se não estiver presente
+            dados_atuais = doc.to_dict()
+            alunos_conectados = dados_atuais.get("alunos", [])
+
+            if aluno_normalizado not in alunos_conectados:
+                alunos_conectados.append(aluno_normalizado)
+
+            doc_ref.update({
+                "alunos": alunos_conectados,
+                "status": "ao_vivo"
+            })
+
             return JSONResponse(
-                content={"erro": f"Status de chamada desconhecido: '{status_atual}'"},
-                status_code=403
+                content={
+                    "mensagem": f"Aluno {aluno_normalizado} conectado à sala.",
+                    "sala": nome_sala,
+                    "alunos": alunos_conectados
+                },
+                status_code=200
             )
 
     except Exception as e:
@@ -2050,6 +2030,7 @@ async def registrar_chamada(request: Request):
             content={"erro": f"Erro interno ao registrar chamada: {str(e)}"},
             status_code=500
         )
+
 
 
 app.add_middleware(

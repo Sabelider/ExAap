@@ -954,8 +954,8 @@ async def get_sala_virtual_professor(
 @app.get("/sala_virtual_aluno", response_class=HTMLResponse)
 async def get_sala_virtual_aluno(
     request: Request,
-    email: Optional[str] = Query(default=None),
-    aluno: Optional[str] = Query(default=None)
+    email: Optional[str] = Query(default=None),   # Professor
+    aluno: Optional[str] = Query(default=None)    # Aluno que vai entrar
 ):
     if not email or not aluno:
         return HTMLResponse("<h2 style='color:red'>Erro: Parâmetros faltando.</h2>", status_code=400)
@@ -963,19 +963,42 @@ async def get_sala_virtual_aluno(
     email_normalizado = email.strip().lower()
     aluno_normalizado = aluno.strip().lower()
 
-    # Verifica se o aluno está vinculado ao professor
+    # 🔍 Verifica se o aluno está vinculado ao professor
     aluno_data = vinculo_existe(email_normalizado, aluno_normalizado)
     if not aluno_data:
-        return HTMLResponse("<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>", status_code=403)
+        return HTMLResponse(
+            "<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>",
+            status_code=403
+        )
 
-    # Verifica se o professor existe
+    # 🔍 Verifica se o professor existe
     professor = buscar_professor_por_email(email_normalizado)
     if not professor:
         return HTMLResponse("<h2 style='color:red'>Professor não encontrado.</h2>", status_code=404)
 
+    # 🔹 Atualiza a lista de participantes em "chamadas_ao_vivo"
+    chamada_ref = db.collection("chamadas_ao_vivo").document(email_normalizado)
+    chamada_doc = chamada_ref.get()
+
+    if chamada_doc.exists:
+        chamada_data = chamada_doc.to_dict() or {}
+        participantes = chamada_data.get("participantes", [])
+
+        if aluno_normalizado not in participantes:
+            participantes.append(aluno_normalizado)
+            chamada_ref.update({"participantes": participantes})
+    else:
+        # Se ainda não existe chamada, cria uma nova
+        chamada_ref.set({
+            "professor": email_normalizado,
+            "participantes": [aluno_normalizado],
+            "inicio": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    # 🔹 Renderiza a sala para o aluno
     return templates.TemplateResponse("sala_virtual_aluno.html", {
         "request": request,
-        "aluno": aluno.strip(),  
+        "aluno": aluno.strip(),
         "professor": email_normalizado
     })
 

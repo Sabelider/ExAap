@@ -2153,23 +2153,29 @@ async def enviar_id_aula(request: Request):
     dados = await request.json()
     peer_id = dados.get("peer_id")
     email_professor = dados.get("email")
-    nome_aluno_raw = dados.get("aluno")
 
-    if not peer_id or not email_professor or not nome_aluno_raw:
+    if not peer_id or not email_professor:
         return JSONResponse(status_code=400, content={"erro": "Dados incompletos"})
 
     try:
-        nome_aluno = nome_aluno_raw.strip().lower().replace(" ", "")
-        doc_ref = db.collection("alunos").document(nome_aluno)
+        email_professor = email_professor.strip().lower()
+
+        # Documento único da sala do professor
+        doc_ref = db.collection("chamadas_ao_vivo").document(email_professor)
+
+        # 🔄 Atualiza (ou cria) a sala com o ID da chamada do professor
         doc_ref.set({
-            "id_chamada": peer_id,
-            "professor_chamada": email_professor.strip().lower()
+            "professor": email_professor,
+            "sala": f"sala-{email_professor.replace(' ', '_')}",
+            "peer_id": peer_id,
+            "status": "ao_vivo"
         }, merge=True)
 
-        return JSONResponse(content={"status": "ID enviado com sucesso"})
+        return JSONResponse(content={"status": "ID enviado com sucesso", "peer_id": peer_id})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"erro": str(e)})
+
 
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):
@@ -2180,11 +2186,31 @@ async def buscar_id_professor(aluno: str):
 
         if doc.exists:
             data = doc.to_dict()
-            return {"peer_id": data.get("id_chamada")}
+            peer_id = data.get("id_chamada")
+            professor = data.get("professor_chamada")
+
+            if peer_id:
+                return JSONResponse(content={
+                    "status": "ID encontrado",
+                    "peer_id": peer_id,
+                    "professor_chamada": professor
+                })
+            else:
+                return JSONResponse(content={
+                    "status": "Nenhum ID registrado",
+                    "peer_id": None,
+                    "professor_chamada": professor
+                })
         else:
-            return {"peer_id": None}
+            return JSONResponse(content={
+                "status": "Aluno não encontrado",
+                "peer_id": None,
+                "professor_chamada": None
+            })
+
     except Exception as e:
-        return {"erro": str(e)}
+        return JSONResponse(status_code=500, content={"erro": str(e)})
+
 
 from datetime import datetime
 from fastapi import Body, HTTPException

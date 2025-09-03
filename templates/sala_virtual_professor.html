@@ -10,25 +10,20 @@
       background: #000;
       font-family: "Roboto", sans-serif;
       color: #fff;
-      overflow: hidden;
-    }
-
-    .video-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding-top: 20px;
     }
 
-    #remoteVideo {
-      position: absolute;
-      top: -10%;
-      left: 0;
-      width: 100%;
-      height: 120%;
+    video {
+      width: 90vw;
+      max-width: 400px;
+      height: 70vh;
+      border: 3px solid #fff;
+      margin-bottom: 12px;
       object-fit: cover;
     }
 
@@ -39,51 +34,29 @@
       width: 120px;
       height: 90px;
       border: 2px solid #fff;
-      border-radius: 8px;
-      z-index: 10;
+    }
+
+    #info {
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    #status {
+      margin-bottom: 12px;
+      font-size: 16px;
     }
 
     #cronometro {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.4);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 22px;
+      font-size: 26px;
       font-weight: bold;
-      display: none;
-      z-index: 20;
-    }
-
-    /* Efeitos de desfoque superior/inferior */
-    .blur-top,
-    .blur-bottom {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: 5%;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      z-index: 5;
-      pointer-events: none;
-    }
-
-    .blur-top {
-      top: 0;
-    }
-
-    .blur-bottom {
-      bottom: 0;
+      color: #fff;
+      margin-bottom: 20px;
     }
 
     #confirmarAulaBtn {
       display: none;
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
+      margin-top: 16px;
       background-color: #ffa500;
       color: black;
       font-weight: bold;
@@ -92,14 +65,12 @@
       font-size: 16px;
       cursor: pointer;
       border: none;
-      z-index: 30;
     }
 
     #confirmarAulaBtn:hover {
       background-color: #ff8800;
     }
 
-    /* Botão chamar aluno */
     #chamarAlunoBtn {
       position: fixed;
       bottom: 20px;
@@ -113,58 +84,23 @@
       border-radius: 8px;
       font-size: 16px;
       cursor: pointer;
-      z-index: 30;
     }
 
     #chamarAlunoBtn:hover {
       background-color: darkgreen;
     }
-
-    @media (min-width: 768px) {
-      #remoteVideo {
-        top: -15%;
-        height: 130%;
-      }
-
-      #localVideo {
-        width: 180px;
-        height: 135px;
-      }
-
-      #cronometro {
-        font-size: 26px;
-        padding: 8px 18px;
-      }
-
-      #confirmarAulaBtn {
-        font-size: 18px;
-        padding: 12px 22px;
-      }
-
-      #chamarAlunoBtn {
-        font-size: 18px;
-        padding: 14px 26px;
-      }
-    }
-
-    @media (max-width: 767px) {
-      #localVideo {
-        top: 15px;
-        right: 15px;
-        bottom: auto;
-        width: 100px;
-        height: 70px;
-      }
-    }
   </style>
 </head>
 <body>
-  <div class="video-container">
-    <video id="remoteVideo" autoplay playsinline></video>
+  <div id="info">
+    <div><strong>O seu ID:</strong> <span id="myId">Gerando...</span></div>
+    <div><strong>Status:</strong> <span id="status">Aguardando conexão...</span></div>
+    <div id="cronometro" style="display: none;">01:00:00</div>
+  </div>
+
+  <div>
     <video id="localVideo" autoplay muted playsinline></video>
-    <div id="cronometro">01:00</div>
-    <div class="blur-top"></div>
-    <div class="blur-bottom"></div>
+    <video id="remoteVideo" autoplay playsinline></video>
   </div>
 
   <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar o Aluno</button>
@@ -176,6 +112,20 @@
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
+      authDomain: "exap-8a935.firebaseapp.com",
+      projectId: "exap-8a935",
+      storageBucket: "exap-8a935.appspot.com",
+      messagingSenderId: "664710895978",
+      appId: "1:664710895978:web:304790f37d7561d9b1ed13"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script>
+    const myIdSpan = document.getElementById("myId");
+    const statusSpan = document.getElementById("status");
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
     const cronometro = document.getElementById("cronometro");
@@ -191,7 +141,6 @@
     let meuPeerId = "";
     let tempoRestante = 3600; // 1 hora em segundos
     let intervalo;
-    let mensagemMostrada = false; // controle para mostrar só uma vez
 
     async function startCamera() {
       try {
@@ -208,9 +157,11 @@
 
       peer.on("open", (id) => {
         meuPeerId = id;
+        myIdSpan.textContent = id;
       });
 
       peer.on("call", (call) => {
+        statusSpan.textContent = "📞 Recebendo chamada...";
         call.answer(localStream);
         handleCallEvents(call);
       });
@@ -224,11 +175,13 @@
     function handleCallEvents(call) {
       call.on("stream", (remoteStream) => {
         remoteVideo.srcObject = remoteStream;
+        statusSpan.textContent = "✅ Conectado!";
         iniciarCronometro();
       });
 
       call.on("close", () => {
-        confirmarAulaBtn.style.display = "inline-block";
+        statusSpan.textContent = "🔌 Conexão encerrada.";
+        confirmarAulaBtn.style.display = "inline-block"; // Garante visibilidade
       });
 
       call.on("error", (err) => {
@@ -263,28 +216,21 @@
 
     function iniciarCronometro() {
       cronometro.style.display = "block";
-      tempoRestante = 3600; // reinicia 1h
+      tempoRestante = 3600; // reinicia 1 hora
 
       intervalo = setInterval(() => {
         if (tempoRestante <= 0) {
           clearInterval(intervalo);
-          cronometro.textContent = "00:00";
+          cronometro.textContent = "00:00:00";
           encerrarChamada();
           return;
         }
 
         tempoRestante--;
-
-        // mostrar mensagem aos 55 minutos
-        if (tempoRestante === 300 && !mensagemMostrada) {
-          alert("📢 Está a gostar da aula?");
-          mensagemMostrada = true;
-        }
-
-        let minutos = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
+        let horas = Math.floor(tempoRestante / 3600).toString().padStart(2, '0');
+        let minutos = Math.floor((tempoRestante % 3600) / 60).toString().padStart(2, '0');
         let segundos = (tempoRestante % 60).toString().padStart(2, '0');
-
-        cronometro.textContent = ${minutos}:${segundos};
+        cronometro.textContent = `${horas}:${minutos}:${segundos}`;
       }, 1000);
     }
 
@@ -292,14 +238,15 @@
       if (currentCall) {
         currentCall.close();
         remoteVideo.srcObject = null;
+        statusSpan.textContent = "⏱️ Aula encerrada";
       }
+
       confirmarAulaBtn.style.display = "inline-block";
     }
 
     function registrarAula() {
       const btn = document.getElementById("confirmarAulaBtn");
-      btn.disabled = true;
-      btn.style.display = "none";
+      btn.disabled = true; 
 
       fetch("/registrar-aula", {
         method: "POST",
@@ -312,17 +259,16 @@
       .then(res => {
         if (res.ok) {
           alert("✅ Aula registrada com sucesso!");
+          btn.style.display = "none"; 
         } else {
           alert("⚠️ Falha ao registrar aula.");
-          btn.style.display = "inline-block";
           btn.disabled = false;
         }
       })
       .catch(err => {
         console.error("Erro ao registrar aula:", err);
         alert("Erro de conexão ao registrar aula.");
-        btn.style.display = "inline-block";
-        btn.disabled = false;
+        btn.disabled = false; 
       });
     }
 

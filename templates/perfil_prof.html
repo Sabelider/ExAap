@@ -107,22 +107,6 @@
     border-color: #218838;
   }
 
-  .btn-info {
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
-  border: none;
-  padding: 6px 12px;
-  color: #fff;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.btn-info:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
 .botao-padrao {
   background: linear-gradient(135deg, #00c9ff, #92fe9d);
   border: none;
@@ -663,7 +647,7 @@ async function listarMeusAlunos() {
       // Botão Informações
       const infoBtn = document.createElement('button');
       infoBtn.textContent = 'Informações';
-      infoBtn.className = 'btn-info'; // classe exclusiva para o botão informações
+      infoBtn.className = 'botao-padrao';
       infoBtn.onclick = (e) => {
         e.stopPropagation();
         exibirInformacoesAluno(aluno);
@@ -710,34 +694,36 @@ async function listarMeusAlunos() {
   }
 }
 
-// Função para exibir informações do aluno em modal
+// Função para exibir informações do aluno em modal moderno
 function exibirInformacoesAluno(aluno) {
   const overlay = document.createElement('div');
   overlay.className = 'overlay-info';
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
 
   const modal = document.createElement('div');
   modal.className = 'modal-info';
 
   modal.innerHTML = `
     <h3>${aluno.nome}</h3>
-    <p><strong>Telefone:</strong> 
-      <a href="https://wa.me/${aluno.telefone}" target="_blank">${aluno.telefone || '-'}</a>
-      <button class="copy-btn" onclick="navigator.clipboard.writeText('${aluno.telefone}')">Copiar</button>
-    </p>
-    <p><strong>Província:</strong> ${aluno.provincia || '-'}</p>
-    <p><strong>Município:</strong> ${aluno.municipio || '-'}</p>
-    <p><strong>Bairro:</strong> ${aluno.bairro || '-'}</p>
-    <p><strong>Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</p>
-    <button class="fechar-btn" onclick="this.closest('.overlay-info').remove()">Fechar</button>
+    <div class="info-row">
+      <span>Telefone:</span>
+      <span>
+        <a href="https://wa.me/${aluno.telefone}" target="_blank">${aluno.telefone || '-'}</a>
+        <button class="botao-padrao" onclick="navigator.clipboard.writeText('${aluno.telefone}')">Copiar</button>
+      </span>
+    </div>
+    <div class="info-row"><span>Província:</span> <span>${aluno.provincia || '-'}</span></div>
+    <div class="info-row"><span>Município:</span> <span>${aluno.municipio || '-'}</span></div>
+    <div class="info-row"><span>Bairro:</span> <span>${aluno.bairro || '-'}</span></div>
+    <div class="info-row"><span>Nível de Inglês:</span> <span>${aluno.nivel_ingles || '-'}</span></div>
+    <button class="botao-padrao fechar-btn">Fechar</button>
   `;
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-}
 
+  modal.querySelector('.fechar-btn').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+}
   
 async function verAulasDadas(nomeAluno) {
   try {
@@ -827,17 +813,17 @@ async function carregarUltimasAulas(professorEmail) {
       // Botão Informações
       const infoBtn = document.createElement('button');
       infoBtn.textContent = 'Informações';
-      infoBtn.className = 'btn-info'; // mesma classe do botão informações
+      infoBtn.className = 'botao-padrao';
       infoBtn.onclick = (e) => {
         e.stopPropagation();
-        exibirInformacoesAluno(aluno); // reutiliza a função do modal
+        exibirInformacoesAluno(aluno); 
       };
       card.appendChild(infoBtn);
 
       // Botão Vincular
       const vincularBtn = document.createElement('button');
       vincularBtn.textContent = 'Vincular';
-      vincularBtn.className = 'notificar-btn';
+      vincularBtn.className = 'botao-padrao';
       vincularBtn.onclick = (e) => {
         e.stopPropagation();
         vincularAluno(nomeAluno, '{{ professor.email }}');
@@ -850,6 +836,37 @@ async function carregarUltimasAulas(professorEmail) {
     console.error("Erro ao buscar alunos disponíveis:", error);
     alert("Erro ao buscar alunos disponíveis.");
   }
+}
+
+// Função modal já usada para ambos os casos
+function exibirInformacoesAluno(aluno) {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay-info';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-info';
+
+  modal.innerHTML = `
+    <h3>${aluno.nome}</h3>
+    <div class="info-row">
+      <span>Telefone:</span>
+      <span>
+        <a href="https://wa.me/${aluno.telefone}" target="_blank">${aluno.telefone || '-'}</a>
+        <button class="botao-padrao" onclick="navigator.clipboard.writeText('${aluno.telefone}')">Copiar</button>
+      </span>
+    </div>
+    <div class="info-row"><span>Província:</span> <span>${aluno.provincia || '-'}</span></div>
+    <div class="info-row"><span>Município:</span> <span>${aluno.municipio || '-'}</span></div>
+    <div class="info-row"><span>Bairro:</span> <span>${aluno.bairro || '-'}</span></div>
+    <div class="info-row"><span>Nível de Inglês:</span> <span>${aluno.nivel_ingles || '-'}</span></div>
+    <button class="botao-padrao fechar-btn">Fechar</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  modal.querySelector('.fechar-btn').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
 }
 
   async function vincularAluno(nomeAluno, professorEmail) {

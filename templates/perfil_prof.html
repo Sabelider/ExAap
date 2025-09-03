@@ -381,188 +381,6 @@
 </form>
 
 <script>
-  const lista = document.getElementById("lista-ultimas-aulas");
-  const verMaisBtn = document.getElementById("ver-mais-btn");
-  const ocultarBtn = document.getElementById("ocultar-btn");
-
-  let skip = 0;
-  const limit = 5;
-  let total = 0;
-
-  async function carregarAulas() {
-    try {
-      const response = await fetch("/ultimas-aulas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          professor_email: "{{ professor.email }}",
-          skip: skip,
-          limit: limit
-        })
-      });
-
-      const data = await response.json();
-      const aulas = data.ultimas_aulas || [];
-      total = data.total || 0;
-
-      aulas.forEach(aula => {
-        const li = document.createElement("li");
-        li.className = "aula-item";
-        li.innerHTML = `
-          <div class="aula-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-          <div class="aula-info">
-            <strong>${aula.nome}</strong>
-            <span>${aula.data} às ${aula.horario}</span>
-          </div>
-        `;
-        lista.appendChild(li);
-      });
-
-      skip += aulas.length;
-
-      // mostrar ou esconder botões
-      if (skip < total) {
-        verMaisBtn.style.display = "inline-block";
-        ocultarBtn.style.display = "none";
-      } else {
-        verMaisBtn.style.display = "none";
-        if (skip > limit) {
-          ocultarBtn.style.display = "inline-block";
-        }
-      }
-
-    } catch (err) {
-      console.error("Erro ao buscar aulas:", err);
-      lista.innerHTML = `<li style="color:#c00;padding:12px;">Erro ao carregar aulas</li>`;
-    }
-  }
-
-  // Função para ocultar as aulas extras
-  function ocultarAulas() {
-    const itens = lista.querySelectorAll("li");
-    itens.forEach((item, index) => {
-      if (index >= limit) item.remove();
-    });
-    skip = limit; // volta para o estado inicial
-    verMaisBtn.style.display = "inline-block";
-    ocultarBtn.style.display = "none";
-  }
-
-  verMaisBtn.addEventListener("click", carregarAulas);
-  ocultarBtn.addEventListener("click", ocultarAulas);
-
- 
-  carregarAulas();
-</script>
-  
-
-<div id="alunos-disponiveis" class="secao-dinamica">
-  <h4>Alunos Disponíveis</h4>
-  <div id="lista-alunos-disponiveis"></div>
-</div>
-
-<div id="meus-alunos" class="secao-dinamica">
-  <h4>Meus Alunos</h4>
-  <div id="lista-meus-alunos"></div>
-</div>
-
-<div id="ver-dados" class="secao-dinamica">
-  <h4>Meus Dados</h4>
-  <p>Email: {{ professor.email }}</p>
-  <p>Telefone: {{ professor.telefone }}</p>
-</div>
-
-<!-- Aulas do Dia -->
-<div id="aulas-dia" class="secao-dinamica" style="display:none; margin-top:10px; background:#f9f9f9; padding:10px; border-radius:8px;">
-  <h4>Aulas de Hoje</h4>
-  <div id="lista-aulas-dia"></div>
-</div>
-
-
-<div id="aulas-semana" class="secao-dinamica" style="display:none; margin-top:10px; background:#eef; padding:10px; border-radius:8px;">
-  <h4>Minhas Aulas da Semana</h4>
-  <div id="lista-aulas-semana"></div>
-</div>
-
-
-<div id="calendarOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:999;" onclick="fecharCalendarioSeForFora(event)">
-  <!-- CAIXA CALENDÁRIO -->
-  <div id="calendarContainer" onclick="event.stopPropagation()" style="position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:15px; z-index:1000; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); width:350px; max-height:85vh; overflow-y:auto; font-size:14px;">
-    <h4>Selecionar Horários</h4>
-    <div id="daySelector" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
-    <div id="timeSelector" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;"></div>
-    <div style="margin-top:15px; text-align:right;">
-      <button onclick="enviarHorario()" style="background:#28a745; color:#fff; border:none; padding:8px 12px; border-radius:5px;">Enviar o horário</button>
-      <button onclick="fecharCalendario()" style="margin-left:10px;">Fechar</button>
-    </div>
-  </div>
-</div>
-
-  
-<div id="painel-informacoes" style="display:none; position:fixed; bottom:60px; left:10px; right:10px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:1000; font-size:15px; max-height:80vh; overflow-y:auto;">
-  <h3 style="margin-top:0; color:#333;">Bem-vindo(a) à Sabi Líder!</h3>
-  <p>O seu centro de formação online, onde pode lecionar de forma flexível, segura e eficiente — sem sair de casa.</p>
-
- <h4 style="margin-top:15px; color:#444;">
-  <i class="fa-solid fa-star"></i> Vantagens das aulas online
-</h4>
-<ul style="padding-left:20px; line-height:1.6;">
-  <li>Flexibilidade de horários: ensine quando quiser.</li>
-  <li>Sem deslocamentos: economize tempo e custos.</li>
-  <li>Conexão direta com os alunos: interações em tempo real.</li>
-  <li>Ambiente organizado: histórico, chamadas e relatórios num só lugar.</li>
-  <li>Privacidade e segurança de dados garantidos.</li>
-</ul>
-
-<h4 style="margin-top:15px; color:#444;">
-  <i class="fa-solid fa-lock"></i> Políticas de Privacidade
-</h4>
-<ul style="padding-left:20px; line-height:1.6;">
-  <li>Todos os dados são protegidos e armazenados com segurança.</li>
-  <li>O uso da plataforma está sujeito à autorização de acesso individual.</li>
-  <li>O professor compromete-se a manter a ética e o respeito nas aulas.</li>
-  <li>O conteúdo gerado é de responsabilidade do educador.</li>
-</ul>
-
-<h4 style="margin-top:15px; color:#444;">
-  <i class="fa-solid fa-file-invoice"></i> Modo de Uso
-</h4>
-<ul style="padding-left:20px; line-height:1.6;">
-  <li>Use o menu inferior para navegar entre alunos, salários e aulas.</li>
-  <li>Consulte sua agenda semanal com um clique.</li>
-  <li>Ao iniciar uma aula, garanta boa conexão e ambiente tranquilo.</li>
-  <li>Comunique-se com clareza e esteja sempre disponível nos horários acordados.</li>
-</ul>
-
-<div style="text-align:right; margin-top:20px;">
-  <button onclick="fecharMenuResumo()" style="background:#dc3545; color:#fff; border:none; padding:8px 12px; border-radius:5px;">
-    <i class="fa-solid fa-xmark"></i> Fechar
-  </button>
-</div>
-
-<!-- Link para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-
-<!-- Navegação inferior -->
-<div class="bottom-nav">
-  <button onclick="abrirPerfil()" title="Meu Perfil">
-    <i class="fas fa-user-circle"></i>
-  </button>
-  <button onclick="abrirSalarios()" title="Salários">
-    <i class="fas fa-money-bill-wave"></i>
-  </button>
-  <button onclick="abrirMenuResumo()" title="Informações">
-    <i class="fas fa-bars"></i>
-  </button>
-</div>
-
-
-<form method="POST" action="/dados_professor" id="form-dados-prof" style="display:none;">
-  <input type="hidden" name="email" id="prof-email-hidden">
-</form>
-
-<script>
 
 
 let saldoVisivel = false;
@@ -706,7 +524,7 @@ async function mostrarAulasDaSemana() {
   lista.innerHTML = "";
 
   if (dados.aulas && typeof dados.aulas === "object" && Object.keys(dados.aulas).length > 0) {
-    
+    // ✅ Ordem corrigida conforme backend com OrderedDict
     const diasOrdenados = [
       "Domingo", "Segunda-feira", "Terça-feira",
       "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"
@@ -764,7 +582,7 @@ async function mostrarAulasDaSemana() {
         })
       });
 
-      
+      // ✅ Definir status como "ok"
       await fetch("/definir-status-ok", {
         method: "POST",
         headers: {
@@ -773,13 +591,13 @@ async function mostrarAulasDaSemana() {
         body: JSON.stringify({ aluno: aluno })
       });
 
-// Redirecionar para a sala
-window.location.href = `/sala_virtual_professor?email=${encodeURIComponent(professorEmail)}&aluno=${encodeURIComponent(aluno)}`;
-} catch (error) {
-  console.error("Erro ao iniciar chamada:", error);
-  alert("Erro ao iniciar a chamada.");
-}
-}
+      // Redirecionar para a sala
+    window.location.href = `/sala_virtual_professor?email=${encodeURIComponent(professorEmail)}&aluno=${encodeURIComponent(aluno)}`;
+    } catch (error) {
+      console.error("Erro ao iniciar chamada:", error);
+      alert("Erro ao iniciar a chamada.");
+    }
+  }
 
 let alunoSelecionado = null;
 
@@ -804,29 +622,15 @@ async function listarMeusAlunos() {
       const statusClass = aluno.online ? 'online' : 'offline';
       const statusText = aluno.online ? 'Online' : 'Offline';
 
-      const infoId = `info-${aluno.nome.replace(/\s+/g, "-")}`;
-
       card.innerHTML = `
         <div class="aluno-header" style="display: flex; justify-content: space-between; align-items: center;">
           <span><strong>${aluno.nome}</strong> - ${aluno.disciplina}</span>
-          <div class="status" style="display:flex; align-items:center; gap:10px;">
+          <div class="status">
             <span>${statusText}</span>
             <span class="status-dot ${statusClass}"></span>
-            <button onclick="toggleInfo('${infoId}')" class="btn-info">
-              ℹnformações
-            </button>
           </div>
         </div>
-
-<div id="${infoId}" class="aluno-info">
-  <div class="info-grid">
-    <div><strong><i class="fa-solid fa-phone"></i> Telefone:</strong> ${aluno.telefone || '-'}</div>
-    <div><strong><i class="fa-solid fa-globe"></i> Província:</strong> ${aluno.provincia || '-'}</div>
-    <div><strong><i class="fa-solid fa-city"></i> Município:</strong> ${aluno.municipio || '-'}</div>
-    <div><strong><i class="fa-solid fa-location-dot"></i> Bairro:</strong> ${aluno.bairro || '-'}</div>
-    <div><strong><i class="fa-solid fa-language"></i> Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</div>
-  </div>
-</div>
+      `;
 
       if (aluno.online) {
         const iniciarBtn = document.createElement('button');
@@ -876,11 +680,6 @@ async function listarMeusAlunos() {
   }
 }
 
-function toggleInfo(id) {
-  const el = document.getElementById(id);
-  el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
-}
-
 async function verAulasDadas(nomeAluno) {
   try {
     const response = await fetch("/ver-aulas", {
@@ -908,109 +707,101 @@ async function verAulasDadas(nomeAluno) {
 }
 
 async function carregarUltimasAulas(professorEmail) {
-  try {
-    const resposta = await fetch("/ultimas-aulas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ professor_email: professorEmail })
-    });
-
-    const resultado = await resposta.json();
-
-    const lista = document.getElementById("lista-ultimas-aulas");
-    lista.innerHTML = ""; // limpar antes de preencher
-
-    if (resultado.ultimas_aulas && resultado.ultimas_aulas.length > 0) {
-      resultado.ultimas_aulas.forEach((aula) => {
-        const item = document.createElement("li");
-        item.innerHTML = `<strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}`;
-        lista.appendChild(item);
+    try {
+      const resposta = await fetch("/ultimas-aulas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professor_email: professorEmail })
       });
-    } else {
-      lista.innerHTML = "<li>Nenhuma aula registrada ainda.</li>";
-    }
 
-  } catch (error) {
-    console.error("Erro ao carregar últimas aulas:", error);
+      const resultado = await resposta.json();
+
+      const lista = document.getElementById("lista-ultimas-aulas");
+      lista.innerHTML = ""; // limpar antes de preencher
+
+      if (resultado.ultimas_aulas && resultado.ultimas_aulas.length > 0) {
+        resultado.ultimas_aulas.forEach((aula) => {
+          const item = document.createElement("li");
+          item.innerHTML = `<strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}`;
+          lista.appendChild(item);
+        });
+      } else {
+        lista.innerHTML = "<li>Nenhuma aula registrada ainda.</li>";
+      }
+
+    } catch (error) {
+      console.error("Erro ao carregar últimas aulas:", error);
+    }
   }
-}
 
-const professorEmail = "{{ professor.email }}";
-carregarUltimasAulas(professorEmail);
+  const professorEmail = "{{ professor.email }}";
+  carregarUltimasAulas(professorEmail);
+  
+ async function buscarAlunosDisponiveis() {
+    const email = "{{ professor.email }}";
+    try {
+      const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
+      const lista = await res.json();
+      const container = document.getElementById('alunos-disponiveis');
+      container.innerHTML = '<h2>Alunos Disponíveis</h2>';
 
-async function buscarAlunosDisponiveis() {
-  const email = "{{ professor.email }}";
-  try {
-    const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
-    const lista = await res.json();
-    const container = document.getElementById('alunos-disponiveis');
-    container.innerHTML = '<h2>Alunos Disponíveis</h2>';
+      if (lista.length === 0) {
+        container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
+        return;
+      }
 
-    if (lista.length === 0) {
-      container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
-      return;
+      lista.forEach(aluno => {
+        const card = document.createElement('div');
+        card.className = 'aluno-card';
+
+        const nomeAluno = aluno.nome;
+        const disciplina = aluno.disciplina;
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${nomeAluno}</strong> - ${disciplina}
+            </div>
+            <button class="notificar-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
+              Vincular
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    } catch (error) {
+      console.error("Erro ao buscar alunos disponíveis:", error);
+      alert("Erro ao buscar alunos disponíveis.");
     }
-
-    lista.forEach(aluno => {
-      const card = document.createElement('div');
-      card.className = 'aluno-card';
-
-      const nomeAluno = aluno.nome;
-      const disciplina = aluno.disciplina;
-      const progressoIngles = aluno.progresso_ingles ?? 0;
-      const provincia = aluno.provincia || "Não informado";
-      const municipio = aluno.municipio || "Não informado";
-      const bairro = aluno.bairro || "Não informado";
-      const telefone = aluno.telefone || "Não informado";
-
-      card.innerHTML = `
-  <div style="border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 8px;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <strong>${nomeAluno}</strong> - ${disciplina}<br>
-        <small><i class="fa-solid fa-book"></i> Inglês: ${progressoIngles}%</small><br>
-        <small><i class="fa-solid fa-earth-americas"></i> Província: ${provincia}</small><br>
-        <small><i class="fa-solid fa-city"></i> Município: ${municipio}</small><br>
-        <small><i class="fa-solid fa-house"></i> Bairro: ${bairro}</small><br>
-        <small><i class="fa-solid fa-phone"></i> Tel: ${telefone}</small>
-      </div>
-      <button class="vincular-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
-        Vincular
-      </button>
-    </div>
-  </div>
-`;
-
-    container.appendChild(card);
-
-
+  }
 
   async function vincularAluno(nomeAluno, professorEmail) {
-  try {
-    const res = await fetch('/vincular-aluno', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        professor_email: professorEmail,
-        aluno_nome: nomeAluno
-      })
-    });
+    try {
+      const res = await fetch('/vincular-aluno', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          professor_email: professorEmail,
+          aluno_nome: nomeAluno
+        })
+      });
 
-    if (res.ok) {
-      alert(`Aluno "${nomeAluno}" vinculado com sucesso!`);
-      buscarAlunosDisponiveis();
-    } else {
-      const erro = await res.json();
-      alert(`Erro: ${erro.detail}`);
+      if (res.ok) {
+        alert(`Aluno "${nomeAluno}" vinculado com sucesso!`);
+        buscarAlunosDisponiveis();
+      } else {
+        const erro = await res.json();
+        alert(`Erro: ${erro.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao vincular aluno:', error);
+      alert('Erro interno ao tentar vincular o aluno.');
     }
-  } catch (error) {
-    console.error('Erro ao vincular aluno:', error);
-    alert('Erro interno ao tentar vincular o aluno.');
   }
-}
-
+  
 let horarioSelecionado = {}; 
 let diaAtivo = ""; 
 
@@ -1122,6 +913,7 @@ async function enviarHorario() {
   };
 
   try {
+  
     const response = await fetch("/enviar-horario", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1132,6 +924,7 @@ async function enviarHorario() {
     if (response.ok) {
       alert(`Horário enviado com sucesso para ${alunoSelecionado}!`);
 
+      
       const diasSelecionados = Object.keys(horarioSelecionado);
       const ultimoDia = diasSelecionados[diasSelecionados.length - 1];
       const horarios = horarioSelecionado[ultimoDia];
@@ -1167,36 +960,37 @@ async function enviarHorario() {
   }
 }
 
-function toggleDados() {
-  const div = document.getElementById("dadosSecretos");
-  div.style.display = div.style.display === "none" ? "block" : "none";
+  function toggleDados() {
+    const div = document.getElementById("dadosSecretos");
+    div.style.display = div.style.display === "none" ? "block" : "none";
 
-  const mensagensDiv = document.getElementById("mensagensAdmin");
-  mensagensDiv.style.display = mensagensDiv.style.display === "none" ? "block" : "none";
-}
-
-async function buscarMensagensProfessor() {
-  const email = "{{ professor.email }}".trim().toLowerCase();
-  const res = await fetch(`/mensagens-professor/${email}`);
-  const dados = await res.json();
-
-  const lista = document.getElementById("listaMensagens");
-  lista.innerHTML = "";
-
-  if (dados.mensagens && dados.mensagens.length > 0) {
-    dados.mensagens.forEach(msg => {
-      const item = document.createElement("li");
-      item.style.padding = "10px";
-      item.style.borderBottom = "1px solid #ffe082";
-      item.innerHTML = `<strong>${msg.data || "Sem data"}:</strong><br>${msg.texto}`;
-      lista.appendChild(item);
-    });
-  } else {
-    lista.innerHTML = "<li style='color:#777'>Nenhuma mensagem recebida ainda.</li>";
+    const mensagensDiv = document.getElementById("mensagensAdmin");
+    mensagensDiv.style.display = mensagensDiv.style.display === "none" ? "block" : "none";
   }
-}
 
-window.addEventListener("DOMContentLoaded", buscarMensagensProfessor);
+  async function buscarMensagensProfessor() {
+    const email = "{{ professor.email }}".trim().toLowerCase();
+    const res = await fetch(`/mensagens-professor/${email}`);
+    const dados = await res.json();
+
+    const lista = document.getElementById("listaMensagens");
+    lista.innerHTML = "";
+
+    if (dados.mensagens && dados.mensagens.length > 0) {
+      dados.mensagens.forEach(msg => {
+        const item = document.createElement("li");
+        item.style.padding = "10px";
+        item.style.borderBottom = "1px solid #ffe082";
+        item.innerHTML = `<strong>${msg.data || "Sem data"}:</strong><br>${msg.texto}`;
+        lista.appendChild(item);
+      });
+    } else {
+      lista.innerHTML = "<li style='color:#777'>Nenhuma mensagem recebida ainda.</li>";
+    }
+  }
+
+ 
+  window.addEventListener("DOMContentLoaded", buscarMensagensProfessor);
 </script>
 </body>
 </html>

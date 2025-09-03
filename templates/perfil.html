@@ -248,29 +248,35 @@
 </style>
 </head>
 <body>
-  <div class="top-bar">
-    <img src="/static/perfil.png" alt="Perfil" />
-    <div class="info">
-      <h2>Olá, {{ aluno.nome }} 👋</h2>
-      <p>B.I: {{ aluno.bilhete }}</p>
+ <div class="top-bar">
+  <img src="/static/perfil.png" alt="Perfil" />
+  <div class="info">
+    <h2>Olá, {{ aluno.nome }} <i class="fa-solid fa-hand-peace"></i></h2>
+    <p><i class="fa-solid fa-id-card"></i> B.I: {{ aluno.bilhete }}</p>
 
-      <div class="saldo">
-        <p style="margin: 0; font-size: 11px; font-family: 'Arial', sans-serif;">
-          <strong style="font-size: 11px;">Saldo:</strong>
-          <span id="valor-divida" data-real="{{ total_gasto }}">Kz {{ total_gasto }},00</span>
-          <button onclick="toggleVisibilidade()" style="margin-left: 10px;">👁️</button><br>
-        </p>
+    <div class="saldo">
+      <p style="margin: 0; font-size: 11px; font-family: 'Arial', sans-serif;">
+        <strong style="font-size: 11px;"><i class="fa-solid fa-wallet"></i> Saldo:</strong>
+        <span id="valor-divida" data-real="{{ total_gasto }}">Kz {{ total_gasto }},00</span>
+        <button onclick="toggleVisibilidade()" style="margin-left: 10px;">
+          <i class="fa-solid fa-eye"></i>
+        </button><br>
+      </p>
 
-        <strong style="font-size: 11px;">Nível de Inglês:</strong>
-        <span id="nivel-ingles">{{ aluno.nivel_ingles }}</span>
-      </div>
+      <strong style="font-size: 11px;"><i class="fa-solid fa-language"></i> Nível de Inglês:</strong>
+      <span id="nivel-ingles">{{ aluno.nivel_ingles }}</span>
+    </div>
 
-      <div class="carrossel-indicadores">
-        <span></span>
-        <span style="opacity: 0.3;"></span>
-      </div>
+    <div class="carrossel-indicadores">
+      <span></span>
+      <span style="opacity: 0.3;"></span>
     </div>
   </div>
+</div>
+
+<!-- Link para os ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
  <div class="acoes">
   <div class="acao" onclick="toggleAulas()">
@@ -325,9 +331,15 @@
       <i class="fa-solid fa-xmark"></i>
     </button>
 
-    <h3 style="margin: 0 0 8px 0; font-size: 15px;">🧠 Desafio de Inglês</h3>
-    <p><strong>Nível:</strong> <span id="nivel-aluno">{{ aluno.nivel_ingles }}</span></p>
-    <p id="pergunta-texto" style="margin: 6px 0; font-size: 13px;">Loading...</p>
+    <h3 style="margin: 0 0 8px 0; font-size: 15px;">
+  <i class="fa-solid fa-brain"></i> Desafio de Inglês
+</h3>
+<p><strong><i class="fa-solid fa-language"></i> Nível:</strong> <span id="nivel-aluno">{{ aluno.nivel_ingles }}</span></p>
+<p id="pergunta-texto" style="margin: 6px 0; font-size: 13px;">Loading...</p>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
     <div style="display: flex; gap: 8px; align-items: center;">
       <input
@@ -366,18 +378,22 @@ function fecharDesafio() {
 
   <div class="footer">
   <div class="item active" onclick="abrirPerfil()">
-    <i>👤</i>
+    <i class="fa-solid fa-user"></i>
     O Meu Perfil
   </div>
   <div class="item" onclick="abrirPagamentos()">
-    <i>💳</i>
+    <i class="fa-solid fa-credit-card"></i>
     Pagamentos
   </div>
   <div class="item" onclick="abrirMenu()">
-    <i>📂</i>
+    <i class="fa-solid fa-folder"></i>
     Menu
   </div>
 </div>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <script>
 function abrirPerfil() {
@@ -454,195 +470,211 @@ function abrirPagamentos() {
   const infoAulaDiv = document.getElementById("info-aula");
   const salaIdSpan = document.getElementById("sala-id");
 
-  onSnapshot(chamadaRef, (docSnap) => {
-    try {
-      if (docSnap.exists()) {
-        const dados = docSnap.data();
-        if (dados.status === "pendente") {
-          salaIdSpan.textContent = dados.sala;
-          infoAulaDiv.style.display = "block";
-          const aceitar = confirm(`📡 O professor ${dados.professor} está te chamando para uma aula. Deseja entrar?`);
-          updateDoc(chamadaRef, {
-            status: aceitar ? "aceito" : "rejeitado"
-          });
-          if (aceitar) {
-            window.location.href = `/sala_virtual_aluno/${dados.sala}`;
-          }
+ onSnapshot(chamadaRef, (docSnap) => {
+  try {
+    if (docSnap.exists()) {
+      const dados = docSnap.data();
+      if (dados.status === "pendente") {
+        salaIdSpan.textContent = dados.sala;
+        infoAulaDiv.style.display = "block";
+        const aceitar = confirm(`📡 O professor ${dados.professor} está te chamando para uma aula. Deseja entrar?`);
+        updateDoc(chamadaRef, {
+          status: aceitar ? "aceito" : "rejeitado"
+        });
+        if (aceitar) {
+          window.location.href = `/sala_virtual_aluno/${dados.sala}`;
         }
       }
-    } catch (e) {
-      console.error("Erro no onSnapshot:", e);
     }
-  });
+  } catch (e) {
+    console.error("Erro no onSnapshot:", e);
+  }
+});
 
+ window.toggleAulas = async function () {
+  const div = document.getElementById("sec-aula");
+  const aulasDadas = document.getElementById("aulas-dadas");
+  const aulasRestantes = document.getElementById("aulas-restantes");
+  const listaAulas = document.getElementById("lista-aulas");
 
-  window.toggleAulas = async function () {
-    const div = document.getElementById("sec-aula");
-    const aulasDadas = document.getElementById("aulas-dadas");
-    const aulasRestantes = document.getElementById("aulas-restantes");
-    const listaAulas = document.getElementById("lista-aulas");
-
-    if (div.style.display === "block") {
-      div.style.display = "none";
-      return;
-    }
-
-    aulasDadas.textContent = "...carregando...";
-    aulasRestantes.textContent = "";
-    listaAulas.innerHTML = "";
-
-    try {
-      const response = await fetch("/ver-aulas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: nomeAluno })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-
-      if (data.erro) {
-        aulasDadas.textContent = "Erro ao carregar as aulas.";
-        aulasRestantes.textContent = "";
-        listaAulas.innerHTML = "";
-        return;
-      }
-
-      aulasDadas.textContent = `✅ Já teve: ${data.aulas_dadas} aulas`;
-      aulasRestantes.textContent = `📌 Faltam: ${data.restantes} aulas`;
-      listaAulas.innerHTML = "";
-      (data.aulas || []).forEach((aula, i) => {
-        const li = document.createElement("li");
-        li.textContent = `${i + 1}. 📅 ${aula.data} 🕐 ${aula.horario}`;
-        listaAulas.appendChild(li);
-      });
-    } catch (err) {
-      console.error("Erro toggleAulas:", err);
-      aulasDadas.textContent = "❌ Erro ao buscar dados.";
-      aulasRestantes.textContent = "";
-      listaAulas.innerHTML = "";
-    }
-
-    div.style.display = "block";
-  };
-
-  window.toggleProfessor = async function () {
-    const container = document.getElementById("professor-nome");
-    if (container.style.display === "block") {
-      container.style.display = "none";
-      return;
-    }
-    container.innerHTML = "Carregando...";
-    try {
-      const res = await fetch(`/meu-professor-status/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const statusIcon = data.online ? '🟢' : '⚪';
-      const statusText = data.online ? 'Online' : 'Offline';
-      container.innerHTML = `${statusIcon} Professor: ${data.professor} <span class="status-icon">(${statusText})</span>`;
-      container.style.display = "block";
-    } catch (e) {
-      console.error("Erro toggleProfessor:", e);
-      container.innerHTML = "Professor não encontrado.";
-      container.style.display = "block";
-    }
-  };
-
-  // Normaliza o nome do aluno para consulta
-  const aluno = nomeAluno.trim().toLowerCase().replace(/\s+/g, "");
-
-  async function verificarAulaAtiva() {
-    try {
-      const res = await fetch(`/buscar-id-professor?aluno=${aluno}`);
-      const data = await res.json();
-
-      const icone = document.getElementById("icone-aulas");
-      const texto = document.getElementById("texto-aulas");
-      const infoBox = document.getElementById("info-aula");
-
-      if (data.peer_id) {
-        // Aula encontrada
-        icone.classList.add("active");
-        texto.textContent = "Aula Ativa";
-        document.getElementById("btn-aulas-ativas").classList.add("active");
-
-        // Mostrar info extra
-        const hora = new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-        infoBox.innerHTML = `<b>Aula a decorrer</b> — ${hora}<br>👨‍🏫 Professor: ${data.professor || "Desconhecido"}`;
-        infoBox.classList.add("active");
-      } else {
-        // Nenhuma aula
-        icone.classList.remove("active");
-        texto.textContent = "Aulas Ativas";
-        document.getElementById("btn-aulas-ativas").classList.remove("active");
-        infoBox.classList.remove("active");
-      }
-    } catch (err) {
-      console.error("Erro ao verificar aula ativa:", err);
-    }
+  if (div.style.display === "block") {
+    div.style.display = "none";
+    return;
   }
 
- 
-  setInterval(verificarAulaAtiva, 2000);
+  aulasDadas.textContent = "...carregando...";
+  aulasRestantes.textContent = "";
+  listaAulas.innerHTML = "";
+
+  try {
+    const response = await fetch("/ver-aulas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: nomeAluno })
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+
+    if (data.erro) {
+      aulasDadas.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao carregar as aulas.`;
+      aulasRestantes.textContent = "";
+      listaAulas.innerHTML = "";
+      return;
+    }
+
+    aulasDadas.innerHTML = `<i class="fa-solid fa-circle-check"></i> Já teve: ${data.aulas_dadas} aulas`;
+    aulasRestantes.innerHTML = `<i class="fa-solid fa-thumbtack"></i> Faltam: ${data.restantes} aulas`;
+
+    listaAulas.innerHTML = "";
+    (data.aulas || []).forEach((aula, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = `${i + 1}. <i class="fa-solid fa-calendar-days"></i> ${aula.data} <i class="fa-regular fa-clock"></i> ${aula.horario}`;
+      listaAulas.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Erro toggleAulas:", err);
+    aulasDadas.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao buscar dados.`;
+    aulasRestantes.textContent = "";
+    listaAulas.innerHTML = "";
+  }
+
+  div.style.display = "block";
+};
+
+window.toggleProfessor = async function () {
+  const container = document.getElementById("professor-nome");
+  if (container.style.display === "block") {
+    container.style.display = "none";
+    return;
+  }
+  container.innerHTML = "Carregando...";
+  try {
+    const res = await fetch(`/meu-professor-status/${encodeURIComponent(nomeAluno)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const statusIcon = data.online
+      ? '<i class="fa-solid fa-circle text-success"></i>'
+      : '<i class="fa-regular fa-circle text-muted"></i>';
+    const statusText = data.online ? 'Online' : 'Offline';
+
+    container.innerHTML = `${statusIcon} Professor: ${data.professor} <span class="status-icon">(${statusText})</span>`;
+    container.style.display = "block";
+  } catch (e) {
+    console.error("Erro toggleProfessor:", e);
+    container.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Professor não encontrado.`;
+    container.style.display = "block";
+  }
+};
+
+// Normaliza o nome do aluno para consulta
+const aluno = nomeAluno.trim().toLowerCase().replace(/\s+/g, "");
+
+
+async function verificarAulaAtiva() {
+  try {
+    const res = await fetch(`/buscar-id-professor?aluno=${aluno}`);
+    const data = await res.json();
+
+    const icone = document.getElementById("icone-aulas");
+    const texto = document.getElementById("texto-aulas");
+    const infoBox = document.getElementById("info-aula");
+    const btn = document.getElementById("btn-aulas-ativas");
+
+    if (data.peer_id) {
+      // Aula encontrada
+      icone.classList.add("fa-beat-fade", "text-success"); // animação + verde
+      texto.textContent = "Aula Ativa";
+      btn.classList.add("active");
+
+      // Mostrar info extra
+      const hora = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      infoBox.innerHTML = `
+        <b><i class="fa-solid fa-video"></i> Aula a decorrer</b> — ${hora}<br>
+        <i class="fa-solid fa-chalkboard-user"></i> Professor: ${data.professor || "Desconhecido"}
+      `;
+      infoBox.classList.add("active");
+    } else {
+      // Nenhuma aula
+      icone.classList.remove("fa-beat-fade", "text-success");
+      texto.textContent = "Aulas Ativas";
+      btn.classList.remove("active");
+      infoBox.classList.remove("active");
+    }
+  } catch (err) {
+    console.error("Erro ao verificar aula ativa:", err);
+  }
+}
+
+setInterval(verificarAulaAtiva, 2000);
+
   
   function toggleDesafio() {
-    const desafio = document.getElementById('container-desafio');
-    desafio.style.display = (desafio.style.display === 'none' || desafio.style.display === '') 
-        ? 'block' 
-        : 'none';
+  const desafio = document.getElementById("container-desafio");
+  desafio.style.display =
+    desafio.style.display === "none" || desafio.style.display === ""
+      ? "block"
+      : "none";
 }
 
 function fecharDesafio() {
-    document.getElementById('container-desafio').style.display = 'none';
+  document.getElementById("container-desafio").style.display = "none";
 }
 
-  window.verHorario = async function () {
-    const container = document.getElementById("sec-horario");
-    const listaHorario = document.getElementById("lista-horario");
+window.verHorario = async function () {
+  const container = document.getElementById("sec-horario");
+  const listaHorario = document.getElementById("lista-horario");
 
-    if (container.style.display === "block") {
-      container.style.display = "none";
-      return;
-    }
+  if (container.style.display === "block") {
+    container.style.display = "none";
+    return;
+  }
 
-    listaHorario.innerHTML = "Carregando...";
+  listaHorario.innerHTML = "Carregando...";
 
-    try {
-      const res = await fetch(`/ver-horario-aluno/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      listaHorario.innerHTML = "";
+  try {
+    const res = await fetch(
+      `/ver-horario-aluno/${encodeURIComponent(nomeAluno)}`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    listaHorario.innerHTML = "";
 
-      if (data.erro) {
-        const li = document.createElement("li");
-        li.textContent = "⚠️ Horário não encontrado.";
-        listaHorario.appendChild(li);
-      } else {
-        for (const [dia, horarios] of Object.entries(data.horario || {})) {
-          const diaItem = document.createElement("li");
-          diaItem.innerHTML = `<strong>📅 ${traduzirDia(dia)}:</strong>`;
-          listaHorario.appendChild(diaItem);
+    if (data.erro) {
+      const li = document.createElement("li");
+      li.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Horário não encontrado.`;
+      listaHorario.appendChild(li);
+    } else {
+      for (const [dia, horarios] of Object.entries(data.horario || {})) {
+        const diaItem = document.createElement("li");
+        diaItem.innerHTML = `<strong><i class="fa-solid fa-calendar-days"></i> ${traduzirDia(
+          dia
+        )}:</strong>`;
+        listaHorario.appendChild(diaItem);
 
-          (horarios || []).forEach(h => {
-            const horaItem = document.createElement("li");
-            horaItem.textContent = `- ${h}`;
-            horaItem.style.marginLeft = "15px";
-            listaHorario.appendChild(horaItem);
-          });
-        }
+        (horarios || []).forEach((h) => {
+          const horaItem = document.createElement("li");
+          horaItem.innerHTML = `<i class="fa-regular fa-clock"></i> ${h}`;
+          horaItem.style.marginLeft = "15px";
+          listaHorario.appendChild(horaItem);
+        });
       }
-    } catch (e) {
-      console.error("Erro verHorario:", e);
-      listaHorario.innerHTML = "<li>❌ Erro ao buscar horário.</li>";
     }
+  } catch (e) {
+    console.error("Erro verHorario:", e);
+    listaHorario.innerHTML =
+      `<li><i class="fa-solid fa-circle-xmark"></i> Erro ao buscar horário.</li>`;
+  }
 
-    container.style.display = "block";
-  };
+  container.style.display = "block";
+};
+
 
   function traduzirDia(diaAbreviado) {
     const dias = {
@@ -696,92 +728,108 @@ function fecharDesafio() {
 
  
   window.carregarPerguntas = async function () {
-    try {
-      const nivelBusca = window.mapaNiveis[window.nivelAtual] || window.nivelAtual;
-      const url = `https://beckend-exaap.onrender.com/pergunta-ingles?nome=${encodeURIComponent(nomeAluno)}&nivel=${encodeURIComponent(nivelBusca)}`;
-      console.log("carregarPerguntas -> fetch", url);
-      const resposta = await fetch(url);
-      if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-      const dados = await resposta.json();
+  try {
+    const nivelBusca =
+      window.mapaNiveis[window.nivelAtual] || window.nivelAtual;
+    const url = `https://beckend-exaap.onrender.com/pergunta-ingles?nome=${encodeURIComponent(
+      nomeAluno
+    )}&nivel=${encodeURIComponent(nivelBusca)}`;
+    console.log("carregarPerguntas -> fetch", url);
+    const resposta = await fetch(url);
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    const dados = await resposta.json();
 
-      // subiu de nível informado pelo backend
-      if (dados.mensagem && dados.novo_nivel) {
-        window.nivelAtual = dados.novo_nivel;
-        document.getElementById("nivel-aluno").textContent = dados.novo_nivel.toUpperCase();
-        const mensagemEl = document.getElementById("mensagem-feedback");
-        mensagemEl.textContent = `🚀 ${dados.mensagem}`;
-        setTimeout(() => mensagemEl.textContent = "", 2000);
-      }
-
-      if (dados.pergunta) {
-        // se backend retorna pergunta diretamente
-        window.perguntas = [dados.pergunta];
-        // garantir dataset id
-        const respostaInput = document.getElementById("resposta-input");
-        if (dados.id) {
-          respostaInput.dataset.perguntaId = dados.id;
-        } else {
-          delete respostaInput.dataset.perguntaId;
-        }
-        document.getElementById("pergunta-texto").textContent = dados.pergunta;
-        document.getElementById("nivel-aluno").textContent = (dados.nivel || window.nivelAtual).toUpperCase();
-        window.nivelAtual = (dados.nivel || window.nivelAtual).toLowerCase();
-      } else if (dados.status === "maximo") {
-        document.getElementById("pergunta-texto").textContent = "🏆 Você já está no nível máximo!";
-      } else if (dados.status === "final-nivel") {
-        document.getElementById("pergunta-texto").textContent = "🎉 Terminaste todas as perguntas!";
-      } else {
-        document.getElementById("pergunta-texto").textContent = "Nenhuma pergunta disponível.";
-      }
-
-    } catch (erro) {
-      console.error("Erro carregarPerguntas:", erro);
-      document.getElementById("pergunta-texto").textContent = "Erro ao carregar a pergunta.";
+    // subiu de nível informado pelo backend
+    if (dados.mensagem && dados.novo_nivel) {
+      window.nivelAtual = dados.novo_nivel;
+      document.getElementById("nivel-aluno").textContent =
+        dados.novo_nivel.toUpperCase();
+      const mensagemEl = document.getElementById("mensagem-feedback");
+      mensagemEl.innerHTML = `<i class="fa-solid fa-rocket"></i> ${dados.mensagem}`;
+      setTimeout(() => (mensagemEl.textContent = ""), 2000);
     }
-  };
 
-  window.mostrarPergunta = async function () {
-    try {
-      const nivelBusca = window.mapaNiveis[window.nivelAtual] || window.nivelAtual;
-      const url = `https://beckend-exaap.onrender.com/pergunta-ingles?nome=${encodeURIComponent(nomeAluno)}&nivel=${encodeURIComponent(nivelBusca)}`;
-      console.log("mostrarPergunta -> fetch", url);
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-
-      const perguntaTexto = document.getElementById("pergunta-texto");
+    if (dados.pergunta) {
+      // se backend retorna pergunta diretamente
+      window.perguntas = [dados.pergunta];
+      // garantir dataset id
       const respostaInput = document.getElementById("resposta-input");
-      const mensagemFeedback = document.getElementById("mensagem-feedback");
-
-      if (data.pergunta) {
-        perguntaTexto.textContent = data.pergunta;
-        document.getElementById("nivel-aluno").textContent = (data.nivel || window.nivelAtual).toUpperCase();
-        window.nivelAtual = (data.nivel || window.nivelAtual).toLowerCase();
-
-        if (data.id) {
-          respostaInput.dataset.perguntaId = data.id;
-        } else {
-          console.warn("⚠️ Nenhum ID recebido da pergunta!");
-          delete respostaInput.dataset.perguntaId;
-        }
-
-        respostaInput.value = "";
-        mensagemFeedback.textContent = "";
-
-      } else if (data.status === "final-nivel") {
-        perguntaTexto.textContent = "🎉 Terminaste todas as perguntas!";
-        delete respostaInput.dataset.perguntaId;
+      if (dados.id) {
+        respostaInput.dataset.perguntaId = dados.id;
       } else {
-        perguntaTexto.textContent = "Nenhuma pergunta disponível.";
         delete respostaInput.dataset.perguntaId;
       }
-    } catch (err) {
-      console.error("Erro mostrarPergunta:", err);
-      document.getElementById("pergunta-texto").textContent = "Erro ao carregar a pergunta.";
-      delete document.getElementById("resposta-input").dataset.perguntaId;
+      document.getElementById("pergunta-texto").textContent = dados.pergunta;
+      document.getElementById("nivel-aluno").textContent = (
+        dados.nivel || window.nivelAtual
+      ).toUpperCase();
+      window.nivelAtual = (dados.nivel || window.nivelAtual).toLowerCase();
+    } else if (dados.status === "maximo") {
+      document.getElementById("pergunta-texto").innerHTML =
+        `<i class="fa-solid fa-trophy"></i> Você já está no nível máximo!`;
+    } else if (dados.status === "final-nivel") {
+      document.getElementById("pergunta-texto").innerHTML =
+        `<i class="fa-solid fa-champagne-glasses"></i> Terminaste todas as perguntas!`;
+    } else {
+      document.getElementById("pergunta-texto").textContent =
+        "Nenhuma pergunta disponível.";
     }
-  };
-  
+  } catch (erro) {
+    console.error("Erro carregarPerguntas:", erro);
+    document.getElementById("pergunta-texto").innerHTML =
+      `<i class="fa-solid fa-circle-xmark"></i> Erro ao carregar a pergunta.`;
+  }
+};
+
+
+ window.mostrarPergunta = async function () {
+  try {
+    const nivelBusca =
+      window.mapaNiveis[window.nivelAtual] || window.nivelAtual;
+    const url = `https://beckend-exaap.onrender.com/pergunta-ingles?nome=${encodeURIComponent(
+      nomeAluno
+    )}&nivel=${encodeURIComponent(nivelBusca)}`;
+    console.log("mostrarPergunta -> fetch", url);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+
+    const perguntaTexto = document.getElementById("pergunta-texto");
+    const respostaInput = document.getElementById("resposta-input");
+    const mensagemFeedback = document.getElementById("mensagem-feedback");
+
+    if (data.pergunta) {
+      perguntaTexto.textContent = data.pergunta;
+      document.getElementById("nivel-aluno").textContent = (
+        data.nivel || window.nivelAtual
+      ).toUpperCase();
+      window.nivelAtual = (data.nivel || window.nivelAtual).toLowerCase();
+
+      if (data.id) {
+        respostaInput.dataset.perguntaId = data.id;
+      } else {
+        console.warn("Nenhum ID recebido da pergunta!");
+        delete respostaInput.dataset.perguntaId;
+      }
+
+      respostaInput.value = "";
+      mensagemFeedback.textContent = "";
+    } else if (data.status === "final-nivel") {
+      perguntaTexto.innerHTML =
+        `<i class="fa-solid fa-champagne-glasses"></i> Terminaste todas as perguntas!`;
+      delete respostaInput.dataset.perguntaId;
+    } else {
+      perguntaTexto.textContent = "Nenhuma pergunta disponível.";
+      delete respostaInput.dataset.perguntaId;
+    }
+  } catch (err) {
+    console.error("Erro mostrarPergunta:", err);
+    document.getElementById("pergunta-texto").innerHTML =
+      `<i class="fa-solid fa-circle-xmark"></i> Erro ao carregar a pergunta.`;
+    delete document.getElementById("resposta-input").dataset.perguntaId;
+  }
+};
+
   window.verNotificacao = async function () {
     try {
       const response = await fetch("/verificar-notificacao", {
@@ -853,29 +901,33 @@ function fecharDesafio() {
   });
   
   
-  window.verificarResposta = async function () {
-    const respostaInput = document.getElementById('resposta-input');
-    const btnVerificar = document.getElementById('btn-verificar');
-    const resposta = respostaInput.value.trim();
-    const perguntaId = respostaInput.dataset.perguntaId;
-    const mensagemEl = document.getElementById('mensagem-feedback');
+ window.verificarResposta = async function () {
+  const respostaInput = document.getElementById("resposta-input");
+  const btnVerificar = document.getElementById("btn-verificar");
+  const resposta = respostaInput.value.trim();
+  const perguntaId = respostaInput.dataset.perguntaId;
+  const mensagemEl = document.getElementById("mensagem-feedback");
 
-    if (!resposta) {
-      mensagemEl.textContent = "⚠️ Escreve uma resposta antes de verificar.";
-      return;
-    }
+  if (!resposta) {
+    mensagemEl.innerHTML =
+      `<i class="fa-solid fa-triangle-exclamation"></i> Escreve uma resposta antes de verificar.`;
+    return;
+  }
 
-    if (!perguntaId) {
-      mensagemEl.textContent = "⚠️ Nenhuma pergunta carregada.";
-      return;
-    }
+  if (!perguntaId) {
+    mensagemEl.innerHTML =
+      `<i class="fa-solid fa-triangle-exclamation"></i> Nenhuma pergunta carregada.`;
+    return;
+  }
 
-    // desativa botão enquanto faz requisição
-    btnVerificar.disabled = true;
-    btnVerificar.style.opacity = "0.6";
+  // desativa botão enquanto faz requisição
+  btnVerificar.disabled = true;
+  btnVerificar.style.opacity = "0.6";
 
-    try {
-      const response = await fetch("https://beckend-exaap.onrender.com/verificar-resposta", {
+  try {
+    const response = await fetch(
+      "https://beckend-exaap.onrender.com/verificar-resposta",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -883,116 +935,125 @@ function fecharDesafio() {
         body: JSON.stringify({
           nome: nomeAluno,
           resposta: resposta,
-          pergunta_id: perguntaId
+          pergunta_id: perguntaId,
         }),
-      });
-
-      if (!response.ok) {
-        // mostrar erro amigável
-        throw new Error(`Erro HTTP ${response.status}`);
       }
+    );
 
-      const data = await response.json();
-      console.log("verificarResposta -> resposta do backend:", data);
-
-      if (data.acertou) {
-        if (data.subiu_nivel) {
-          mensagemEl.textContent = `🎉 Parabéns! Subiste para o nível ${data.novo_nivel.toUpperCase()}!`;
-          // se servidor retornou novo_nivel, atualiza estado
-          if (data.novo_nivel) {
-            window.nivelAtual = data.novo_nivel.toLowerCase();
-            document.getElementById('nivel-aluno').textContent = data.novo_nivel.toUpperCase();
-          }
-        } else {
-          mensagemEl.textContent = "✔️ Resposta correta!";
-        }
-
-        respostaInput.value = "";
-
-        setTimeout(async () => {
-          mensagemEl.textContent = "";
-          // chama a próxima pergunta de forma segura
-          await window.proximaPergunta();
-        }, 1200);
-
-      } else {
-        mensagemEl.textContent = "❌ Resposta incorreta. Tenta novamente!";
-      }
-
-    } catch (error) {
-      console.error("Erro verificarResposta:", error);
-      mensagemEl.textContent = "Erro na verificação. Tenta mais tarde.";
-    } finally {
-      btnVerificar.disabled = false;
-      btnVerificar.style.opacity = "1";
+    if (!response.ok) {
+      // mostrar erro amigável
+      throw new Error(`Erro HTTP ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+    console.log("verificarResposta -> resposta do backend:", data);
+
+    if (data.acertou) {
+      if (data.subiu_nivel) {
+        mensagemEl.innerHTML =
+          `<i class="fa-solid fa-trophy"></i> Parabéns! Subiste para o nível <b>${data.novo_nivel.toUpperCase()}</b>!`;
+        // se servidor retornou novo_nivel, atualiza estado
+        if (data.novo_nivel) {
+          window.nivelAtual = data.novo_nivel.toLowerCase();
+          document.getElementById("nivel-aluno").textContent =
+            data.novo_nivel.toUpperCase();
+        }
+      } else {
+        mensagemEl.innerHTML =
+          `<i class="fa-solid fa-circle-check"></i> Resposta correta!`;
+      }
+
+      respostaInput.value = "";
+
+      setTimeout(async () => {
+        mensagemEl.textContent = "";
+        // chama a próxima pergunta de forma segura
+        await window.proximaPergunta();
+      }, 1200);
+    } else {
+      mensagemEl.innerHTML =
+        `<i class="fa-solid fa-circle-xmark"></i> Resposta incorreta. Tenta novamente!`;
+    }
+  } catch (error) {
+    console.error("Erro verificarResposta:", error);
+    mensagemEl.innerHTML =
+      `<i class="fa-solid fa-bug"></i> Erro na verificação. Tenta mais tarde.`;
+  } finally {
+    btnVerificar.disabled = false;
+    btnVerificar.style.opacity = "1";
+  }
+};
+
 
   window.proximaPergunta = async function () {
-    try {
-      const response = await fetch(`https://beckend-exaap.onrender.com/proxima-pergunta`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: nomeAluno })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const dados = await response.json();
-      console.log("proximaPergunta -> backend:", dados);
+  try {
+    const response = await fetch(`https://beckend-exaap.onrender.com/proxima-pergunta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: nomeAluno })
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const dados = await response.json();
+    console.log("proximaPergunta -> backend:", dados);
 
-      if (dados.pergunta) {
-        document.getElementById("pergunta-texto").textContent = dados.pergunta;
-        document.getElementById("nivel-aluno").textContent = (dados.nivel || window.nivelAtual).toUpperCase();
-        window.nivelAtual = (dados.nivel || window.nivelAtual).toLowerCase();
-        document.getElementById("resposta-input").dataset.perguntaId = dados.id || "";
-        document.getElementById("resposta-input").value = "";
-      } else if (dados.status === "final-nivel") {
-        document.getElementById("pergunta-texto").textContent = "🎉 Terminaste todas as perguntas deste nível!";
-        // chamar subir de nível
-        setTimeout(() => { window.subirNivel(); }, 1000);
-      } else {
-        document.getElementById("pergunta-texto").textContent = "Nenhuma pergunta disponível.";
-      }
-    } catch (e) {
-      console.error("Erro proximaPergunta:", e);
-      document.getElementById("pergunta-texto").textContent = "Erro ao carregar próxima pergunta.";
+    if (dados.pergunta) {
+      document.getElementById("pergunta-texto").textContent = dados.pergunta;
+      document.getElementById("nivel-aluno").textContent =
+        (dados.nivel || window.nivelAtual).toUpperCase();
+      window.nivelAtual = (dados.nivel || window.nivelAtual).toLowerCase();
+      document.getElementById("resposta-input").dataset.perguntaId = dados.id || "";
+      document.getElementById("resposta-input").value = "";
+    } else if (dados.status === "final-nivel") {
+      document.getElementById("pergunta-texto").innerHTML =
+        `<i class="fa-solid fa-flag-checkered"></i> Terminaste todas as perguntas deste nível!`;
+      // chamar subir de nível
+      setTimeout(() => { window.subirNivel(); }, 1000);
+    } else {
+      document.getElementById("pergunta-texto").innerHTML =
+        `<i class="fa-solid fa-circle-info"></i> Nenhuma pergunta disponível.`;
     }
-  };
+  } catch (e) {
+    console.error("Erro proximaPergunta:", e);
+    document.getElementById("pergunta-texto").innerHTML =
+      `<i class="fa-solid fa-bug"></i> Erro ao carregar próxima pergunta.`;
+  }
+};
 
-  window.subirNivel = async function () {
-    try {
-      const resposta = await fetch('https://beckend-exaap.onrender.com/subir-nivel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: nomeAluno })
-      });
-      if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-      const dados = await resposta.json();
-      console.log("subirNivel -> backend:", dados);
+window.subirNivel = async function () {
+  try {
+    const resposta = await fetch("https://beckend-exaap.onrender.com/subir-nivel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: nomeAluno })
+    });
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    const dados = await resposta.json();
+    console.log("subirNivel -> backend:", dados);
 
-      if (dados.novo_nivel) {
-        window.nivelAtual = dados.novo_nivel.toLowerCase();
-        document.getElementById('nivel-aluno').textContent = dados.novo_nivel.toUpperCase();
-        window.perguntaAtual = 0;
+    if (dados.novo_nivel) {
+      window.nivelAtual = dados.novo_nivel.toLowerCase();
+      document.getElementById("nivel-aluno").textContent = dados.novo_nivel.toUpperCase();
+      window.perguntaAtual = 0;
 
-        const mensagemEl = document.getElementById('mensagem-feedback');
-        mensagemEl.textContent = `🚀 Parabéns! Agora você está no nível ${dados.novo_nivel.toUpperCase()}!`;
+      const mensagemEl = document.getElementById("mensagem-feedback");
+      mensagemEl.innerHTML =
+        `<i class="fa-solid fa-rocket"></i> Parabéns! Agora você está no nível <b>${dados.novo_nivel.toUpperCase()}</b>!`;
 
-        setTimeout(async () => {
-          mensagemEl.textContent = "";
-          // carregar primeira pergunta do novo nível
-          await window.proximaPergunta();
-        }, 1500);
-      } else if (dados.erro) {
-        console.error("Erro ao subir de nível:", dados.erro);
-      }
-
-    } catch (error) {
-      console.error("Erro subirNivel:", error);
+      setTimeout(async () => {
+        mensagemEl.textContent = "";
+        // carregar primeira pergunta do novo nível
+        await window.proximaPergunta();
+      }, 1500);
+    } else if (dados.erro) {
+      console.error("Erro ao subir de nível:", dados.erro);
     }
-  };
+  } catch (error) {
+    console.error("Erro subirNivel:", error);
+  }
+};
 
-  // inicia o jogo
-  window.carregarPerguntas();
+// inicia o jogo
+window.carregarPerguntas();
 
   // expõe também função de toggleVisibilidade (mantida global pelo onclick no HTML)
   window.toggleVisibilidade = function () {

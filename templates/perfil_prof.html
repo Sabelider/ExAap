@@ -107,6 +107,22 @@
     border-color: #218838;
   }
 
+  .btn-info {
+  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  border: none;
+  padding: 6px 12px;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 .botao-padrao {
   background: linear-gradient(135deg, #00c9ff, #92fe9d);
   border: none;
@@ -632,6 +648,7 @@ async function listarMeusAlunos() {
         </div>
       `;
 
+      // Botão Dar Aula
       if (aluno.online) {
         const iniciarBtn = document.createElement('button');
         iniciarBtn.textContent = 'Dar Aula';
@@ -643,6 +660,17 @@ async function listarMeusAlunos() {
         card.appendChild(iniciarBtn);
       }
 
+      // Botão Informações
+      const infoBtn = document.createElement('button');
+      infoBtn.textContent = 'Informações';
+      infoBtn.className = 'btn-info'; // classe exclusiva para o botão informações
+      infoBtn.onclick = (e) => {
+        e.stopPropagation();
+        exibirInformacoesAluno(aluno);
+      };
+      card.appendChild(infoBtn);
+
+      // Botão Desvincular
       const desvincularBtn = document.createElement('button');
       desvincularBtn.textContent = 'Desvincular';
       desvincularBtn.className = 'botao-padrao';
@@ -652,6 +680,7 @@ async function listarMeusAlunos() {
       };
       card.appendChild(desvincularBtn);
 
+      // Botão Horário
       const horarioBtn = document.createElement('button');
       horarioBtn.textContent = 'Horário';
       horarioBtn.className = 'botao-padrao';
@@ -662,6 +691,7 @@ async function listarMeusAlunos() {
       };
       card.appendChild(horarioBtn);
 
+      // Botão Aulas Dadas
       const aulasBtn = document.createElement('button');
       aulasBtn.textContent = 'Aulas dadas';
       aulasBtn.className = 'botao-padrao';
@@ -671,7 +701,7 @@ async function listarMeusAlunos() {
       };
       card.appendChild(aulasBtn);
 
-      container.appendChild(card); 
+      container.appendChild(card);
     });
 
   } catch (error) {
@@ -680,6 +710,35 @@ async function listarMeusAlunos() {
   }
 }
 
+// Função para exibir informações do aluno em modal
+function exibirInformacoesAluno(aluno) {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay-info';
+  overlay.onclick = (e) => {
+    if (e.target === overlay) overlay.remove();
+  };
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-info';
+
+  modal.innerHTML = `
+    <h3>${aluno.nome}</h3>
+    <p><strong>Telefone:</strong> 
+      <a href="https://wa.me/${aluno.telefone}" target="_blank">${aluno.telefone || '-'}</a>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('${aluno.telefone}')">Copiar</button>
+    </p>
+    <p><strong>Província:</strong> ${aluno.provincia || '-'}</p>
+    <p><strong>Município:</strong> ${aluno.municipio || '-'}</p>
+    <p><strong>Bairro:</strong> ${aluno.bairro || '-'}</p>
+    <p><strong>Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</p>
+    <button class="fechar-btn" onclick="this.closest('.overlay-info').remove()">Fechar</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+  
 async function verAulasDadas(nomeAluno) {
   try {
     const response = await fetch("/ver-aulas", {
@@ -738,43 +797,60 @@ async function carregarUltimasAulas(professorEmail) {
   carregarUltimasAulas(professorEmail);
   
  async function buscarAlunosDisponiveis() {
-    const email = "{{ professor.email }}";
-    try {
-      const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
-      const lista = await res.json();
-      const container = document.getElementById('alunos-disponiveis');
-      container.innerHTML = '<h2>Alunos Disponíveis</h2>';
+  const email = "{{ professor.email }}";
+  try {
+    const res = await fetch(`/alunos-disponiveis/${encodeURIComponent(email)}`);
+    const lista = await res.json();
+    const container = document.getElementById('alunos-disponiveis');
+    container.innerHTML = '<h2>Alunos Disponíveis</h2>';
 
-      if (lista.length === 0) {
-        container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
-        return;
-      }
-
-      lista.forEach(aluno => {
-        const card = document.createElement('div');
-        card.className = 'aluno-card';
-
-        const nomeAluno = aluno.nome;
-        const disciplina = aluno.disciplina;
-
-        card.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <strong>${nomeAluno}</strong> - ${disciplina}
-            </div>
-            <button class="notificar-btn" onclick="vincularAluno('${nomeAluno}', '{{ professor.email }}')">
-              Vincular
-            </button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    } catch (error) {
-      console.error("Erro ao buscar alunos disponíveis:", error);
-      alert("Erro ao buscar alunos disponíveis.");
+    if (lista.length === 0) {
+      container.innerHTML += '<p>Nenhum aluno disponível no momento.</p>';
+      return;
     }
+
+    lista.forEach(aluno => {
+      const card = document.createElement('div');
+      card.className = 'aluno-card';
+
+      const nomeAluno = aluno.nome;
+      const disciplina = aluno.disciplina;
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${nomeAluno}</strong> - ${disciplina}
+          </div>
+        </div>
+      `;
+
+      // Botão Informações
+      const infoBtn = document.createElement('button');
+      infoBtn.textContent = 'Informações';
+      infoBtn.className = 'btn-info'; // mesma classe do botão informações
+      infoBtn.onclick = (e) => {
+        e.stopPropagation();
+        exibirInformacoesAluno(aluno); // reutiliza a função do modal
+      };
+      card.appendChild(infoBtn);
+
+      // Botão Vincular
+      const vincularBtn = document.createElement('button');
+      vincularBtn.textContent = 'Vincular';
+      vincularBtn.className = 'notificar-btn';
+      vincularBtn.onclick = (e) => {
+        e.stopPropagation();
+        vincularAluno(nomeAluno, '{{ professor.email }}');
+      };
+      card.appendChild(vincularBtn);
+
+      container.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Erro ao buscar alunos disponíveis:", error);
+    alert("Erro ao buscar alunos disponíveis.");
   }
+}
 
   async function vincularAluno(nomeAluno, professorEmail) {
     try {

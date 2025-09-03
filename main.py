@@ -2144,6 +2144,7 @@ async def enviar_id_aula(request: Request):
         for d in docs:
             data = d.to_dict()
             aluno_db = data.get("aluno", "").strip().lower().replace(" ", "")
+
             if aluno_db == nome_aluno:
                 vinculo_encontrado = True
                 break
@@ -2154,7 +2155,7 @@ async def enviar_id_aula(request: Request):
                 content={"erro": "Aluno não está vinculado ao professor"}
             )
 
-        # 🔑 Atualiza o documento do aluno com o peer_id da chamada
+        # 🔑 Atualiza apenas o ID e professor no documento do aluno
         doc_ref = db.collection("alunos").document(nome_aluno)
         doc_ref.set({
             "id_chamada": peer_id,
@@ -2174,21 +2175,29 @@ async def enviar_id_aula(request: Request):
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):
     try:
-        aluno_normalizado = aluno.strip().lower().replace(" ", "")
+        # 🔄 Normalização
+        aluno_normalizado = str(aluno).strip().lower().replace(" ", "")
+        
+        # 📄 Busca no documento do aluno
         doc_ref = db.collection("alunos").document(aluno_normalizado)
         doc = doc_ref.get()
 
         if not doc.exists:
-            return {"peer_id": None, "professor": None}
+            return JSONResponse(content={
+                "peer_id": None,
+                "professor": None,
+                "status": "Aluno não encontrado"
+            })
 
         data = doc.to_dict()
-        return {
+        return JSONResponse(content={
             "peer_id": data.get("id_chamada"),
-            "professor": data.get("professor_chamada")
-        }
+            "professor": data.get("professor_chamada"),
+            "status": "Sucesso"
+        })
 
     except Exception as e:
-        return {"erro": str(e)}
+        return JSONResponse(status_code=500, content={"erro": str(e)})
 
 
 @app.post("/registrar-aula")

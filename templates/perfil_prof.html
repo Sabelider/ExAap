@@ -871,16 +871,19 @@ async function listarMeusAlunos() {
           </div>
         </div>
 
-        <div id="${infoId}" class="aluno-info">
-          <div class="info-grid">
-            <div><strong>📞 Telefone:</strong> ${aluno.telefone || '-'}</div>
-            <div><strong>🌍 Província:</strong> ${aluno.provincia || '-'}</div>
-            <div><strong>🏙 Município:</strong> ${aluno.municipio || '-'}</div>
-            <div><strong>📌 Bairro:</strong> ${aluno.bairro || '-'}</div>
-            <div><strong>🇬🇧 Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</div>
-          </div>
-        </div>
-      `;
+<div id="${infoId}" class="aluno-info">
+  <div class="info-grid">
+    <div><strong><i class="fa-solid fa-phone"></i> Telefone:</strong> ${aluno.telefone || '-'}</div>
+    <div><strong><i class="fa-solid fa-globe"></i> Província:</strong> ${aluno.provincia || '-'}</div>
+    <div><strong><i class="fa-solid fa-city"></i> Município:</strong> ${aluno.municipio || '-'}</div>
+    <div><strong><i class="fa-solid fa-location-dot"></i> Bairro:</strong> ${aluno.bairro || '-'}</div>
+    <div><strong><i class="fa-solid fa-language"></i> Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</div>
+  </div>
+</div>
+
+<!-- Link para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
       if (aluno.online) {
         const iniciarBtn = document.createElement('button');

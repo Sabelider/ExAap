@@ -913,8 +913,9 @@ async def get_sala_virtual_professor(
 
         professor = doc.to_dict()
 
-        # 🧪 Valida vínculo se um aluno for passado na URL
+        # 🧪 Valida vínculo com o aluno, se fornecido
         if aluno:
+            # Buscar todos os documentos do professor na coleção alunos_professor
             docs = db.collection('alunos_professor') \
                 .where('professor', '==', email).stream()
 
@@ -933,16 +934,16 @@ async def get_sala_virtual_professor(
                     status_code=403
                 )
 
-        # 🔑 Sala única baseada só no email do professor (igual ao registrar_chamada)
+        # 🔑 Gera ID da sala
         def slug(texto):
             return slugify(texto)
 
-        sala_id = slug(email)
+        sala_id = f"{slug(email)}-{slug(aluno_normalizado)}" if aluno else slug(email)
 
         return templates.TemplateResponse("sala_virtual_professor.html", {
             "request": request,
             "email": email,
-            "aluno": aluno,  # pode ser None → permite vários alunos depois
+            "aluno": aluno,
             "professor": professor,
             "sala_id": sala_id
         })
@@ -950,12 +951,11 @@ async def get_sala_virtual_professor(
     except Exception as e:
         return HTMLResponse(f"<h2 style='color:red'>Erro ao abrir sala do professor: {str(e)}</h2>", status_code=500)
 
-
 @app.get("/sala_virtual_aluno", response_class=HTMLResponse)
 async def get_sala_virtual_aluno(
     request: Request,
-    email: Optional[str] = Query(default=None),   # Professor
-    aluno: Optional[str] = Query(default=None)    # Aluno que vai entrar
+    email: Optional[str] = Query(default=None),
+    aluno: Optional[str] = Query(default=None)
 ):
     if not email or not aluno:
         return HTMLResponse("<h2 style='color:red'>Erro: Parâmetros faltando.</h2>", status_code=400)
@@ -963,42 +963,19 @@ async def get_sala_virtual_aluno(
     email_normalizado = email.strip().lower()
     aluno_normalizado = aluno.strip().lower()
 
-    # 🔍 Verifica se o aluno está vinculado ao professor
+    # Verifica se o aluno está vinculado ao professor
     aluno_data = vinculo_existe(email_normalizado, aluno_normalizado)
     if not aluno_data:
-        return HTMLResponse(
-            "<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>",
-            status_code=403
-        )
+        return HTMLResponse("<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>", status_code=403)
 
-    # 🔍 Verifica se o professor existe
+    # Verifica se o professor existe
     professor = buscar_professor_por_email(email_normalizado)
     if not professor:
         return HTMLResponse("<h2 style='color:red'>Professor não encontrado.</h2>", status_code=404)
 
-    # 🔹 Atualiza a lista de participantes em "chamadas_ao_vivo"
-    chamada_ref = db.collection("chamadas_ao_vivo").document(email_normalizado)
-    chamada_doc = chamada_ref.get()
-
-    if chamada_doc.exists:
-        chamada_data = chamada_doc.to_dict() or {}
-        participantes = chamada_data.get("participantes", [])
-
-        if aluno_normalizado not in participantes:
-            participantes.append(aluno_normalizado)
-            chamada_ref.update({"participantes": participantes})
-    else:
-        # Se ainda não existe chamada, cria uma nova
-        chamada_ref.set({
-            "professor": email_normalizado,
-            "participantes": [aluno_normalizado],
-            "inicio": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-
-    # 🔹 Renderiza a sala para o aluno
     return templates.TemplateResponse("sala_virtual_aluno.html", {
         "request": request,
-        "aluno": aluno.strip(),
+        "aluno": aluno.strip(),  
         "professor": email_normalizado
     })
 
@@ -1972,6 +1949,9 @@ async def verificar_notificacao(request: Request):
         return JSONResponse(content={"erro": str(e)}, status_code=500)
 
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):
     try:
@@ -1985,9 +1965,9 @@ async def registrar_chamada(request: Request):
         # Normalização
         aluno_normalizado = str(aluno_raw).strip().lower().replace(" ", "")
         professor_normalizado = str(professor_raw).strip().lower()
-        nome_sala = f"{professor_normalizado.replace(' ', '_')}"
+        nome_sala = f"{professor_normalizado.replace(' ', '_')}-{aluno_normalizado}"
 
-        # Verificar vínculo professor-aluno
+        # Verificar vínculo
         vinculo_docs = db.collection("alunos_professor") \
                          .where("professor", "==", professor_normalizado) \
                          .stream()
@@ -2006,45 +1986,63 @@ async def registrar_chamada(request: Request):
                 status_code=403
             )
 
-        # Documento da sala (1 documento por professor)
-        doc_ref = db.collection("chamadas_ao_vivo").document(professor_normalizado)
+        # Verificar ou criar o documento de chamada
+        doc_ref = db.collection("chamadas_ao_vivo").document(aluno_normalizado)
         doc = doc_ref.get()
 
         if not doc.exists:
-            # 🔧 Criar sala nova com o primeiro aluno
+            # 🔧 Se não existir, cria automaticamente com status 'aceito'
             doc_ref.set({
+                "aluno": aluno_normalizado,
                 "professor": professor_normalizado,
-                "aluno_principal": aluno_normalizado,
-                "participantes": [aluno_normalizado],
                 "status": "aceito",
-                "sala": nome_sala,
-                "inicio": firestore.SERVER_TIMESTAMP
+                "sala": nome_sala
             }, merge=True)
 
             return JSONResponse(
                 content={
-                    "mensagem": "Sala criada e conexão autorizada.",
+                    "mensagem": "Conexão autorizada - documento criado.",
                     "sala": nome_sala
                 },
                 status_code=200
             )
 
-        # Sala já existe → adicionar o aluno como participante
+        # Verificar status existente
         dados_atuais = doc.to_dict() or {}
-        participantes = dados_atuais.get("participantes", [])
+        status_atual = dados_atuais.get("status", "")
 
-        if aluno_normalizado not in participantes:
-            participantes.append(aluno_normalizado)
-            doc_ref.update({"participantes": participantes})
+        if status_atual == "aceito":
+            doc_ref.set({
+                "aluno": aluno_normalizado,
+                "professor": professor_normalizado,
+                "sala": nome_sala
+            }, merge=True)
 
-        return JSONResponse(
-            content={
-                "mensagem": "Aluno adicionado à aula existente.",
-                "sala": dados_atuais.get("sala", nome_sala),
-                "participantes": participantes
-            },
-            status_code=200
-        )
+            return JSONResponse(
+                content={
+                    "mensagem": "Conexão autorizada com status 'aceito'.",
+                    "sala": nome_sala
+                },
+                status_code=200
+            )
+
+        elif status_atual == "pendente":
+            return JSONResponse(
+                content={"erro": "Aguardando o aluno aceitar a chamada..."},
+                status_code=403
+            )
+
+        elif status_atual == "recusado":
+            return JSONResponse(
+                content={"erro": "O aluno recusou a chamada."},
+                status_code=403
+            )
+
+        else:
+            return JSONResponse(
+                content={"erro": f"Status de chamada desconhecido: '{status_atual}'"},
+                status_code=403
+            )
 
     except Exception as e:
         print(f"❌ ERRO AO REGISTRAR CHAMADA: {str(e)}")
@@ -2132,169 +2130,107 @@ async def enviar_id_aula(request: Request):
         return JSONResponse(status_code=400, content={"erro": "Dados incompletos"})
 
     try:
-        # Normalização
-        nome_aluno = str(nome_aluno_raw).strip().lower().replace(" ", "")
-        email_professor_normalizado = str(email_professor).strip().lower()
-
-        # 🔍 Verifica se o aluno está vinculado ao professor
-        docs = db.collection("alunos_professor") \
-                 .where("professor", "==", email_professor_normalizado).stream()
-
-        vinculo_encontrado = False
-        for d in docs:
-            data = d.to_dict()
-            aluno_db = data.get("aluno", "").strip().lower().replace(" ", "")
-
-            if aluno_db == nome_aluno:
-                vinculo_encontrado = True
-                break
-
-        if not vinculo_encontrado:
-            return JSONResponse(
-                status_code=403,
-                content={"erro": "Aluno não está vinculado ao professor"}
-            )
-
-        # 🔑 Atualiza apenas o ID e professor no documento do aluno
+        nome_aluno = nome_aluno_raw.strip().lower().replace(" ", "")
         doc_ref = db.collection("alunos").document(nome_aluno)
         doc_ref.set({
             "id_chamada": peer_id,
-            "professor_chamada": email_professor_normalizado
+            "professor_chamada": email_professor.strip().lower()
         }, merge=True)
 
-        return JSONResponse(content={
-            "status": "ID enviado com sucesso",
-            "aluno": nome_aluno,
-            "professor": email_professor_normalizado
-        })
+        return JSONResponse(content={"status": "ID enviado com sucesso"})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"erro": str(e)})
-
 
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):
     try:
-        # 🔄 Normalização
-        aluno_normalizado = str(aluno).strip().lower().replace(" ", "")
-        
-        # 📄 Busca no documento do aluno
+        aluno_normalizado = aluno.strip().lower().replace(" ", "")
         doc_ref = db.collection("alunos").document(aluno_normalizado)
         doc = doc_ref.get()
 
-        if not doc.exists:
-            return JSONResponse(content={
-                "peer_id": None,
-                "professor": None,
-                "status": "Aluno não encontrado"
-            })
-
-        data = doc.to_dict()
-        return JSONResponse(content={
-            "peer_id": data.get("id_chamada"),
-            "professor": data.get("professor_chamada"),
-            "status": "Sucesso"
-        })
-
+        if doc.exists:
+            data = doc.to_dict()
+            return {"peer_id": data.get("id_chamada")}
+        else:
+            return {"peer_id": None}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"erro": str(e)})
+        return {"erro": str(e)}
 
+from datetime import datetime
+from fastapi import Body, HTTPException
 
 @app.post("/registrar-aula")
 async def registrar_aula(data: dict = Body(...)):
     try:
         professor = data.get("professor", "").strip().lower()
-        if not professor:
-            raise HTTPException(status_code=400, detail="Professor não fornecido")
+        aluno = data.get("aluno", "").strip().lower()
 
-        # 🔹 Buscar todos os alunos participantes da chamada atual
-        chamada_ref = db.collection("chamadas_ao_vivo").document(professor)
-        chamada_doc = chamada_ref.get()
-        if not chamada_doc.exists:
-            raise HTTPException(status_code=404, detail="Nenhuma chamada encontrada para este professor")
+        if not professor or not aluno:
+            raise HTTPException(status_code=400, detail="Dados incompletos")
 
-        chamada_data = chamada_doc.to_dict() or {}
-        participantes = chamada_data.get("participantes", [])
+        # 🔹 Busca vínculo aluno-professor
+        query = db.collection("alunos_professor") \
+                  .where("professor", "==", professor) \
+                  .where("aluno", "==", aluno) \
+                  .limit(1).stream()
 
-        if not participantes:
-            raise HTTPException(status_code=400, detail="Nenhum aluno participante encontrado na chamada")
+        doc = next(query, None)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Vínculo não encontrado")
 
-        resultados = []
+        doc_ref = db.collection("alunos_professor").document(doc.id)
+        doc_data = doc.to_dict()
+        aulas_anteriores = doc_data.get("aulas_dadas", 0)
+        lista_aulas = doc_data.get("aulas", [])
+        aulas_passadas = doc_data.get("aulas_passadas", [])  
+        valor_passado = doc_data.get("valor_passado", [])    
 
-        for aluno in participantes:
-            aluno = aluno.strip().lower()
+        agora = datetime.now()
+        nova_aula = {
+            "data": agora.strftime("%Y-%m-%d"),
+            "horario": agora.strftime("%H:%M")
+        }
 
-            # 🔹 Busca vínculo aluno-professor
-            query = db.collection("alunos_professor") \
-                      .where("professor", "==", professor) \
-                      .where("aluno", "==", aluno) \
-                      .limit(1).stream()
+        # Incrementa a aula
+        novo_total = aulas_anteriores + 1
+        valor_mensal = novo_total * 1250  # 💰 cálculo do valor acumulado
 
-            doc = next(query, None)
-            if not doc:
-                resultados.append({"aluno": aluno, "status": "❌ Vínculo não encontrado"})
-                continue
+        update_data = {
+            "aulas_dadas": novo_total,
+            "aulas": lista_aulas + [nova_aula],
+            "valor_mensal": valor_mensal
+        }
 
-            doc_ref = db.collection("alunos_professor").document(doc.id)
-            doc_data = doc.to_dict()
-            aulas_anteriores = doc_data.get("aulas_dadas", 0)
-            lista_aulas = doc_data.get("aulas", [])
-            aulas_passadas = doc_data.get("aulas_passadas", [])
-            valor_passado = doc_data.get("valor_passado", [])
+        registro_passado = None
+        registro_valor = None
 
-            agora = datetime.now()
-            nova_aula = {
-                "data": agora.strftime("%Y-%m-%d"),
-                "horario": agora.strftime("%H:%M")
+        # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
+        if novo_total >= 12:
+            registro_passado = {
+                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
+                "mes": agora.strftime("%Y-%m"),
+                "total_aulas": 12
             }
 
-            # Incrementa a aula
-            novo_total = aulas_anteriores + 1
-            valor_mensal = novo_total * 1250  # 💰 cálculo do valor acumulado
-
-            update_data = {
-                "aulas_dadas": novo_total,
-                "aulas": lista_aulas + [nova_aula],
-                "valor_mensal": valor_mensal
+            registro_valor = {
+                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
+                "mes": agora.strftime("%Y-%m"),
+                "valor_pago": valor_mensal,
+                "pago": "Não Pago"   # 🔹 sempre garante a criação
             }
 
-            registro_passado = None
-            registro_valor = None
+            aulas_passadas.append(registro_passado)
+            valor_passado.append(registro_valor)
 
-            # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
-            if novo_total >= 12:
-                registro_passado = {
-                    "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
-                    "mes": agora.strftime("%Y-%m"),
-                    "total_aulas": 12
-                }
+            # Resetar os contadores
+            update_data["aulas_dadas"] = 0
+            update_data["valor_mensal"] = 0
+            update_data["aulas_passadas"] = aulas_passadas
+            update_data["valor_passado"] = valor_passado
 
-                registro_valor = {
-                    "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
-                    "mes": agora.strftime("%Y-%m"),
-                    "valor_pago": valor_mensal,
-                    "pago": "Não Pago"
-                }
-
-                aulas_passadas.append(registro_passado)
-                valor_passado.append(registro_valor)
-
-                # Resetar os contadores
-                update_data["aulas_dadas"] = 0
-                update_data["valor_mensal"] = 0
-                update_data["aulas_passadas"] = aulas_passadas
-                update_data["valor_passado"] = valor_passado
-
-            # 🔹 Atualiza documento aluno-professor
-            doc_ref.update(update_data)
-
-            resultados.append({
-                "aluno": aluno,
-                "status": "✅ Aula registrada",
-                "nova_aula": nova_aula,
-                "transferencia_aulas": registro_passado,
-                "transferencia_valor": registro_valor
-            })
+        # 🔹 Atualiza documento aluno-professor
+        doc_ref.update(update_data)
 
         # 🔹 Atualiza saldo_atual do professor na coleção "professores_online"
         prof_ref = db.collection("professores_online").where(
@@ -2307,22 +2243,22 @@ async def registrar_aula(data: dict = Body(...)):
             prof_data = prof_doc.to_dict() or {}
             salario_info = prof_data.get("salario", {})
 
-            saldo_atual = int(salario_info.get("saldo_atual", 0))
+            # soma ao saldo atual existente
+            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 12 else 0)
 
-            for r in resultados:
-                if r.get("status") == "✅ Aula registrada":
-                    if r.get("transferencia_valor"):
-                        saldo_atual += r["transferencia_valor"]["valor_pago"]
-                    else:
-                        saldo_atual += 1250  # valor por aula
+            # se completou 12 aulas, transfere todo valor e zera o acumulado no aluno-professor
+            if novo_total >= 12:
+                saldo_atual = int(salario_info.get("saldo_atual", 0)) + registro_valor["valor_pago"]
 
             prof_doc_ref.update({
                 "salario.saldo_atual": saldo_atual
             })
 
         return {
-            "mensagem": f"✅ Aula registrada para {len(resultados)} aluno(s)",
-            "detalhes": resultados
+            "mensagem": f"✅ Aula registrada com sucesso (total atual: {update_data['aulas_dadas']})",
+            "nova_aula": nova_aula,
+            "transferencia_aulas": registro_passado if registro_passado else None,
+            "transferencia_valor": registro_valor if registro_valor else None
         }
 
     except Exception as e:

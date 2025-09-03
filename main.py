@@ -904,7 +904,7 @@ async def get_sala_virtual_professor(
         email = email.strip().lower()
         aluno_normalizado = aluno.strip().lower() if aluno else None
 
-        # 🔍 Busca o documento do professor
+        # 🔍 Busca o documento do professor (status online)
         doc_ref = db.collection("professores_online2").document(email)
         doc = doc_ref.get()
 
@@ -913,18 +913,16 @@ async def get_sala_virtual_professor(
 
         professor = doc.to_dict()
 
-        # 🧪 Valida vínculo com o aluno, se fornecido
+        # 🧪 Se aluno foi enviado, valida vínculo com o professor
         if aluno:
-            # Buscar todos os documentos do professor na coleção alunos_professor
             docs = db.collection('alunos_professor') \
                 .where('professor', '==', email).stream()
 
             vinculo_encontrado = False
             for d in docs:
                 data = d.to_dict()
-                dados_aluno = data.get("dados_aluno", {})
-                nome_no_banco = dados_aluno.get("nome", "").strip().lower()
-                if nome_no_banco == aluno_normalizado:
+                aluno_db = data.get("aluno", "").strip().lower()
+                if aluno_db == aluno_normalizado:
                     vinculo_encontrado = True
                     break
 
@@ -934,11 +932,26 @@ async def get_sala_virtual_professor(
                     status_code=403
                 )
 
-        # 🔑 Gera ID da sala
-        def slug(texto):
-            return slugify(texto)
+            # 🔄 Adiciona o aluno na sala já existente (ou cria se não existir)
+            sala_ref = db.collection("chamadas_ao_vivo").document(email)
+            sala_doc = sala_ref.get()
 
-        sala_id = f"{slug(email)}-{slug(aluno_normalizado)}" if aluno else slug(email)
+            if not sala_doc.exists:
+                sala_ref.set({
+                    "professor": email,
+                    "sala": f"sala-{email.replace(' ', '_')}",
+                    "status": "ao_vivo",
+                    "alunos": [aluno_normalizado]
+                })
+            else:
+                dados_sala = sala_doc.to_dict()
+                alunos_conectados = dados_sala.get("alunos", [])
+                if aluno_normalizado not in alunos_conectados:
+                    alunos_conectados.append(aluno_normalizado)
+                    sala_ref.update({"alunos": alunos_conectados})
+
+        # 🔑 Sala única do professor
+        sala_id = f"sala-{email.replace(' ', '_')}"
 
         return templates.TemplateResponse("sala_virtual_professor.html", {
             "request": request,
@@ -963,20 +976,55 @@ async def get_sala_virtual_aluno(
     email_normalizado = email.strip().lower()
     aluno_normalizado = aluno.strip().lower()
 
-    # Verifica se o aluno está vinculado ao professor
-    aluno_data = vinculo_existe(email_normalizado, aluno_normalizado)
-    if not aluno_data:
+    # 🔍 Verifica se o aluno está vinculado ao professor
+    docs = db.collection('alunos_professor') \
+        .where('professor', '==', email_normalizado).stream()
+
+    vinculo_encontrado = False
+    for d in docs:
+        data = d.to_dict()
+        aluno_db = data.get("aluno", "").strip().lower()
+        if aluno_db == aluno_normalizado:
+            vinculo_encontrado = True
+            break
+
+    if not vinculo_encontrado:
         return HTMLResponse("<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>", status_code=403)
 
-    # Verifica se o professor existe
-    professor = buscar_professor_por_email(email_normalizado)
-    if not professor:
+    # 🔍 Verifica se o professor existe
+    professor_doc = db.collection("professores_online2").document(email_normalizado).get()
+    if not professor_doc.exists:
         return HTMLResponse("<h2 style='color:red'>Professor não encontrado.</h2>", status_code=404)
 
+    professor = professor_doc.to_dict()
+
+    # 🔑 Documento da sala única do professor
+    sala_ref = db.collection("chamadas_ao_vivo").document(email_normalizado)
+    sala_doc = sala_ref.get()
+
+    nome_sala = f"sala-{email_normalizado.replace(' ', '_')}"
+
+    if not sala_doc.exists:
+        # Cria a sala se ainda não existir
+        sala_ref.set({
+            "professor": email_normalizado,
+            "sala": nome_sala,
+            "status": "ao_vivo",
+            "alunos": [aluno_normalizado]
+        })
+    else:
+        dados_sala = sala_doc.to_dict()
+        alunos_conectados = dados_sala.get("alunos", [])
+        if aluno_normalizado not in alunos_conectados:
+            alunos_conectados.append(aluno_normalizado)
+            sala_ref.update({"alunos": alunos_conectados})
+
+    # 🔗 Renderiza a sala do aluno
     return templates.TemplateResponse("sala_virtual_aluno.html", {
         "request": request,
-        "aluno": aluno.strip(),  
-        "professor": email_normalizado
+        "aluno": aluno.strip(),
+        "professor": email_normalizado,
+        "sala_id": nome_sala
     })
 
 

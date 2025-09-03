@@ -407,54 +407,52 @@
 
 </style>
 
-</head>
- <!-- Botão de logout no canto superior direito -->
-  <form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
+<head>
+  <!-- Link para ícones (APENAS UMA VEZ) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Botão de logout no canto superior direito -->
+  <form method="POST" action="/logout_prof" 
+        style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
     <input type="hidden" name="email" value="{{ professor.email }}">
     <button type="submit" class="logout-button">Sair</button>
   </form>  
+</head>
 
- <div class="header-bai">
-  <img src="/static/perfil.png" alt="Foto Perfil">
-  <div class="info">
-    <h2>Olá, {{ professor.nome_completo }} <i class="fa-solid fa-hand-wave"></i></h2>
-    <p>Nº B.I: {{ professor.bilhete }}</p>
-    <p class="saldo">
-      Saldo: 
-      <span id="saldo">Kz ******</span>
-      <span class="saldo-toggle" onclick="toggleSaldo()">
-        <i class="fa-solid fa-eye"></i>
-      </span>
-    </p>
+<body>
+  <div class="header-bai">
+    <img src="/static/perfil.png" alt="Foto Perfil">
+    <div class="info">
+      <h2>Olá, {{ professor.nome_completo }} <i class="fa-solid fa-hand-wave"></i></h2>
+      <p>Nº B.I: {{ professor.bilhete }}</p>
+      <p class="saldo">
+        Saldo: 
+        <span id="saldo">Kz ******</span>
+        <span class="saldo-toggle" onclick="toggleSaldo()">
+          <i class="fa-solid fa-eye"></i>
+        </span>
+      </p>
+    </div>
   </div>
-</div>
 
-<!-- Link para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-
-<!-- Botões principais -->
-<div class="botao-menu">
-  <button onclick="toggleSection('meus-alunos', listarMeusAlunos)">Meus alunos</button>
-  <button onclick="toggleSection('alunos-disponiveis', buscarAlunosDisponiveis)">Novos alunos disponíveis</button>
-  <button onclick="toggleSection('aulas-dia', mostrarAulasDoDia)">Aulas do dia</button>
-  <button onclick="toggleSection('aulas-semana', mostrarAulasDaSemana)">Aulas da Semana</button>
-</div>
-
-<div class="ultimas-aulas">
-  <h3><i class="fa-solid fa-book-open"></i> Últimas aulas dadas</h3>
-  <ul id="lista-ultimas-aulas"></ul>
-  <div style="margin-top: 10px; text-align: center;">
-    <button id="ver-mais-btn" style="display:none;">Ver mais</button>
-    <button id="ocultar-btn" style="display:none; background:#ccc; color:#333;">Ocultar</button>
+  <!-- Botões principais -->
+  <div class="botao-menu">
+    <button onclick="toggleSection('meus-alunos', listarMeusAlunos)">Meus alunos</button>
+    <button onclick="toggleSection('alunos-disponiveis', buscarAlunosDisponiveis)">Novos alunos disponíveis</button>
+    <button onclick="toggleSection('aulas-dia', mostrarAulasDoDia)">Aulas do dia</button>
+    <button onclick="toggleSection('aulas-semana', mostrarAulasDaSemana)">Aulas da Semana</button>
   </div>
-</div>
 
-<!-- Link para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <div class="ultimas-aulas">
+    <h3><i class="fa-solid fa-book-open"></i> Últimas aulas dadas</h3>
+    <ul id="lista-ultimas-aulas"></ul>
+    <div style="margin-top: 10px; text-align: center;">
+      <button id="ver-mais-btn" style="display:none;">Ver mais</button>
+      <button id="ocultar-btn" style="display:none; background:#ccc; color:#333;">Ocultar</button>
+    </div>
+  </div>
 
-
-<script>
+  <script>
   const lista = document.getElementById("lista-ultimas-aulas");
   const verMaisBtn = document.getElementById("ver-mais-btn");
   const ocultarBtn = document.getElementById("ocultar-btn");
@@ -847,13 +845,13 @@ async function mostrarAulasDaSemana() {
         body: JSON.stringify({ aluno: aluno })
       });
 
-      // Redirecionar para a sala
-    window.location.href = `/sala_virtual_professor?email=${encodeURIComponent(professorEmail)}&aluno=${encodeURIComponent(aluno)}`;
-    } catch (error) {
-      console.error("Erro ao iniciar chamada:", error);
-      alert("Erro ao iniciar a chamada.");
-    }
-  }
+// Redirecionar para a sala
+window.location.href = `/sala_virtual_professor?email=${encodeURIComponent(professorEmail)}&aluno=${encodeURIComponent(aluno)}`;
+} catch (error) {
+  console.error("Erro ao iniciar chamada:", error);
+  alert("Erro ao iniciar a chamada.");
+}
+}
 
 let alunoSelecionado = null;
 
@@ -901,10 +899,6 @@ async function listarMeusAlunos() {
     <div><strong><i class="fa-solid fa-language"></i> Nível de Inglês:</strong> ${aluno.nivel_ingles || '-'}</div>
   </div>
 </div>
-
-<!-- Link para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 
       if (aluno.online) {
         const iniciarBtn = document.createElement('button');
@@ -954,7 +948,6 @@ async function listarMeusAlunos() {
   }
 }
 
-
 function toggleInfo(id) {
   const el = document.getElementById(id);
   el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
@@ -987,36 +980,36 @@ async function verAulasDadas(nomeAluno) {
 }
 
 async function carregarUltimasAulas(professorEmail) {
-    try {
-      const resposta = await fetch("/ultimas-aulas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ professor_email: professorEmail })
+  try {
+    const resposta = await fetch("/ultimas-aulas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ professor_email: professorEmail })
+    });
+
+    const resultado = await resposta.json();
+
+    const lista = document.getElementById("lista-ultimas-aulas");
+    lista.innerHTML = ""; // limpar antes de preencher
+
+    if (resultado.ultimas_aulas && resultado.ultimas_aulas.length > 0) {
+      resultado.ultimas_aulas.forEach((aula) => {
+        const item = document.createElement("li");
+        item.innerHTML = `<strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}`;
+        lista.appendChild(item);
       });
-
-      const resultado = await resposta.json();
-
-      const lista = document.getElementById("lista-ultimas-aulas");
-      lista.innerHTML = ""; // limpar antes de preencher
-
-      if (resultado.ultimas_aulas && resultado.ultimas_aulas.length > 0) {
-        resultado.ultimas_aulas.forEach((aula) => {
-          const item = document.createElement("li");
-          item.innerHTML = `<strong>${aula.nome}</strong> - ${aula.data} às ${aula.horario}`;
-          lista.appendChild(item);
-        });
-      } else {
-        lista.innerHTML = "<li>Nenhuma aula registrada ainda.</li>";
-      }
-
-    } catch (error) {
-      console.error("Erro ao carregar últimas aulas:", error);
+    } else {
+      lista.innerHTML = "<li>Nenhuma aula registrada ainda.</li>";
     }
-  }
 
-  const professorEmail = "{{ professor.email }}";
-  carregarUltimasAulas(professorEmail);
-  
+  } catch (error) {
+    console.error("Erro ao carregar últimas aulas:", error);
+  }
+}
+
+const professorEmail = "{{ professor.email }}";
+carregarUltimasAulas(professorEmail);
+
 async function buscarAlunosDisponiveis() {
   const email = "{{ professor.email }}";
   try {
@@ -1060,35 +1053,36 @@ async function buscarAlunosDisponiveis() {
   </div>
 `;
 
-container.appendChild(card);
+    container.appendChild(card);
+
 
 
   async function vincularAluno(nomeAluno, professorEmail) {
-    try {
-      const res = await fetch('/vincular-aluno', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          professor_email: professorEmail,
-          aluno_nome: nomeAluno
-        })
-      });
+  try {
+    const res = await fetch('/vincular-aluno', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        professor_email: professorEmail,
+        aluno_nome: nomeAluno
+      })
+    });
 
-      if (res.ok) {
-        alert(`Aluno "${nomeAluno}" vinculado com sucesso!`);
-        buscarAlunosDisponiveis();
-      } else {
-        const erro = await res.json();
-        alert(`Erro: ${erro.detail}`);
-      }
-    } catch (error) {
-      console.error('Erro ao vincular aluno:', error);
-      alert('Erro interno ao tentar vincular o aluno.');
+    if (res.ok) {
+      alert(`Aluno "${nomeAluno}" vinculado com sucesso!`);
+      buscarAlunosDisponiveis();
+    } else {
+      const erro = await res.json();
+      alert(`Erro: ${erro.detail}`);
     }
+  } catch (error) {
+    console.error('Erro ao vincular aluno:', error);
+    alert('Erro interno ao tentar vincular o aluno.');
   }
-  
+}
+
 let horarioSelecionado = {}; 
 let diaAtivo = ""; 
 
@@ -1200,7 +1194,6 @@ async function enviarHorario() {
   };
 
   try {
-  
     const response = await fetch("/enviar-horario", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1211,7 +1204,6 @@ async function enviarHorario() {
     if (response.ok) {
       alert(`Horário enviado com sucesso para ${alunoSelecionado}!`);
 
-      
       const diasSelecionados = Object.keys(horarioSelecionado);
       const ultimoDia = diasSelecionados[diasSelecionados.length - 1];
       const horarios = horarioSelecionado[ultimoDia];
@@ -1247,37 +1239,37 @@ async function enviarHorario() {
   }
 }
 
-  function toggleDados() {
-    const div = document.getElementById("dadosSecretos");
-    div.style.display = div.style.display === "none" ? "block" : "none";
+function toggleDados() {
+  const div = document.getElementById("dadosSecretos");
+  div.style.display = div.style.display === "none" ? "block" : "none";
 
-    const mensagensDiv = document.getElementById("mensagensAdmin");
-    mensagensDiv.style.display = mensagensDiv.style.display === "none" ? "block" : "none";
+  const mensagensDiv = document.getElementById("mensagensAdmin");
+  mensagensDiv.style.display = mensagensDiv.style.display === "none" ? "block" : "none";
+}
+
+async function buscarMensagensProfessor() {
+  const email = "{{ professor.email }}".trim().toLowerCase();
+  const res = await fetch(`/mensagens-professor/${email}`);
+  const dados = await res.json();
+
+  const lista = document.getElementById("listaMensagens");
+  lista.innerHTML = "";
+
+  if (dados.mensagens && dados.mensagens.length > 0) {
+    dados.mensagens.forEach(msg => {
+      const item = document.createElement("li");
+      item.style.padding = "10px";
+      item.style.borderBottom = "1px solid #ffe082";
+      item.innerHTML = `<strong>${msg.data || "Sem data"}:</strong><br>${msg.texto}`;
+      lista.appendChild(item);
+    });
+  } else {
+    lista.innerHTML = "<li style='color:#777'>Nenhuma mensagem recebida ainda.</li>";
   }
+}
 
-  async function buscarMensagensProfessor() {
-    const email = "{{ professor.email }}".trim().toLowerCase();
-    const res = await fetch(`/mensagens-professor/${email}`);
-    const dados = await res.json();
-
-    const lista = document.getElementById("listaMensagens");
-    lista.innerHTML = "";
-
-    if (dados.mensagens && dados.mensagens.length > 0) {
-      dados.mensagens.forEach(msg => {
-        const item = document.createElement("li");
-        item.style.padding = "10px";
-        item.style.borderBottom = "1px solid #ffe082";
-        item.innerHTML = `<strong>${msg.data || "Sem data"}:</strong><br>${msg.texto}`;
-        lista.appendChild(item);
-      });
-    } else {
-      lista.innerHTML = "<li style='color:#777'>Nenhuma mensagem recebida ainda.</li>";
-    }
-  }
-
- 
-  window.addEventListener("DOMContentLoaded", buscarMensagensProfessor);
+window.addEventListener("DOMContentLoaded", buscarMensagensProfessor);
 </script>
 </body>
 </html>
+

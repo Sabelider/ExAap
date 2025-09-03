@@ -913,9 +913,8 @@ async def get_sala_virtual_professor(
 
         professor = doc.to_dict()
 
-        # 🧪 Valida vínculo com o aluno, se fornecido
+        # 🧪 Valida vínculo se um aluno for passado na URL
         if aluno:
-            # Buscar todos os documentos do professor na coleção alunos_professor
             docs = db.collection('alunos_professor') \
                 .where('professor', '==', email).stream()
 
@@ -934,22 +933,23 @@ async def get_sala_virtual_professor(
                     status_code=403
                 )
 
-        # 🔑 Gera ID da sala
+        # 🔑 Sala única baseada só no email do professor (igual ao registrar_chamada)
         def slug(texto):
             return slugify(texto)
 
-        sala_id = f"{slug(email)}-{slug(aluno_normalizado)}" if aluno else slug(email)
+        sala_id = slug(email)
 
         return templates.TemplateResponse("sala_virtual_professor.html", {
             "request": request,
             "email": email,
-            "aluno": aluno,
+            "aluno": aluno,  # pode ser None → permite vários alunos depois
             "professor": professor,
             "sala_id": sala_id
         })
 
     except Exception as e:
         return HTMLResponse(f"<h2 style='color:red'>Erro ao abrir sala do professor: {str(e)}</h2>", status_code=500)
+
 
 @app.get("/sala_virtual_aluno", response_class=HTMLResponse)
 async def get_sala_virtual_aluno(

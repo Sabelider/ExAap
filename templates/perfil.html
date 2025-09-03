@@ -79,7 +79,7 @@
     background-color: #1abc9c;
   }
 
-  /* Estilo moderno para o botão "Entrar" */
+  
   .btn-entrar {
     display: inline-block;
     margin-top: 12px;
@@ -102,35 +102,40 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   }
 
-  .acoes {
-    display: flex;
-    justify-content: space-around;
-    background: #ecf0f1;
-    padding: 15px 0;
-    flex-wrap: wrap;
-  }
+ .acoes {
+  display: flex;
+  justify-content: center;  
+  gap: 8px;                  
+  background: #ecf0f1;
+  padding: 10px 0;
+  flex-wrap: wrap;           
+}
 
-  .acao {
-    width: 70px;
-    height: 70px;
-    background: #d0f0ef;
-    border-radius: 15px;
-    text-align: center;
-    padding-top: 8px;
-    margin: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
+.acao {
+  flex: 0 1 auto;            
+  min-width: 60px;          
+  height: 65px;              
+  background: #d0f0ef;
+  border-radius: 12px;
+  text-align: center;
+  padding: 6px 4px;
+  margin: 2px;               
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
-  .acao i {
-    font-size: 20px;
-    display: block;
-    color: #16a085;
-  }
+.acao i {
+  font-size: 18px;          
+  display: block;
+  color: #16a085;
+  margin-bottom: 2px;
+}
 
-  .acao span {
-    font-size: 12px;
-    color: #000000; /* preto */
-  }
+.acao span {
+  font-size: 11px;           
+  color: #000000;
+  display: block;
+  line-height: 1.1;
+}
 
   .ultimas-aulas {
     background: #ffffff;

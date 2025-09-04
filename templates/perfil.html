@@ -189,7 +189,76 @@
     display: block;
   }
 
-  
+   /* Estilo do overlay */
+  .overlay-info {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+
+  /* Estilo do modal */
+  .modal-info {
+    background: #1a2e3f; /* cor escura padrão */
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 80%;
+    max-width: 700px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    font-family: 'Nunito', sans-serif;
+    animation: aparecer 0.3s ease-in-out;
+  }
+
+  @keyframes aparecer {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-info h2 {
+    margin-bottom: 15px;
+    text-align: center;
+    color: #00c2cb;
+  }
+
+  .info-content {
+    margin: 15px 0;
+    line-height: 1.6;
+  }
+
+  .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .botao-padrao {
+    background: linear-gradient(90deg, #00c2cb, #009688);
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+
+  .botao-padrao:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+
+  .fechar-btn {
+    margin-top: 20px;
+    display: block;
+    background: #f44336;
+  }
+
   .notificacao-container {
     position: fixed;
     top: 50%;
@@ -385,10 +454,9 @@ function fecharDesafio() {
     <i class="fa-solid fa-credit-card"></i>
     Pagamentos
   </div>
-  <div class="item" onclick="abrirMenu()">
-    <i class="fa-solid fa-folder"></i>
-    Menu
-  </div>
+  <div class="item" onclick="abrirInfoEmpresa()">
+  <i class="fa-solid fa-circle-info"></i>
+  Informações
 </div>
 
 <!-- Link para ícones -->
@@ -401,9 +469,72 @@ function abrirPerfil() {
   window.location.href = '/perfil'; 
 }
 
-function abrirMenu() {
-  // Aqui a navegação para o menu
-  window.location.href = '/menu';
+function abrirInfoEmpresa() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay-info";
+
+  const modal = document.createElement("div");
+  modal.className = "modal-info";
+
+  modal.innerHTML = `
+    <h2>Sobre a SabAap</h2>
+    <div class="info-content" id="info-content">
+      <p><strong>Sabi Lider (SU) LDA</strong>, NIF: 5002232529, é uma empresa de direito privado angolano, de capital 100% nacional, com foco em educação e inovação digital.</p>
+      <p>Estamos localizados na <strong>Rua S/nº Centralidade da Marconi</strong> e atuamos no setor da <strong>educação e serviços tecnológicos</strong>.</p>
+      <p>Nosso aplicativo <strong>SabAap</strong> foi criado para ensinar a <strong>Língua Inglesa</strong> com professores qualificados, promovendo aprendizado prático, moderno e acessível.</p>
+    </div>
+
+    <div class="modal-buttons">
+      <button class="botao-padrao" onclick="mostrarConteudo('empresa')">Sobre a Empresa</button>
+      <button class="botao-padrao" onclick="mostrarConteudo('app')">Sobre o App</button>
+      <button class="botao-padrao" onclick="mostrarConteudo('objetivo')">Objetivo</button>
+      <button class="botao-padrao" onclick="mostrarConteudo('mais')">Saber Mais</button>
+    </div>
+
+    <button class="botao-padrao fechar-btn" onclick="fecharInfo()">Fechar</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Fecha ao clicar fora
+  overlay.onclick = (e) => { if(e.target === overlay) fecharInfo(); };
+}
+
+function fecharInfo() {
+  document.querySelector(".overlay-info")?.remove();
+}
+
+function mostrarConteudo(secao) {
+  const conteudo = document.getElementById("info-content");
+
+  if (secao === "empresa") {
+    conteudo.innerHTML = `
+      <p><strong>Sabi Lider (SU) LDA</strong>, NIF: 5002232529, é uma empresa angolana privada, com capital 100% nacional.</p>
+      <p>Atuamos nas áreas de <strong>educação, tecnologia e inovação</strong>, oferecendo soluções modernas para melhorar a vida das pessoas.</p>
+    `;
+  } 
+  else if (secao === "app") {
+    conteudo.innerHTML = `
+      <p><strong>SabAap</strong> é um aplicativo focado no ensino da <strong>Língua Inglesa</strong>, com recursos interativos, aulas personalizadas e professores altamente qualificados.</p>
+      <p>Nosso objetivo é tornar o aprendizado mais <strong>simples, rápido e acessível</strong> para todos.</p>
+    `;
+  } 
+  else if (secao === "objetivo") {
+    conteudo.innerHTML = `
+      <p>Nosso principal objetivo é <strong>democratizar o acesso ao ensino da Língua Inglesa</strong>, preparando os alunos para um futuro globalizado.</p>
+      <p>Com a <strong>SabAap</strong>, cada aluno pode evoluir no seu ritmo, com acompanhamento personalizado.</p>
+    `;
+  } 
+  else if (secao === "mais") {
+    conteudo.innerHTML = `
+      <p>✔ Professores qualificados e experientes.</p>
+      <p>✔ Aulas online e presenciais em breve.</p>
+      <p>✔ Materiais de apoio e exercícios práticos.</p>
+      <p>✔ Plataforma interativa e de fácil utilização.</p>
+      <p>Com a <strong>SabAap</strong>, você não apenas aprende inglês, mas se conecta a novas <strong>oportunidades</strong> no mercado de trabalho e no mundo.</p>
+    `;
+  }
 }
 
 function abrirPagamentos() {

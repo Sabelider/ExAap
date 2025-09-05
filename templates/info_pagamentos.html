@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
@@ -25,6 +25,7 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
     }
 
     h2 {
@@ -44,6 +45,22 @@
       color: #00a0c9;
     }
 
+    .btn-pagar {
+      margin-top: 25px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      color: #000;
+      transition: 0.2s ease;
+    }
+
+    .btn-pagar:hover {
+      opacity: 0.85;
+    }
+
     .footer {
       background: #181d38;
       color: #fff;
@@ -60,7 +77,7 @@
     <p>
       Para efectuar pagamentos, tem duas opções:
     </p>
-    <ul>
+    <ul class="text-start">
       <li><span class="highlight">Pagamento antecipado</span>: garante sua vaga e passa segurança.</li>
       <li><span class="highlight">Pagamento depois da primeira aula</span>: você só paga se sentir confiança e perceber resultados.</li>
     </ul>
@@ -70,6 +87,9 @@
     <p>
       Essa flexibilidade foi criada para que você se sinta seguro ao começar suas aulas.
     </p>
+
+    <!-- Botão PAGAR P-A -->
+    <a href="/login" class="btn btn-pagar">PAGAR P-A</a>
   </div>
 
   <div class="footer">

@@ -6,110 +6,152 @@
   <title>Enviar Comprovativo</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Nunito', sans-serif;
       background-color: #f4f4f8;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 40px 20px;
+      color: #333;
     }
 
     h1 {
       margin-bottom: 30px;
+      color: #00796b;
+      font-size: 1.8rem;
     }
 
+    /* Container do formulário */
     #upload-section {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 15px;
+      gap: 18px;
+      padding: 25px 20px;
       margin-bottom: 20px;
       width: 100%;
-      max-width: 400px;
+      max-width: 450px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     label {
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 5px;
+      color: #2c3e50;
     }
 
     input[type="file"], select, input[type="text"] {
-      padding: 8px;
-      border-radius: 8px;
+      padding: 10px;
+      border-radius: 12px;
       border: 1px solid #ccc;
       background-color: white;
-      font-size: 16px;
+      font-size: 15px;
       width: 100%;
+      transition: 0.2s;
     }
 
-    #submit-button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      background-color: #333;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      margin-top: 10px;
+    input[type="file"]:focus, select:focus, input[type="text"]:focus {
+      border-color: #00c9ff;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0,201,255,0.2);
     }
 
-    #submit-button:hover {
-      background-color: #000;
-    }
-
+    /* IBAN container */
     .iban-container {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background-color: #fff;
-      padding: 12px 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      margin-bottom: 20px;
+      background-color: #f9f9f9;
+      padding: 14px 18px;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
     }
 
     .iban-label {
       font-weight: bold;
+      font-size: 0.95rem;
+      color: #333;
     }
 
     .copy-icon {
       cursor: pointer;
       font-size: 18px;
-      color: #555;
+      color: #007bff;
+      transition: 0.2s;
     }
 
     .copy-icon:hover {
-      color: #000;
+      color: #0056b3;
+      transform: scale(1.1);
     }
 
+    /* Meses */
     .meses-container {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      justify-content: center;
+      gap: 12px;
       width: 100%;
     }
 
     .meses-container button {
-      padding: 6px 12px;
-      font-size: 18px;
-      font-weight: bold;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      font-size: 22px;
+      font-weight: bold;
       cursor: pointer;
-      background-color: #333;
-      color: white;
+      color: #000;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      transition: 0.2s;
     }
 
     .meses-container button:hover {
-      background-color: #000;
+      opacity: 0.85;
+    }
+
+    #meses {
+      text-align: center;
+      width: 60px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      background: #f4f4f8;
+      border-radius: 8px;
+      padding: 8px;
     }
 
     .valor-total {
       font-weight: bold;
+      margin-top: 5px;
+      font-size: 1rem;
+      color: #00796b;
+      text-align: center;
+    }
+
+    /* Botão padrão (reutilizado do app) */
+    .botao-padrao {
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      border: none;
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #000;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: 0.2s ease;
+      text-align: center;
       margin-top: 10px;
-      color: #222;
+    }
+
+    .botao-padrao:hover {
+      opacity: 0.85;
+      transform: translateY(-2px);
     }
   </style>
 </head>
@@ -138,7 +180,7 @@
       <label>Meses a pagar:</label>
       <div class="meses-container">
         <button type="button" onclick="alterarMeses(-1)">−</button>
-        <input type="text" id="meses" name="meses" value="1" readonly style="text-align:center; width:50px;">
+        <input type="text" id="meses" name="meses" value="1" readonly>
         <button type="button" onclick="alterarMeses(1)">+</button>
       </div>
       <div class="valor-total" id="valorTotal">Valor total: 15.000,00 Kz</div>
@@ -147,7 +189,7 @@
       <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required>
     </div>
 
-    <button type="submit" id="submit-button">Enviar Comprovativo</button>
+    <button type="submit" class="botao-padrao">Enviar Comprovativo</button>
   </form>
 
   <script>
@@ -232,7 +274,7 @@
           body: formData
         });
 
-        const html = await response.text(); // lê apenas uma vez
+        const html = await response.text();
 
         if (response.ok) {
           document.open();

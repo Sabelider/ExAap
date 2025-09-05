@@ -8,8 +8,7 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Bootstrap Ícones -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
   body {
@@ -107,45 +106,46 @@
     border-color: #218838;
   }
 
-.botao-padrao {
-  background: linear-gradient(135deg, #00c9ff, #92fe9d);
-  border: none;
-  border-radius: 16px;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: 0.2s ease;
-  text-align: center;
-  margin-top: 10px;
-  margin-right: 5px;
-}
+  .botao-padrao {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    border: none;
+    border-radius: 16px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #000;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s ease;
+    text-align: center;
+    margin-top: 10px;
+    margin-right: 5px;
+  }
 
-.botao-padrao:hover {
-  opacity: 0.85;
-}
+  .botao-padrao:hover {
+    opacity: 0.85;
+  }
   
-.logout-button {
-  position: fixed; 
-  top: 15px;
-  right: 20px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 13px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  z-index: 1000; 
-}
+  .logout-button {
+    position: fixed; 
+    top: 15px;
+    right: 20px;
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 1000; 
+  }
 
-.logout-button:hover {
-  background-color: #d9363e;
-}
+  .logout-button:hover {
+    background-color: #d9363e;
+  }
+
   .botao-menu {
     display: flex;
     justify-content: space-between;
@@ -244,8 +244,105 @@
       flex: 0 0 auto;
     }
   }
-</style>
 
+  /* Overlay fundo escuro */
+  .overlay-info {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+  }
+
+  /* Modal container */
+  .modal-info {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 18px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    animation: slideUp 0.4s ease;
+    font-family: 'Nunito', sans-serif;
+    position: relative;
+  }
+
+  .modal-info h3 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  /* Linha de informação */
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #444;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .info-row span:first-child {
+    font-weight: bold;
+    color: #2c3e50;
+  }
+
+  /* Botões (reaproveitando .botao-padrao já existente) */
+  .botao-padrao {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .botao-padrao:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+
+  /* Fechar (ícone no canto) */
+  .fechar-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    color: #555;
+    font-size: 1.2rem;
+    cursor: pointer;
+    border: none;
+  }
+
+  .fechar-btn:hover {
+    color: #e74c3c;
+    transform: scale(1.2);
+  }
+
+  /* Animações */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+  
 </head>
  <!-- Botão de logout no canto superior direito -->
   <form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
@@ -694,8 +791,16 @@ async function listarMeusAlunos() {
   }
 }
 
-// Função para exibir informações do aluno em modal moderno
+let modalAberta = false;
+
 function exibirInformacoesAluno(aluno) {
+  // Se já estiver aberta, fecha
+  if (modalAberta) {
+    document.querySelector('.overlay-info')?.remove();
+    modalAberta = false;
+    return;
+  }
+
   const overlay = document.createElement('div');
   overlay.className = 'overlay-info';
 
@@ -703,26 +808,42 @@ function exibirInformacoesAluno(aluno) {
   modal.className = 'modal-info';
 
   modal.innerHTML = `
-    <h3>${aluno.nome}</h3>
+    <button class="fechar-btn"><i class="fa-solid fa-xmark"></i></button>
+    <h3><i class="fa-solid fa-user-graduate"></i> ${aluno.nome}</h3>
+
     <div class="info-row">
-      <span>Telefone:</span>
+      <span><i class="fa-solid fa-phone"></i> Telefone:</span>
       <span>
         <a href="https://wa.me/${aluno.telefone}" target="_blank">${aluno.telefone || '-'}</a>
-        <button class="botao-padrao" onclick="navigator.clipboard.writeText('${aluno.telefone}')">Copiar</button>
+        <button class="botao-padrao" onclick="navigator.clipboard.writeText('${aluno.telefone}')">
+          <i class="fa-solid fa-copy"></i>
+        </button>
       </span>
     </div>
-    <div class="info-row"><span>Província:</span> <span>${aluno.provincia || '-'}</span></div>
-    <div class="info-row"><span>Município:</span> <span>${aluno.municipio || '-'}</span></div>
-    <div class="info-row"><span>Bairro:</span> <span>${aluno.bairro || '-'}</span></div>
-    <div class="info-row"><span>Nível de Inglês:</span> <span>${aluno.nivel_ingles || '-'}</span></div>
-    <button class="botao-padrao fechar-btn">Fechar</button>
+
+    <div class="info-row"><span><i class="fa-solid fa-map"></i> Província:</span> <span>${aluno.provincia || '-'}</span></div>
+    <div class="info-row"><span><i class="fa-solid fa-city"></i> Município:</span> <span>${aluno.municipio || '-'}</span></div>
+    <div class="info-row"><span><i class="fa-solid fa-house"></i> Bairro:</span> <span>${aluno.bairro || '-'}</span></div>
+    <div class="info-row"><span><i class="fa-solid fa-language"></i> Inglês:</span> <span>${aluno.nivel_ingles || '-'}</span></div>
   `;
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+  modalAberta = true;
 
-  modal.querySelector('.fechar-btn').onclick = () => overlay.remove();
-  overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+  // Botão fechar
+  modal.querySelector('.fechar-btn').onclick = () => {
+    overlay.remove();
+    modalAberta = false;
+  };
+
+  // Clique fora da modal fecha
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      modalAberta = false;
+    }
+  };
 }
   
 async function verAulasDadas(nomeAluno) {

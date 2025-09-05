@@ -260,60 +260,60 @@
   }
 
   .notificacao-container {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #ffffff;
-    padding: 20px 25px;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-    text-align: center;
-    max-width: 350px;
-    width: 80%;
-    display: none; 
-    z-index: 1000;
-    animation: fadeIn 0.4s ease;
-  }
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  padding: 25px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  max-width: 350px;
+  width: 85%;
+  display: none; 
+  z-index: 1000;
+  animation: fadeIn 0.4s ease;
+}
 
- 
-  .notificacao-container p {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 15px;
-  }
+.notificacao-container p {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
 
- 
-  .notificar-btn {
-    background: linear-gradient(135deg, #00c9ff, #92fe9d);
-    color: #fff;
-    font-weight: bold;
-    border: none;
-    border-radius: 25px;
-    padding: 10px 20px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  }
+.notificar-btn {
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  display: inline-block;
+  margin: auto;
+}
 
-  .notificar-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-    opacity: 0.95;
-  }
+.notificar-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  opacity: 0.95;
+}
 
-  .notificar-btn:active {
-    transform: scale(0.95);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  }
+.notificar-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
 
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -45%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -45%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
 </style>
 </head>
 <body>

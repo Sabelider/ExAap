@@ -252,7 +252,11 @@ async def post_perfil_prof(
 
     # Redireciona de volta ao perfil com confirmação
     return RedirectResponse(url=f"/perfil_prof?email={email}", status_code=303)
-    
+
+@app.get("/info_pagamentos", response_class=HTMLResponse)
+async def info_pagamentos(request: Request):
+    return templates.TemplateResponse("info_pagamentos.html", {"request": request})
+
 @app.get('/alunos-disponiveis/{prof_email}')
 async def alunos_disponiveis(prof_email: str):
     prof_docs = db.collection('professores_online') \

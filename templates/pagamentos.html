@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -20,10 +20,31 @@
     padding: 15px;
     display: flex;
     align-items: center;
-    gap: 15px;
+    justify-content: space-between;
     border-radius: 0 0 20px 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     color: white;
+  }
+
+  .top-bar h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  .btn-pagar {
+    background: white;
+    color: #00aaff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .btn-pagar:hover {
+    background: #f0f0f0;
   }
 
   .pagamento-card {
@@ -59,6 +80,14 @@
   }
 
   @media (max-width: 400px) {
+    .top-bar {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .btn-pagar {
+      align-self: flex-start;
+    }
     .pagamento-card {
       flex-direction: column;
       align-items: flex-start;
@@ -71,6 +100,7 @@
 
 <div class="top-bar">
   <h2>💳 Controle de Pagamentos</h2>
+  <button class="btn-pagar" onclick="abrirPagamento()">Pagar Mensalidade</button>
 </div>
 
 <div id="lista-pagamentos"></div>
@@ -78,9 +108,13 @@
 <script>
 const alunoNome = "joao silva"; // aqui será dinâmico no seu sistema
 
+function abrirPagamento() {
+  window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(alunoNome)}`;
+}
+
 async function carregarPagamentos() {
   try {
-    const res = await fetch(`/historico-pagamentos/${encodeURIComponent(alunoNome)}`);
+    const res = await fetch(`/api/historico-pagamentos/${encodeURIComponent(alunoNome)}`);
     const pagamentos = await res.json();
 
     const lista = document.getElementById("lista-pagamentos");

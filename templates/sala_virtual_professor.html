@@ -25,11 +25,12 @@
 
     #remoteVideo {
       position: absolute;
-      top: -10%;
+      top: 0;
       left: 0;
       width: 100%;
-      height: 120%;
-      object-fit: cover;
+      height: 100%;
+      object-fit: contain; /* atualizado */
+      background: black;
     }
 
     #localVideo {
@@ -121,11 +122,6 @@
     }
 
     @media (min-width: 768px) {
-      #remoteVideo {
-        top: -15%;
-        height: 130%;
-      }
-
       #localVideo {
         width: 180px;
         height: 135px;
@@ -213,85 +209,94 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
+        initPeer(); // só inicia depois que a câmera estiver pronta
       } catch (err) {
         alert("Erro ao acessar câmera e microfone");
         console.error(err);
       }
     }
 
-  function initPeer() {
-  peer = new Peer();
+    function initPeer() {
+      peer = new Peer({
+        config: {
+          'iceServers': [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            {
+              urls: 'turn:openrelay.metered.ca:80',
+              username: 'openrelayproject',
+              credential: 'openrelayproject'
+            }
+          ]
+        }
+      });
 
-  peer.on("open", (id) => {
-    meuPeerId = id;
-    myIdSpan.textContent = id;
-  });
+      peer.on("open", (id) => {
+        meuPeerId = id;
+        myIdSpan.textContent = id;
+      });
 
-  peer.on("call", (call) => {
-    statusSpan.innerHTML = `<i class="fa-solid fa-phone"></i> Recebendo chamada...`;
-    call.answer(localStream);
-    handleCallEvents(call);
-  });
+      peer.on("call", (call) => {
+        statusSpan.innerHTML = `<i class="fa-solid fa-phone"></i> Recebendo chamada...`;
+        call.answer(localStream);
+        handleCallEvents(call);
+      });
 
-  peer.on("error", (err) => {
-    console.error("Erro PeerJS:", err);
-    alert("Erro no PeerJS: " + err.message);
-  });
-}
-
-function handleCallEvents(call) {
-  call.on("stream", (remoteStream) => {
-    remoteVideo.srcObject = remoteStream;
-    statusSpan.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado!`;
-    iniciarCronometro();
-  });
-
-  call.on("close", () => {
-    statusSpan.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
-    confirmarAulaBtn.style.display = "inline-block"; // Garante visibilidade
-  });
-
-  call.on("error", (err) => {
-    console.error("Erro na chamada:", err);
-    confirmarAulaBtn.style.display = "inline-block";
-  });
-
-  currentCall = call;
-}
-
-
-   function enviarIdAoPerfil() {
-  chamarAlunoBtn.style.display = "none";
-
-  fetch("/enviar-id-aula", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      peer_id: meuPeerId,
-      email: email.trim().toLowerCase(),
-      aluno: aluno.trim().toLowerCase()
-    })
-  })
-  .then(res => {
-    if (res.ok) {
-      alert("✅ ID da aula enviado!"); 
-      // substituindo:
-      // alert("✔️ ID da aula enviado!");
-      // ou criar modal/toast HTML com <i class="fa-solid fa-circle-check"></i>
-    } else {
-      alert("⚠️ Erro ao enviar ID.");
+      peer.on("error", (err) => {
+        console.error("Erro PeerJS:", err);
+        alert("Erro no PeerJS: " + err.message);
+      });
     }
-  })
-  .catch(err => {
-    console.error("Erro:", err);
-    alert("⚠️ Erro ao enviar ID.");
-  });
-}
 
+    function handleCallEvents(call) {
+      call.on("stream", (remoteStream) => {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.play().catch(err => console.warn("Autoplay bloqueado:", err));
+        statusSpan.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado!`;
+        iniciarCronometro();
+      });
+
+      call.on("close", () => {
+        statusSpan.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
+        confirmarAulaBtn.style.display = "inline-block";
+      });
+
+      call.on("error", (err) => {
+        console.error("Erro na chamada:", err);
+        confirmarAulaBtn.style.display = "inline-block";
+      });
+
+      currentCall = call;
+    }
+
+    function enviarIdAoPerfil() {
+      chamarAlunoBtn.style.display = "none";
+
+      fetch("/enviar-id-aula", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          peer_id: meuPeerId,
+          email: email.trim().toLowerCase(),
+          aluno: aluno.trim().toLowerCase()
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("✅ ID da aula enviado!");
+        } else {
+          alert("⚠️ Erro ao enviar ID.");
+        }
+      })
+      .catch(err => {
+        console.error("Erro:", err);
+        alert("⚠️ Erro ao enviar ID.");
+      });
+    }
 
     function iniciarCronometro() {
       cronometro.style.display = "block";
-      tempoRestante = 3600; // reinicia 1 hora
+      tempoRestante = 3600;
 
       intervalo = setInterval(() => {
         if (tempoRestante <= 0) {
@@ -315,39 +320,38 @@ function handleCallEvents(call) {
         remoteVideo.srcObject = null;
         statusSpan.textContent = "⏱️ Aula encerrada";
       }
-
       confirmarAulaBtn.style.display = "inline-block";
     }
 
-   function registrarAula() {
-  const btn = document.getElementById("confirmarAulaBtn");
-  btn.disabled = true; 
+    function registrarAula() {
+      const btn = document.getElementById("confirmarAulaBtn");
+      btn.disabled = true;
 
-  fetch("/registrar-aula", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      professor: email.trim().toLowerCase(),
-      aluno: aluno.trim().toLowerCase()
-    })
-  })
-  .then(res => {
-    if (res.ok) {
-      mostrarNotificacao(`<i class="fa-solid fa-circle-check"></i> Aula registrada com sucesso!`, "sucesso");
-      btn.style.display = "none"; 
-    } else {
-      mostrarNotificacao(`<i class="fa-solid fa-circle-exclamation"></i> Falha ao registrar aula.`, "erro");
-      btn.disabled = false;
+      fetch("/registrar-aula", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          professor: email.trim().toLowerCase(),
+          aluno: aluno.trim().toLowerCase()
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("✅ Aula registrada com sucesso!");
+          btn.style.display = "none";
+        } else {
+          alert("⚠️ Falha ao registrar aula.");
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        console.error("Erro ao registrar aula:", err);
+        alert("⚠️ Erro de conexão ao registrar aula.");
+        btn.disabled = false;
+      });
     }
-  })
-  .catch(err => {
-    console.error("Erro ao registrar aula:", err);
-    mostrarNotificacao(`<i class="fa-solid fa-triangle-exclamation"></i> Erro de conexão ao registrar aula.`, "erro");
-    btn.disabled = false; 
-  });
-}
 
-    startCamera().then(initPeer);
+    startCamera(); // inicia o fluxo
   </script>
 </body>
 </html>

@@ -739,17 +739,17 @@ async def exibir_login(request: Request, sucesso: int = 0):
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     alunos_ref = db.collection("alunos")
 
-    # Normaliza os valores digitados
-    nome_digitado = nome.strip().lower()
-    senha_digitada = senha.strip().lower()
+    # Normaliza os valores digitados (remove espaços no início e no fim e converte para minúsculas)
+    nome_digitado = nome.lstrip().rstrip().lower()
+    senha_digitada = senha.lstrip().rstrip().lower()
 
     # Busca todos os alunos para fazer comparação segura
     alunos = alunos_ref.stream()
 
     for aluno in alunos:
         dados = aluno.to_dict()
-        nome_banco = dados.get("nome", "").strip().lower()
-        senha_banco = dados.get("senha", "").strip().lower()
+        nome_banco = dados.get("nome", "").lstrip().rstrip().lower()
+        senha_banco = dados.get("senha", "").lstrip().rstrip().lower()
 
         if nome_banco == nome_digitado and senha_banco == senha_digitada:
             aluno.reference.update({"online": True})

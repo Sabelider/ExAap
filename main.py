@@ -1530,11 +1530,19 @@ async def login_prof_post(
     nome_completo: str = Form(...),
     senha: str = Form(...)
 ):
-    professores_ref = db.collection("professores_online").where("nome_completo", "==", nome_completo).stream()
+    # Normaliza os valores digitados (remove espaços no início e fim e converte para minúsculas)
+    nome_digitado = nome_completo.lstrip().rstrip().lower()
+    senha_digitada = senha.lstrip().rstrip().lower()
+
+    # Busca professores que tenham o mesmo nome normalizado
+    professores_ref = db.collection("professores_online").stream()
 
     for prof in professores_ref:
         dados = prof.to_dict()
-        if dados.get("senha") == senha:
+        nome_banco = dados.get("nome_completo", "").lstrip().rstrip().lower()
+        senha_banco = dados.get("senha", "").lstrip().rstrip().lower()
+
+        if nome_banco == nome_digitado and senha_banco == senha_digitada:
             email = dados.get("email")
 
             # Atualiza o campo 'online' para True
@@ -1549,6 +1557,7 @@ async def login_prof_post(
         "request": request,
         "erro": "Nome completo ou senha incorretos."
     })
+
 
 @app.post("/dados_professor", response_class=HTMLResponse)
 async def dados_professor(request: Request, email: str = Form(...)):

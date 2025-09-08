@@ -252,11 +252,7 @@ async def post_perfil_prof(
 
     # Redireciona de volta ao perfil com confirmação
     return RedirectResponse(url=f"/perfil_prof?email={email}", status_code=303)
-
-@app.get("/info_pagamentos", response_class=HTMLResponse)
-async def info_pagamentos(request: Request):
-    return templates.TemplateResponse("info_pagamentos.html", {"request": request})
-
+    
 @app.get('/alunos-disponiveis/{prof_email}')
 async def alunos_disponiveis(prof_email: str):
     prof_docs = db.collection('professores_online') \
@@ -322,6 +318,15 @@ async def meus_alunos(prof_email: str):
         )
 
 
+# Modelo para enviar mensagem
+class MensagemInfo(BaseModel):
+    aluno: str
+    professor: str
+    mensagem: str
+    remetente: str  # 🔹 agora indicamos quem enviou: "aluno" ou "professor"
+
+
+# 🔹 Atualiza coleção e garante campos mínimos sempre que professor abre seus alunos
 @app.get("/meus-alunos-status/{prof_email}")
 async def meus_alunos_status(prof_email: str):
     try:
@@ -331,8 +336,18 @@ async def meus_alunos_status(prof_email: str):
         alunos = []
         for doc in docs:
             d = doc.to_dict()
-            dados = d.get('dados_aluno', {})
 
+            atualizacoes = {}
+            # Criar campos obrigatórios se não existirem
+            if 'dados_aluno' not in d:
+                atualizacoes['dados_aluno'] = {}
+            if 'chat' not in d:
+                atualizacoes['chat'] = []
+
+            if atualizacoes:
+                db.collection('alunos_professor').document(doc.id).update(atualizacoes)
+
+            dados = d.get('dados_aluno', {})
             alunos.append({
                 'nome': dados.get('nome', d.get('aluno', '')),
                 'disciplina': dados.get('disciplina', ''),
@@ -340,7 +355,7 @@ async def meus_alunos_status(prof_email: str):
                 'provincia': dados.get('provincia', ''),
                 'municipio': dados.get('municipio', ''),
                 'bairro': dados.get('bairro', ''),
-                'nivel_ingles': dados.get('nivel_ingles', ''),  # já pega o nível direto
+                'nivel_ingles': dados.get('nivel_ingles', ''),
                 'online': d.get('online', False)
             })
 
@@ -353,6 +368,100 @@ async def meus_alunos_status(prof_email: str):
         )
 
 
+# 🔹 Rota para enviar mensagem (aluno ou professor)
+@app.post("/enviar-mensagem")
+async def enviar_mensagem(info: MensagemInfo):
+    try:
+        aluno = info.aluno.strip().lower()
+        professor = info.professor.strip().lower()
+
+        docs = db.collection('alunos_professor') \
+                 .where('aluno', '==', aluno) \
+                 .where('professor', '==', professor).stream()
+
+        for doc in docs:
+            doc_ref = db.collection('alunos_professor').document(doc.id)
+
+            nova_msg = {
+                'remetente': info.remetente.lower(),  # "aluno" ou "professor"
+                'mensagem': info.mensagem,
+                'timestamp': datetime.datetime.utcnow().isoformat()
+            }
+
+            # Garante que o campo chat exista
+            d = doc.to_dict()
+            if 'chat' not in d:
+                doc_ref.update({'chat': []})
+
+            # Adiciona mensagem ao chat
+            doc_ref.update({
+                'chat': firestore.ArrayUnion([nova_msg])
+            })
+
+            return {"status": "ok", "mensagem": "Mensagem enviada com sucesso"}
+
+        return JSONResponse(status_code=404, content={"detail": "Aluno/Professor não encontrados"})
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+
+# 🔹 Rota para buscar mensagens entre aluno e professor
+@app.get("/buscar-mensagens/{professor}/{aluno}")
+async def buscar_mensagens(professor: str, aluno: str):
+    try:
+        docs = db.collection('alunos_professor') \
+                 .where('aluno', '==', aluno.strip().lower()) \
+                 .where('professor', '==', professor.strip().lower()).stream()
+
+        for doc in docs:
+            d = doc.to_dict()
+            if 'chat' not in d:
+                db.collection('alunos_professor').document(doc.id).update({'chat': []})
+                return []
+            return d['chat']
+
+        return []
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+
+# 🔹 Status completo com last_seen
+@app.get("/alunos-status-completo/{prof_email}")
+async def alunos_status_completo(prof_email: str):
+    try:
+        docs = db.collection('alunos_professor') \
+                 .where('professor', '==', prof_email.strip().lower()).stream()
+
+        alunos = []
+        for doc in docs:
+            data = doc.to_dict()
+            nome = data.get("aluno")
+
+            aluno_query = db.collection("alunos").where("nome", "==", nome).limit(1).stream()
+            aluno_doc = next(aluno_query, None)
+
+            if aluno_doc and aluno_doc.exists:
+                aluno_data = aluno_doc.to_dict()
+                alunos.append({
+                    "nome": nome,
+                    "online": aluno_data.get("online", False),
+                    "last_seen": aluno_data.get("last_seen", "Desconhecido")
+                })
+            else:
+                alunos.append({
+                    "nome": nome,
+                    "online": False,
+                    "last_seen": "Desconhecido"
+                })
+
+        return alunos
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": "Erro ao buscar status dos alunos", "erro": str(e)})
+        
+        
 @app.get("/alunos-status-completo/{prof_email}")
 async def alunos_status_completo(prof_email: str):
     try:
@@ -739,17 +848,17 @@ async def exibir_login(request: Request, sucesso: int = 0):
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     alunos_ref = db.collection("alunos")
 
-    # Normaliza os valores digitados (remove espaços no início e no fim e converte para minúsculas)
-    nome_digitado = nome.lstrip().rstrip().lower()
-    senha_digitada = senha.lstrip().rstrip().lower()
+    # Normaliza os valores digitados
+    nome_digitado = nome.strip().lower()
+    senha_digitada = senha.strip().lower()
 
     # Busca todos os alunos para fazer comparação segura
     alunos = alunos_ref.stream()
 
     for aluno in alunos:
         dados = aluno.to_dict()
-        nome_banco = dados.get("nome", "").lstrip().rstrip().lower()
-        senha_banco = dados.get("senha", "").lstrip().rstrip().lower()
+        nome_banco = dados.get("nome", "").strip().lower()
+        senha_banco = dados.get("senha", "").strip().lower()
 
         if nome_banco == nome_digitado and senha_banco == senha_digitada:
             aluno.reference.update({"online": True})
@@ -1530,19 +1639,11 @@ async def login_prof_post(
     nome_completo: str = Form(...),
     senha: str = Form(...)
 ):
-    # Normaliza os valores digitados (remove espaços no início e fim e converte para minúsculas)
-    nome_digitado = nome_completo.lstrip().rstrip().lower()
-    senha_digitada = senha.lstrip().rstrip().lower()
-
-    # Busca professores que tenham o mesmo nome normalizado
-    professores_ref = db.collection("professores_online").stream()
+    professores_ref = db.collection("professores_online").where("nome_completo", "==", nome_completo).stream()
 
     for prof in professores_ref:
         dados = prof.to_dict()
-        nome_banco = dados.get("nome_completo", "").lstrip().rstrip().lower()
-        senha_banco = dados.get("senha", "").lstrip().rstrip().lower()
-
-        if nome_banco == nome_digitado and senha_banco == senha_digitada:
+        if dados.get("senha") == senha:
             email = dados.get("email")
 
             # Atualiza o campo 'online' para True
@@ -1557,7 +1658,6 @@ async def login_prof_post(
         "request": request,
         "erro": "Nome completo ou senha incorretos."
     })
-
 
 @app.post("/dados_professor", response_class=HTMLResponse)
 async def dados_professor(request: Request, email: str = Form(...)):

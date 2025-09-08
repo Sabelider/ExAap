@@ -697,6 +697,7 @@ async function mostrarAulasDaSemana() {
   }
 
 let alunoSelecionado = null;
+let modalChatAberta = false;
 
 async function listarMeusAlunos() {
   const emailProfessorLogado = "{{ professor.email }}";
@@ -751,6 +752,16 @@ async function listarMeusAlunos() {
       };
       card.appendChild(infoBtn);
 
+      // Botão Chat
+      const chatBtn = document.createElement('button');
+      chatBtn.innerHTML = '<i class="fa-solid fa-comment"></i> Chat';
+      chatBtn.className = 'botao-padrao';
+      chatBtn.onclick = (e) => {
+        e.stopPropagation();
+        abrirChatAluno(aluno.nome);
+      };
+      card.appendChild(chatBtn);
+
       // Botão Desvincular
       const desvincularBtn = document.createElement('button');
       desvincularBtn.textContent = 'Desvincular';
@@ -789,6 +800,91 @@ async function listarMeusAlunos() {
     console.error("Erro ao buscar alunos:", error);
     alert("Erro ao buscar alunos.");
   }
+}
+
+// Função de chat
+function abrirChatAluno(alunoNome) {
+  alunoSelecionado = alunoNome;
+
+  if (modalChatAberta) {
+    document.querySelector('.overlay-chat')?.remove();
+    modalChatAberta = false;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay-chat';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-chat';
+
+  modal.innerHTML = `
+    <button class="fechar-btn"><i class="fa-solid fa-xmark"></i></button>
+    <h3>Chat com ${alunoNome}</h3>
+    <div id="mensagens-chat" class="mensagens-chat"></div>
+    <div class="input-chat">
+      <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
+      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  modalChatAberta = true;
+
+  // Fechar modal
+  modal.querySelector('.fechar-btn').onclick = () => {
+    overlay.remove();
+    modalChatAberta = false;
+  };
+
+  // Enviar mensagem
+  modal.querySelector('#enviar-msg').onclick = async () => {
+    const input = modal.querySelector('#input-msg');
+    const mensagem = input.value.trim();
+    if (!mensagem) return;
+
+    try {
+      await fetch("/enviar-mensagem", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          aluno: alunoNome,
+          professor: "{{ professor.email }}",
+          mensagem,
+          remetente: "professor"   // 🔹 agora identifica quem está enviando
+        })
+      });
+      input.value = "";
+      carregarMensagens();
+    } catch (err) {
+      console.error("Erro ao enviar mensagem:", err);
+    }
+  };
+
+  // Carregar mensagens
+  async function carregarMensagens() {
+    try {
+      const res = await fetch(`/buscar-mensagens/{{ professor.email }}/${alunoNome}`);
+      const msgs = await res.json();
+      const container = modal.querySelector('#mensagens-chat');
+      container.innerHTML = "";
+      msgs.forEach(m => {
+        const div = document.createElement('div');
+        div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
+        div.textContent = m.mensagem;
+        container.appendChild(div);
+      });
+      container.scrollTop = container.scrollHeight;
+    } catch (err) {
+      console.error("Erro ao buscar mensagens:", err);
+    }
+  }
+
+  carregarMensagens();
+  // Atualizar chat a cada 2s
+  setInterval(() => {
+    if (modalChatAberta) carregarMensagens();
+  }, 2000);
 }
 
 let modalAberta = false;

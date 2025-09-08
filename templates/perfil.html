@@ -8,14 +8,14 @@
   body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
-    background: #f5f7fa; /* fundo mais suave */
+    background: #f5f7fa;
     color: #2c3e50;
     max-width: 480px;
     margin: auto;
   }
 
   .top-bar {
-    background: linear-gradient(135deg, #00c9ff, #92fe9d); /* Mantida */
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
     padding: 15px;
     display: flex;
     align-items: center;
@@ -50,12 +50,10 @@
     font-size: 1.1rem;
     font-weight: 500;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #34495e;
     flex-direction: column;
     align-items: flex-start;
     margin-top: 8px;
+    color: #34495e;
   }
 
   .saldo button {
@@ -63,20 +61,6 @@
     border: none;
     color: #2c3e50;
     cursor: pointer;
-  }
-
-  .carrossel-indicadores {
-    margin-top: 8px;
-    text-align: center;
-  }
-
-  .carrossel-indicadores span {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin: 0 3px;
-    border-radius: 50%;
-    background-color: #1abc9c;
   }
 
   .acoes {
@@ -96,6 +80,13 @@
     padding-top: 8px;
     margin: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .acao:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
 
   .acao i {
@@ -106,7 +97,7 @@
 
   .acao span {
     font-size: 12px;
-    color: #000000; /* preto */
+    color: #000000;
   }
 
   .ultimas-aulas {
@@ -135,6 +126,7 @@
     color: #2c3e50;
   }
 
+  /* Ícone de notificação animado */
   @keyframes tremer {
     0%, 100% { transform: rotate(0deg); }
     20% { transform: rotate(-15deg); }
@@ -143,10 +135,9 @@
     80% { transform: rotate(10deg); }
   }
 
-  
   .notificacao-ativa {
-    color: red; 
-    animation: tremer 0.6s infinite; 
+    color: red;
+    animation: tremer 0.6s infinite;
     font-weight: bold;
   }
 
@@ -161,6 +152,7 @@
     pointer-events: none;
   }
 
+  /* Footer fixo */
   .footer {
     position: fixed;
     bottom: 0;
@@ -172,6 +164,7 @@
     justify-content: space-around;
     align-items: center;
     padding: 10px 0;
+    z-index: 100;
   }
 
   .footer .item {
@@ -189,131 +182,188 @@
     display: block;
   }
 
-   /* Estilo do overlay */
-  .overlay-info {
+  /* === Modal padrão === */
+  .custom-modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: center;
-    z-index: 2000;
+    z-index: 99999;
+    animation: fadeIn 0.3s ease-in-out;
   }
 
-  /* Estilo do modal */
-  .modal-info {
-    background: #1a2e3f; /* cor escura padrão */
-    color: white;
+  .custom-modal {
+    background: #fff;
+    border-radius: 14px;
+    max-width: 350px;
+    width: 85%;
     padding: 20px;
-    border-radius: 12px;
-    width: 80%;
-    max-width: 700px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    font-family: 'Nunito', sans-serif;
-    animation: aparecer 0.3s ease-in-out;
-  }
-
-  @keyframes aparecer {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  .modal-info h2 {
-    margin-bottom: 15px;
     text-align: center;
-    color: #00c2cb;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    position: relative;
+    animation: slideIn 0.35s ease-out;
   }
 
-  .info-content {
-    margin: 15px 0;
-    line-height: 1.6;
+  .custom-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 18px;
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .modal-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-    flex-wrap: wrap;
+  .custom-close-btn:hover {
+    transform: scale(1.15);
+    color: #ff4444;
+    box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
   }
 
-  .botao-padrao {
-    background: linear-gradient(90deg, #00c2cb, #009688);
-    color: white;
+  .custom-close-btn:active {
+    transform: scale(0.95);
+  }
+
+  .custom-action-btn {
+    display: inline-block;
+    background: linear-gradient(45deg, #007bff, #00c6ff);
+    color: #fff;
+    font-weight: bold;
+    font-size: 15px;
     padding: 10px 18px;
     border: none;
     border-radius: 8px;
+    margin-top: 15px;
     cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
+    transition: all 0.25s ease;
   }
 
-  .botao-padrao:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
+  .custom-action-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.35);
   }
 
-  .fechar-btn {
-    margin-top: 20px;
-    display: block;
-    background: #f44336;
+  .custom-action-btn:active {
+    transform: scale(0.95);
   }
 
-  .notificacao-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  padding: 25px 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-  text-align: center;
-  max-width: 350px;
-  width: 85%;
-  display: none; 
-  z-index: 1000;
-  animation: fadeIn 0.4s ease;
-}
+  /* === Estilo para chat === */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    max-height: 60vh;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #dfe6e9;
+    background: #ffffff;
+  }
 
-.notificacao-container p {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0 0 20px 0;
-  text-align: center;
-}
+  .chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f9fbfd;
+  }
 
-.notificar-btn {
-  background: linear-gradient(135deg, #00c9ff, #92fe9d);
-  color: #fff;
-  font-weight: bold;
-  border: none;
-  border-radius: 25px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  display: inline-block;
-  margin: auto;
-}
+  .chat-message {
+    margin: 8px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 75%;
+    word-wrap: break-word;
+    font-size: 14px;
+  }
 
-.notificar-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-  opacity: 0.95;
-}
+  .chat-message.professor {
+    background: #d1f7d6;
+    align-self: flex-start;
+  }
 
-.notificar-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
+  .chat-message.aluno {
+    background: #a8e4ff;
+    align-self: flex-end;
+  }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -45%); }
-  to { opacity: 1; transform: translate(-50%, -50%); }
-}
+  .chat-input {
+    display: flex;
+    border-top: 1px solid #dcdde1;
+    padding: 8px;
+    background: #f5f7fa;
+  }
+
+  .chat-input input {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 8px 12px;
+    outline: none;
+    font-size: 14px;
+  }
+
+  .chat-input button {
+    background: linear-gradient(45deg, #00c9ff, #92fe9d);
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .chat-input button:hover {
+    transform: scale(1.1);
+  }
+
+  /* === Lista de professores no chat === */
+  .aluno-item {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .aluno-item:hover {
+    background: #eef4ff;
+  }
+
+  .aluno-nome {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .aluno-disciplina {
+    font-size: 13px;
+    color: #555;
+  }
+
+  .chat-icon {
+    color: #007bff;
+    font-size: 18px;
+    margin-left: 10px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -401,14 +451,13 @@
     </button>
 
     <h3 style="margin: 0 0 8px 0; font-size: 15px;">
-  <i class="fa-solid fa-brain"></i> Desafio de Inglês
-</h3>
-<p><strong><i class="fa-solid fa-language"></i> Nível:</strong> <span id="nivel-aluno">{{ aluno.nivel_ingles }}</span></p>
-<p id="pergunta-texto" style="margin: 6px 0; font-size: 13px;">Loading...</p>
+      <i class="fa-solid fa-brain"></i> Desafio de Inglês
+    </h3>
+    <p><strong><i class="fa-solid fa-language"></i> Nível:</strong> <span id="nivel-aluno">{{ aluno.nivel_ingles }}</span></p>
+    <p id="pergunta-texto" style="margin: 6px 0; font-size: 13px;">Loading...</p>
 
-<!-- Link para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <!-- Link para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <div style="display: flex; gap: 8px; align-items: center;">
       <input
@@ -427,6 +476,8 @@
   </div>
 </div>
 
+<!-- Notificação centralizada -->
+<div id="notificacao-mensagem" class="notificacao-container"></div>
 
 <script>
 function toggleDesafio() {
@@ -445,7 +496,8 @@ function fecharDesafio() {
   <p id="mensagem-feedback" style="margin-top: 10px; font-weight: bold;"></p>
 </div>
 
-  <div class="footer">
+<!-- Rodapé do aluno -->
+<div class="footer">
   <div class="item active" onclick="abrirPerfil()">
     <i class="fa-solid fa-user"></i>
     O Meu Perfil
@@ -455,15 +507,190 @@ function fecharDesafio() {
     Pagamentos
   </div>
   <div class="item" onclick="abrirInfoEmpresa()">
-  <i class="fa-solid fa-circle-info"></i>
-  Informações
+    <i class="fa-solid fa-circle-info"></i>
+    Informações
+  </div>
+  <div class="item" onclick="abrirChatAluno()">
+    <i class="fa-solid fa-comments"></i>
+    Chat
+  </div>
 </div>
 
-<!-- Link para ícones -->
+<!-- Modal do Chat do Aluno -->
+<div id="chat-modal-aluno" class="chat-overlay" style="display:none;">
+  <div class="chat-modal">
+    <!-- Cabeçalho -->
+    <div class="chat-header">
+      <h3>Conversar com Professor</h3>
+      <button onclick="fecharChatAluno()">&times;</button>
+    </div>
+
+    <!-- Barra de pesquisa -->
+    <div class="chat-search">
+      <input type="text" id="pesquisar-professor" 
+             placeholder="Pesquisar professor..."
+             onkeyup="filtrarProfessores()">
+      <button type="button" onclick="forcarBuscaProfessor()">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </div>
+
+    <!-- Lista dinâmica de professores -->
+    <div id="lista-professores-chat" class="chat-list"></div>
+  </div>
+</div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<script>
+let professorSelecionado = null;
+let modalChatAberta = false;
+
+// Fechar modal principal
+function fecharChatAluno() {
+  document.getElementById('chat-modal-aluno').style.display = 'none';
+}
+
+// Abrir chat direto com professor
+function abrirChatProfessor(professorEmail) {
+  professorSelecionado = professorEmail;
+
+  // Evitar múltiplos modais
+  if (modalChatAberta) {
+    document.querySelector('.overlay-chat')?.remove();
+    modalChatAberta = false;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay-chat';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-chat';
+
+  modal.innerHTML = `
+    <button class="fechar-btn"><i class="fa-solid fa-xmark"></i></button>
+    <h3>Chat com ${professorEmail}</h3>
+    <div id="mensagens-chat" class="mensagens-chat"></div>
+    <div class="input-chat">
+      <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
+      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  modalChatAberta = true;
+
+  // Fechar modal
+  modal.querySelector('.fechar-btn').onclick = () => {
+    overlay.remove();
+    modalChatAberta = false;
+  };
+
+  // Enviar mensagem
+  modal.querySelector('#enviar-msg').onclick = async () => {
+    const input = modal.querySelector('#input-msg');
+    const mensagem = input.value.trim();
+    if (!mensagem) return;
+
+    try {
+      await fetch("/enviar-mensagem", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          aluno: nomeAluno,
+          professor: professorEmail,
+          mensagem,
+          remetente: "aluno"
+        })
+      });
+      input.value = "";
+      carregarMensagens();
+    } catch (err) {
+      console.error("Erro ao enviar mensagem:", err);
+    }
+  };
+
+  // Carregar mensagens
+  async function carregarMensagens() {
+    try {
+      const res = await fetch(`/buscar-mensagens/${professorEmail}/${nomeAluno}`);
+      const msgs = await res.json();
+      const container = modal.querySelector('#mensagens-chat');
+      container.innerHTML = "";
+
+      msgs.forEach(m => {
+        const div = document.createElement('div');
+        div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
+        div.textContent = m.mensagem;
+        container.appendChild(div);
+      });
+
+      container.scrollTop = container.scrollHeight;
+    } catch (err) {
+      console.error("Erro ao buscar mensagens:", err);
+    }
+  }
+
+  carregarMensagens();
+  // Atualizar chat a cada 2s
+  setInterval(() => {
+    if (modalChatAberta) carregarMensagens();
+  }, 2000);
+}
+
+// Buscar professores vinculados ao aluno
+async function listarProfessoresChat() {
+  const container = document.getElementById('lista-professores-chat');
+  container.innerHTML = '';
+
+  try {
+    const res = await fetch(`/meus-professores-status/${encodeURIComponent(nomeAluno)}`);
+    const lista = await res.json();
+
+    if (!res.ok || lista.length === 0) {
+      container.innerHTML = '<p>Nenhum professor encontrado.</p>';
+      return;
+    }
+
+    lista.forEach(prof => {
+      const profDiv = document.createElement('div');
+      profDiv.className = 'professor-item';
+      profDiv.innerHTML = `
+        <span>${prof.nome} - ${prof.disciplina} ${prof.online ? '(Online)' : '(Offline)'}</span>
+        <button class="botao-padrao">Chat</button>
+      `;
+      profDiv.querySelector('button').onclick = () => abrirChatProfessor(prof.nome);
+      container.appendChild(profDiv);
+    });
+
+  } catch (err) {
+    console.error("Erro ao listar professores:", err);
+    container.innerHTML = '<p>Erro ao carregar professores.</p>';
+  }
+}
+
+// Filtrar professores na lista
+function filtrarProfessores() {
+  const filtro = document.getElementById('pesquisar-professor').value.toLowerCase();
+  document.querySelectorAll('.professor-item').forEach(item => {
+    const nome = item.querySelector('span').textContent.toLowerCase();
+    item.style.display = nome.includes(filtro) ? '' : 'none';
+  });
+}
+
+function forcarBuscaProfessor() {
+  listarProfessoresChat();
+}
+
+// Chamar lista inicial
+listarProfessoresChat();
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <script>
+
 function abrirPerfil() {
   // Aqui você coloca a navegação para o perfil
   window.location.href = '/perfil'; 
@@ -589,8 +816,14 @@ function abrirPagamentos() {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Dados do template
+  // Dados do template (injetados pelo backend)
   const nomeAluno = "{{ aluno.nome }}";
+
+  // 🔹 Sempre salvar no localStorage ao carregar o perfil
+  if (nomeAluno && nomeAluno !== "{{ aluno.nome }}") {
+    localStorage.setItem("alunoNome", nomeAluno.trim().toLowerCase());
+    console.log("Aluno salvo no localStorage:", nomeAluno);
+  }
 
   // ---------------------------
   // FUNÇÕES / LÓGICA EXPOSAS
@@ -622,87 +855,76 @@ function abrirPagamentos() {
   }
 });
 
- window.toggleAulas = async function () {
-  const div = document.getElementById("sec-aula");
-  const aulasDadas = document.getElementById("aulas-dadas");
-  const aulasRestantes = document.getElementById("aulas-restantes");
-  const listaAulas = document.getElementById("lista-aulas");
+// Função auxiliar para exibir modal
+  function mostrarModalAulas(htmlContent) {
+    // Remove qualquer modal anterior
+    const antigo = document.querySelector(".custom-modal-overlay");
+    if (antigo) antigo.remove();
 
-  if (div.style.display === "block") {
-    div.style.display = "none";
-    return;
+    // Criar overlay
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+
+    
+    const modal = document.createElement("div");
+    modal.className = "custom-modal";
+
+    
+    const btnClose = document.createElement("button");
+    btnClose.className = "custom-close-btn";
+    btnClose.innerHTML = "&times;";
+    btnClose.onclick = () => overlay.remove();
+
+ 
+    const content = document.createElement("div");
+    content.innerHTML = htmlContent;
+
+    const btnAction = document.createElement("button");
+    btnAction.className = "custom-action-btn";
+    btnAction.innerText = "Fechar";
+    btnAction.onclick = () => overlay.remove();
+
+  
+    modal.appendChild(btnClose);
+    modal.appendChild(content);
+    modal.appendChild(btnAction);
+    overlay.appendChild(modal);
+
+    document.body.appendChild(overlay);
   }
 
-  aulasDadas.textContent = "...carregando...";
-  aulasRestantes.textContent = "";
-  listaAulas.innerHTML = "";
+  window.toggleAulas = async function () {
+    try {
+      const response = await fetch("/ver-aulas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aluno: nomeAluno })
+      });
 
-  try {
-    const response = await fetch("/ver-aulas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ aluno: nomeAluno })
-    });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (data.erro) {
+        mostrarModalAulas(`<i class="fa-solid fa-circle-xmark"></i> Erro ao carregar as aulas.`);
+        return;
+      }
 
-    const data = await response.json();
+      let html = `
+        <div><i class="fa-solid fa-circle-check"></i> Já teve: ${data.aulas_dadas} aulas</div>
+        <div><i class="fa-solid fa-thumbtack"></i> Faltam: ${data.restantes} aulas</div>
+        <ul style="margin-top:10px;text-align:left;">`;
 
-    if (data.erro) {
-      aulasDadas.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao carregar as aulas.`;
-      aulasRestantes.textContent = "";
-      listaAulas.innerHTML = "";
-      return;
+      (data.aulas || []).forEach((aula, i) => {
+        html += `<li>${i + 1}. <i class="fa-solid fa-calendar-days"></i> ${aula.data} <i class="fa-regular fa-clock"></i> ${aula.horario}</li>`;
+      });
+
+      html += `</ul>`;
+      mostrarModalAulas(html);
+    } catch (err) {
+      console.error("Erro toggleAulas:", err);
+      mostrarModalAulas(`<i class="fa-solid fa-circle-xmark"></i> Erro ao buscar dados.`);
     }
-
-    aulasDadas.innerHTML = `<i class="fa-solid fa-circle-check"></i> Já teve: ${data.aulas_dadas} aulas`;
-    aulasRestantes.innerHTML = `<i class="fa-solid fa-thumbtack"></i> Faltam: ${data.restantes} aulas`;
-
-    listaAulas.innerHTML = "";
-    (data.aulas || []).forEach((aula, i) => {
-      const li = document.createElement("li");
-      li.innerHTML = `${i + 1}. <i class="fa-solid fa-calendar-days"></i> ${aula.data} <i class="fa-regular fa-clock"></i> ${aula.horario}`;
-      listaAulas.appendChild(li);
-    });
-  } catch (err) {
-    console.error("Erro toggleAulas:", err);
-    aulasDadas.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao buscar dados.`;
-    aulasRestantes.textContent = "";
-    listaAulas.innerHTML = "";
-  }
-
-  div.style.display = "block";
-};
-
-window.toggleProfessor = async function () {
-  const container = document.getElementById("professor-nome");
-  if (container.style.display === "block") {
-    container.style.display = "none";
-    return;
-  }
-  container.innerHTML = "Carregando...";
-  try {
-    const res = await fetch(`/meu-professor-status/${encodeURIComponent(nomeAluno)}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    const statusIcon = data.online
-      ? '<i class="fa-solid fa-circle text-success"></i>'
-      : '<i class="fa-regular fa-circle text-muted"></i>';
-    const statusText = data.online ? 'Online' : 'Offline';
-
-    container.innerHTML = `${statusIcon} Professor: ${data.professor} <span class="status-icon">(${statusText})</span>`;
-    container.style.display = "block";
-  } catch (e) {
-    console.error("Erro toggleProfessor:", e);
-    container.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Professor não encontrado.`;
-    container.style.display = "block";
-  }
-};
-
-// Normaliza o nome do aluno para consulta
-const aluno = nomeAluno.trim().toLowerCase().replace(/\s+/g, "");
-
+  };
 
 async function verificarAulaAtiva() {
   try {
@@ -711,39 +933,40 @@ async function verificarAulaAtiva() {
 
     const icone = document.getElementById("icone-aulas");
     const texto = document.getElementById("texto-aulas");
-    const infoBox = document.getElementById("info-aula");
     const btn = document.getElementById("btn-aulas-ativas");
 
     if (data.peer_id) {
-      // Aula encontrada
-      icone.classList.add("fa-beat-fade", "text-success"); // animação + verde
+      icone.classList.add("fa-beat-fade", "text-success");
       texto.textContent = "Aula Ativa";
       btn.classList.add("active");
 
-      // Mostrar info extra
       const hora = new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit"
       });
 
-      infoBox.innerHTML = `
-        <b><i class="fa-solid fa-video"></i> Aula a decorrer</b> — ${hora}<br>
-        <i class="fa-solid fa-chalkboard-user"></i> Professor: ${data.professor || "Desconhecido"}
+      const html = `
+        <div style="margin-bottom:10px;">
+          <b><i class="fa-solid fa-video"></i> Aula a decorrer</b> — ${hora}
+        </div>
+        <div>
+          <i class="fa-solid fa-chalkboard-user"></i> Professor: ${data.professor || "Desconhecido"}
+        </div>
       `;
-      infoBox.classList.add("active");
+
+      mostrarModalAulas(html);
     } else {
-      // Nenhuma aula
       icone.classList.remove("fa-beat-fade", "text-success");
       texto.textContent = "Aulas Ativas";
       btn.classList.remove("active");
-      infoBox.classList.remove("active");
     }
   } catch (err) {
     console.error("Erro ao verificar aula ativa:", err);
   }
 }
 
-setInterval(verificarAulaAtiva, 2000);
+// 👉 só chama quando clicar no botão
+document.getElementById("btn-aulas-ativas").addEventListener("click", verificarAulaAtiva);
 
   
   function toggleDesafio() {
@@ -757,68 +980,102 @@ setInterval(verificarAulaAtiva, 2000);
 function fecharDesafio() {
   document.getElementById("container-desafio").style.display = "none";
 }
-
 window.verHorario = async function () {
-  const container = document.getElementById("sec-horario");
-  const listaHorario = document.getElementById("lista-horario");
+  
+  const oldModal = document.querySelector(".custom-modal-overlay");
+  if (oldModal) oldModal.remove();
 
-  if (container.style.display === "block") {
-    container.style.display = "none";
-    return;
-  }
 
-  listaHorario.innerHTML = "Carregando...";
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay";
+
+ 
+  const modal = document.createElement("div");
+  modal.className = "custom-modal";
+
+ 
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "custom-close-btn";
+  closeBtn.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+  closeBtn.onclick = () => overlay.remove();
+
+  
+  const titulo = document.createElement("h3");
+  titulo.innerHTML = `<i class="fa-solid fa-calendar-days"></i> Horário do Aluno`;
+
+  
+  const listaHorario = document.createElement("ul");
+  listaHorario.style.listStyle = "none";
+  listaHorario.style.padding = "0";
+  listaHorario.style.marginTop = "15px";
+  listaHorario.innerHTML = `
+    <li style="color:#666;">
+      <i class="fa-solid fa-spinner fa-spin"></i> Carregando...
+    </li>`;
+
+  
+  const actionBtn = document.createElement("button");
+  actionBtn.className = "custom-action-btn";
+  actionBtn.textContent = "Fechar";
+  actionBtn.onclick = () => overlay.remove();
+
+  
+  modal.appendChild(closeBtn);
+  modal.appendChild(titulo);
+  modal.appendChild(listaHorario);
+  modal.appendChild(actionBtn);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
 
   try {
-    const res = await fetch(
-      `/ver-horario-aluno/${encodeURIComponent(nomeAluno)}`
-    );
+    const res = await fetch(`/ver-horario-aluno/${encodeURIComponent(nomeAluno)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     listaHorario.innerHTML = "";
 
-    if (data.erro) {
-      const li = document.createElement("li");
-      li.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Horário não encontrado.`;
-      listaHorario.appendChild(li);
+    if (data.erro || !data.horario || Object.keys(data.horario).length === 0) {
+      listaHorario.innerHTML = `
+        <li style="color:#b00;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Nenhum horário encontrado.
+        </li>`;
     } else {
-      for (const [dia, horarios] of Object.entries(data.horario || {})) {
+      for (const [dia, horarios] of Object.entries(data.horario)) {
         const diaItem = document.createElement("li");
-        diaItem.innerHTML = `<strong><i class="fa-solid fa-calendar-days"></i> ${traduzirDia(
-          dia
-        )}:</strong>`;
+        diaItem.innerHTML = `
+          <strong><i class="fa-solid fa-calendar-day"></i> ${traduzirDia(dia)}:</strong>`;
+        diaItem.style.marginTop = "10px";
         listaHorario.appendChild(diaItem);
 
         (horarios || []).forEach((h) => {
           const horaItem = document.createElement("li");
           horaItem.innerHTML = `<i class="fa-regular fa-clock"></i> ${h}`;
-          horaItem.style.marginLeft = "15px";
+          horaItem.style.marginLeft = "20px";
+          horaItem.style.color = "#333";
           listaHorario.appendChild(horaItem);
         });
       }
     }
   } catch (e) {
     console.error("Erro verHorario:", e);
-    listaHorario.innerHTML =
-      `<li><i class="fa-solid fa-circle-xmark"></i> Erro ao buscar horário.</li>`;
+    listaHorario.innerHTML = `
+      <li style="color:#b00;">
+        <i class="fa-solid fa-circle-xmark"></i> Erro ao buscar horário.
+      </li>`;
   }
-
-  container.style.display = "block";
 };
 
-
-  function traduzirDia(diaAbreviado) {
-    const dias = {
-      "Seg": "Segunda-feira",
-      "Ter": "Terça-feira",
-      "Qua": "Quarta-feira",
-      "Qui": "Quinta-feira",
-      "Sex": "Sexta-feira",
-      "Sab": "Sábado",
-      "Dom": "Domingo"
-    };
-    return dias[diaAbreviado] || diaAbreviado;
-  }
+function traduzirDia(diaAbreviado) {
+  const dias = {
+    Seg: "Segunda-feira",
+    Ter: "Terça-feira",
+    Qua: "Quarta-feira",
+    Qui: "Quinta-feira",
+    Sex: "Sexta-feira",
+    Sab: "Sábado",
+    Dom: "Domingo",
+  };
+  return dias[diaAbreviado] || diaAbreviado;
+}
 
   window.toggle = function (id) {
     const el = document.getElementById(id);
@@ -961,76 +1218,71 @@ window.verHorario = async function () {
   }
 };
 
-  window.verNotificacao = async function () {
-    try {
-      const response = await fetch("/verificar-notificacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: nomeAluno })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+window.verNotificacao = async function () {
+  try {
+    const response = await fetch("/verificar-notificacao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: nomeAluno })
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
 
-      const notificacaoEl = document.getElementById("notificacao-mensagem");
-      const contadorAulas = document.getElementById("contador-aulas");
-      const iconeSino = document.getElementById("icone-sino");
-      const textoSala = document.getElementById("texto-sala");
+    const notificacaoEl = document.getElementById("notificacao-mensagem");
+    const contadorAulas = document.getElementById("contador-aulas");
+    const iconeSino = document.getElementById("icone-sino");
+    const textoSala = document.getElementById("texto-sala");
 
-      if (data.notificacao === true) {
-        window.professorEmailAtual = data.professor_email;
+    if (data.notificacao === true) {
+      window.professorEmailAtual = data.professor_email;
 
-        notificacaoEl.innerHTML = `
-          A tua aula irá começar
-          <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Entrar</button>
-        `;
-        notificacaoEl.style.display = "block";
-        contadorAulas.innerText = "(1)";
+      notificacaoEl.innerHTML = `
+        <p>A tua aula irá começar</p>
+        <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Entrar</button>
+      `;
+      notificacaoEl.style.display = "block"; // agora usa o container centralizado
+      contadorAulas.innerText = "(1)";
 
-       
-        iconeSino.classList.add("notificacao-ativa");
-        textoSala.classList.add("notificacao-ativa");
-      } else {
-        notificacaoEl.style.display = "none";
-        contadorAulas.innerText = "";
+      iconeSino.classList.add("notificacao-ativa");
+      textoSala.classList.add("notificacao-ativa");
+    } else {
+      notificacaoEl.style.display = "none";
+      contadorAulas.innerText = "";
 
-        
-        iconeSino.classList.remove("notificacao-ativa");
-        textoSala.classList.remove("notificacao-ativa");
-      }
-    } catch (e) {
-      console.error("Erro verNotificacao:", e);
+      iconeSino.classList.remove("notificacao-ativa");
+      textoSala.classList.remove("notificacao-ativa");
     }
-  };
+  } catch (e) {
+    console.error("Erro verNotificacao:", e);
+  }
+};
 
-  window.desativarNotificacaoERedirecionar = async function () {
-    try {
-      await fetch("/desativar-notificacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: nomeAluno })
-      });
-      document.getElementById("notificacao-mensagem").style.display = "none";
-      document.getElementById("contador-aulas").innerText = "";
+window.desativarNotificacaoERedirecionar = async function () {
+  try {
+    await fetch("/desativar-notificacao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: nomeAluno })
+    });
+    document.getElementById("notificacao-mensagem").style.display = "none";
+    document.getElementById("contador-aulas").innerText = "";
 
-      
-      document.getElementById("icone-sino").classList.remove("notificacao-ativa");
-      document.getElementById("texto-sala").classList.remove("notificacao-ativa");
+    document.getElementById("icone-sino").classList.remove("notificacao-ativa");
+    document.getElementById("texto-sala").classList.remove("notificacao-ativa");
 
-      if (window.professorEmailAtual) {
-        const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
-        window.location.href = `/sala_virtual_aluno/${sala}`;
-      }
-    } catch (e) {
-      console.error("Erro desativarNotificacaoERedirecionar:", e);
+    if (window.professorEmailAtual) {
+      const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
+      window.location.href = `/sala_virtual_aluno/${sala}`;
     }
-  };
+  } catch (e) {
+    console.error("Erro desativarNotificacaoERedirecionar:", e);
+  }
+};
 
-
-  window.addEventListener("DOMContentLoaded", () => {
-    verNotificacao();
-    setInterval(verNotificacao, 5000);
-  });
-  
+window.addEventListener("DOMContentLoaded", () => {
+  verNotificacao();
+  setInterval(verNotificacao, 5000);
+});
   
  window.verificarResposta = async function () {
   const respostaInput = document.getElementById("resposta-input");
@@ -1051,7 +1303,7 @@ window.verHorario = async function () {
     return;
   }
 
-  // desativa botão enquanto faz requisição
+
   btnVerificar.disabled = true;
   btnVerificar.style.opacity = "0.6";
 
@@ -1072,7 +1324,7 @@ window.verHorario = async function () {
     );
 
     if (!response.ok) {
-      // mostrar erro amigável
+      
       throw new Error(`Erro HTTP ${response.status}`);
     }
 
@@ -1114,7 +1366,6 @@ window.verHorario = async function () {
     btnVerificar.style.opacity = "1";
   }
 };
-
 
   window.proximaPergunta = async function () {
   try {
@@ -1183,10 +1434,10 @@ window.subirNivel = async function () {
   }
 };
 
-// inicia o jogo
+
 window.carregarPerguntas();
 
-  // expõe também função de toggleVisibilidade (mantida global pelo onclick no HTML)
+  
   window.toggleVisibilidade = function () {
     const dividaEl = document.getElementById("valor-divida");
     const inglesEl = document.getElementById("nivel-ingles");

@@ -25,12 +25,11 @@
 
     #remoteVideo {
       position: absolute;
-      top: 0;
+      top: -10%;
       left: 0;
       width: 100%;
-      height: 100%;
-      object-fit: contain; /* atualizado */
-      background: black;
+      height: 120%;
+      object-fit: cover;
     }
 
     #localVideo {
@@ -122,6 +121,11 @@
     }
 
     @media (min-width: 768px) {
+      #remoteVideo {
+        top: -15%;
+        height: 130%;
+      }
+
       #localVideo {
         width: 180px;
         height: 135px;
@@ -155,17 +159,19 @@
   </style>
 </head>
 <body>
+  <!-- Status e Cronômetro -->
   <div id="info">
-    <div><strong>O seu ID:</strong> <span id="myId">Gerando...</span></div>
     <div><strong>Status:</strong> <span id="status">Aguardando conexão...</span></div>
     <div id="cronometro" style="display: none;">01:00:00</div>
   </div>
 
+  <!-- Vídeos -->
   <div>
     <video id="localVideo" autoplay muted playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
 
+  <!-- Botões -->
   <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar o Aluno</button>
   <button id="confirmarAulaBtn" onclick="registrarAula()">Confirmar aula dada?</button>
 
@@ -187,7 +193,6 @@
   </script>
 
   <script>
-    const myIdSpan = document.getElementById("myId");
     const statusSpan = document.getElementById("status");
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
@@ -202,14 +207,13 @@
     let peer;
     let currentCall;
     let meuPeerId = "";
-    let tempoRestante = 3600; // 1 hora em segundos
+    let tempoRestante = 3900; // 🔹 1 hora e 5 minutos em segundos
     let intervalo;
 
     async function startCamera() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
-        initPeer(); // só inicia depois que a câmera estiver pronta
       } catch (err) {
         alert("Erro ao acessar câmera e microfone");
         console.error(err);
@@ -217,23 +221,10 @@
     }
 
     function initPeer() {
-      peer = new Peer({
-        config: {
-          'iceServers': [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            {
-              urls: 'turn:openrelay.metered.ca:80',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
-            }
-          ]
-        }
-      });
+      peer = new Peer();
 
       peer.on("open", (id) => {
         meuPeerId = id;
-        myIdSpan.textContent = id;
       });
 
       peer.on("call", (call) => {
@@ -251,7 +242,6 @@
     function handleCallEvents(call) {
       call.on("stream", (remoteStream) => {
         remoteVideo.srcObject = remoteStream;
-        remoteVideo.play().catch(err => console.warn("Autoplay bloqueado:", err));
         statusSpan.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado!`;
         iniciarCronometro();
       });
@@ -296,21 +286,20 @@
 
     function iniciarCronometro() {
       cronometro.style.display = "block";
-      tempoRestante = 3600;
+      tempoRestante = 3900; // 🔹 Reinicia para 1h05min sempre que iniciar
 
       intervalo = setInterval(() => {
         if (tempoRestante <= 0) {
           clearInterval(intervalo);
-          cronometro.textContent = "00:00:00";
+          cronometro.textContent = "00:00";
           encerrarChamada();
           return;
         }
 
         tempoRestante--;
-        let horas = Math.floor(tempoRestante / 3600).toString().padStart(2, '0');
-        let minutos = Math.floor((tempoRestante % 3600) / 60).toString().padStart(2, '0');
+        let minutos = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
         let segundos = (tempoRestante % 60).toString().padStart(2, '0');
-        cronometro.textContent = `${horas}:${minutos}:${segundos}`;
+        cronometro.textContent = `${minutos}:${segundos}`;
       }, 1000);
     }
 
@@ -325,7 +314,7 @@
 
     function registrarAula() {
       const btn = document.getElementById("confirmarAulaBtn");
-      btn.disabled = true;
+      btn.disabled = true; 
 
       fetch("/registrar-aula", {
         method: "POST",
@@ -337,21 +326,21 @@
       })
       .then(res => {
         if (res.ok) {
-          alert("✅ Aula registrada com sucesso!");
-          btn.style.display = "none";
+          alert("✔️ Aula registrada com sucesso!");
+          btn.style.display = "none"; 
         } else {
-          alert("⚠️ Falha ao registrar aula.");
+          alert("❌ Falha ao registrar aula.");
           btn.disabled = false;
         }
       })
       .catch(err => {
         console.error("Erro ao registrar aula:", err);
         alert("⚠️ Erro de conexão ao registrar aula.");
-        btn.disabled = false;
+        btn.disabled = false; 
       });
     }
 
-    startCamera(); // inicia o fluxo
-  </script>
+    startCamera().then(initPeer);
+</script>
 </body>
 </html>

@@ -29,18 +29,17 @@
     overflow: hidden;
   }
 
-  /* Vídeo remoto ocupa mais da tela */
+  /* Vídeo remoto ocupa mais da tela para preencher */
   #remoteVideo {
     position: absolute;
-    top: 0;
+    top: -10%;
     left: 0;
     width: 100%;
-    height: 100%;
-    object-fit: contain; /* 🔑 evita cortes e tela preta */
-    background: black;   /* 🔑 fundo preto se vídeo não carregar */
+    height: 120%;
+    object-fit: cover;
   }
 
-  /* Efeitos de desfoque */
+  /* Efeitos de desfoque superior/inferior */
   .blur-top,
   .blur-bottom {
     position: absolute;
@@ -53,8 +52,13 @@
     z-index: 2;
   }
 
-  .blur-top { top: 0; }
-  .blur-bottom { bottom: 0; }
+  .blur-top {
+    top: 0;
+  }
+
+  .blur-bottom {
+    bottom: 0;
+  }
 
   /* Vídeo local (miniatura) */
   #localVideo {
@@ -77,7 +81,7 @@
     z-index: 4;
   }
 
-  /* Notificação (40min) */
+  /* Notificação (40s) */
   #notificacao {
     display: none;
     position: absolute;
@@ -99,7 +103,10 @@
     cursor: pointer;
     border-radius: 4px;
   }
-  #notificacao button#nao { background: #dc3545; }
+
+  #notificacao button#nao {
+    background: #dc3545;
+  }
 
   /* Pagamento */
   #pagamento {
@@ -161,157 +168,155 @@
   const aluno = "{{ aluno }}";
   const professor = "{{ professor }}";
 
-  let peer;
-  let localStream;
+ let peer;
+let localStream;
 
-  async function startCamera() {
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      return true;
-    } catch (err) {
-      console.error("Erro ao acessar a câmera e microfone:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao acessar a câmera/microfone`;
-      return false;
-    }
+async function startCamera() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+    return true;
+  } catch (err) {
+    console.error("Erro ao acessar a câmera e microfone:", err);
+    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao acessar a câmera/microfone`;
+    return false;
   }
+}
 
-  function initPeerAndConnect(peerIdDoProfessor) {
-    peer = new Peer({
-      config: {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          {
-            urls: "turn:relay1.expressturn.com:3478",
-            username: "efYJdJZ4JUkN6oYwI5",
-            credential: "H7jC2L3P4s9M0xQw"
-          }
-        ]
-      }
+function initPeerAndConnect(peerIdDoProfessor) {
+  peer = new Peer();
+  peer.on("open", () => {
+    statusEl.innerHTML = `<i class="fa-solid fa-link"></i> Conectando ao professor...`;
+    const call = peer.call(peerIdDoProfessor, localStream);
+
+    call.on("stream", async (remoteStream) => {
+      remoteVideo.srcObject = remoteStream;
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor!`;
+
+      // Só inicia o cronômetro quando realmente conectado
+      await iniciarCronometro();
     });
 
-    peer.on("open", () => {
-      statusEl.innerHTML = `<i class="fa-solid fa-link"></i> Conectando ao professor...`;
-      const call = peer.call(peerIdDoProfessor, localStream);
-
-      call.on("stream", async (remoteStream) => {
-        remoteVideo.srcObject = remoteStream;
-
-        try {
-          await remoteVideo.play(); // 🔑 força autoplay
-        } catch (err) {
-          console.warn("Autoplay bloqueado, usuário precisa interagir:", err);
-        }
-
-        statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor!`;
-        await iniciarCronometro();
-      });
-
-      call.on("close", () => {
-        statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
-      });
-
-      call.on("error", (err) => {
-        console.error("Erro na chamada:", err);
-      });
+    call.on("close", () => {
+      statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
     });
 
-    peer.on("error", (err) => {
-      console.error("Erro PeerJS:", err);
+    call.on("error", (err) => {
+      console.error("Erro na chamada:", err);
     });
-  }
-
-  async function verificarPermissaoEConectar() {
-    try {
-      const resp = await fetch(`/registrar-chamada`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: aluno, professor: professor })
-      });
-
-      const result = await resp.json();
-      if (resp.ok && result.sala) {
-        buscarPeerIdEDiscar();
-      } else {
-        statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Conexão não autorizada.`;
-        console.warn(result);
-      }
-    } catch (err) {
-      console.error("Erro ao verificar status:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Falha ao verificar a autorização.`;
-    }
-  }
-
-  async function buscarPeerIdEDiscar() {
-    try {
-      const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
-      let tentativas = 0;
-      const maxTentativas = 30;
-
-      statusEl.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Aguardando o professor iniciar a chamada...`;
-
-      while (tentativas < maxTentativas) {
-        const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-        const data = await res.json();
-
-        if (data.peer_id) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ID do professor encontrado, conectando...`;
-          initPeerAndConnect(data.peer_id);
-          return;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        tentativas++;
-      }
-
-      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Professor ausente.`;
-    } catch (err) {
-      console.error("Erro ao buscar o ID do professor:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Erro ao buscar ID.`;
-    }
-  }
-
-  async function verificarSeDeveMostrarPagamento() {
-    try {
-      const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);
-      const data = await res.json();
-      const aulas = data.aulas || 0;
-      return aulas === 0 || aulas === 11;
-    } catch (err) {
-      console.error("Erro ao obter número de aulas:", err);
-      return false;
-    }
-  }
-
-  async function iniciarCronometro() {
-    const mostrarPagamento = await verificarSeDeveMostrarPagamento();
-    if (!mostrarPagamento) return;
-
-    let segundos = 0;
-    const duracaoAula = 3600;
-    const intervalo = setInterval(() => {
-      segundos++;
-      if (segundos === 2400) {
-        notificacao.style.display = "block";
-      }
-      if (segundos >= duracaoAula) clearInterval(intervalo);
-    }, 1000);
-  }
-
-  // 🔑 Só inicia conexão depois que a câmera/microfone estiverem prontos
-  startCamera().then(ok => {
-    if (ok) verificarPermissaoEConectar();
   });
 
-  btnSim.onclick = () => {
-    notificacao.style.display = "none";
-    pagamento.style.display = "block";
-  };
-  btnNao.onclick = () => { notificacao.style.display = "none"; };
-  btnPagamento.onclick = () => {
-    window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
-  };
-  </script>
+  peer.on("error", (err) => {
+    console.error("Erro PeerJS:", err);
+  });
+}
+
+ async function verificarPermissaoEConectar() {
+  try {
+    const resp = await fetch(`/registrar-chamada`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: aluno, professor: professor })
+    });
+
+    const result = await resp.json();
+    if (resp.ok && result.sala) {
+      buscarPeerIdEDiscar();
+    } else {
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Conexão não autorizada.`;
+      console.warn(result);
+    }
+  } catch (err) {
+    console.error("Erro ao verificar status:", err);
+    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Falha ao verificar a autorização.`;
+  }
+}
+
+async function buscarPeerIdEDiscar() {
+  try {
+    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+
+    let tentativas = 0;
+    const maxTentativas = 30; // até 1 minuto (2s cada tentativa)
+
+    statusEl.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Aguardando o professor iniciar a chamada...`;
+
+    while (tentativas < maxTentativas) {
+      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+      const data = await res.json();
+
+      if (data.peer_id) {
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ID do professor encontrado, conectando...`;
+        initPeerAndConnect(data.peer_id);
+        return; // interrompe o loop assim que encontrar
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      tentativas++;
+    }
+
+    // só aparece após TODAS as tentativas falharem
+    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Professor ausente.`;
+  } catch (err) {
+    console.error("Erro ao buscar o ID do professor:", err);
+    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Erro ao buscar ID.`;
+  }
+}
+
+async function verificarSeDeveMostrarPagamento() {
+  try {
+    const res = await fetch(`/aulas_dadas?aluno=${encodeURIComponent(aluno)}`);
+    const data = await res.json();
+    const aulas = data.aulas || 0;
+    return aulas === 0 || aulas === 11; // primeira aula ou antes da 12ª
+  } catch (err) {
+    console.error("Erro ao obter número de aulas:", err);
+    return false;
+  }
+}
+
+async function iniciarCronometro() {
+  const mostrarPagamento = await verificarSeDeveMostrarPagamento();
+  if (!mostrarPagamento) return;
+
+  let segundos = 0;
+  const duracaoAula = 3900; // 1h05 = 3900 segundos
+  const minutoNotificacao = 3600; // 60 minutos = 3600 segundos
+
+  const intervalo = setInterval(() => {
+    segundos++;
+
+    if (segundos === minutoNotificacao) {
+      // notificação apenas no minuto 60
+      notificacao.style.display = "block";
+    }
+
+    if (segundos >= duracaoAula) {
+      clearInterval(intervalo);
+      notificacao.style.display = "none"; 
+      encerrarChamada?.(); // encerra se a função existir
+    }
+  }, 1000);
+}
+
+startCamera().then(ok => {
+  if (ok) {
+    verificarPermissaoEConectar();
+  }
+});
+
+btnSim.onclick = () => {
+  notificacao.style.display = "none";
+  pagamento.style.display = "block";
+};
+
+btnNao.onclick = () => {
+  notificacao.style.display = "none";
+};
+
+btnPagamento.onclick = () => {
+  window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
+};
+</script>
 </body>
 </html>

@@ -4098,3 +4098,7 @@ async def ajustar_progresso_ingles():
             count += 1
 
     return {"mensagem": f"Campos criados/atualizados em {count} alunos."}
+
+@app.get("/info-p", response_class=HTMLResponse)
+async def abrir_info_p(request: Request):
+    return templates.TemplateResponse("info-p.html", {"request": request})

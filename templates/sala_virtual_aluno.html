@@ -28,7 +28,6 @@
     overflow: hidden;
   }
 
-  /* ✅ RemoteVideo ajustado para evitar corte preto */
   #remoteVideo {
     position: absolute;
     top: 0;
@@ -163,10 +162,14 @@
 
   let peer;
   let localStream;
+  let currentCall;
 
   async function startCamera() {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
       localVideo.srcObject = localStream;
       return true;
     } catch (err) {
@@ -181,7 +184,12 @@
       config: {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" }
+          { urls: "stun:stun1.l.google.com:19302" },
+          {
+            urls: "turn:seu-turn.dominio.com:3478",
+            username: "usuario",
+            credential: "senha"
+          }
         ]
       }
     });
@@ -193,25 +201,55 @@
       }
 
       statusEl.innerHTML = `<i class="fa-solid fa-link"></i> Conectando ao professor...`;
-      const call = peer.call(peerIdDoProfessor, localStream);
+      currentCall = peer.call(peerIdDoProfessor, localStream);
+      handleCallEvents(currentCall);
+    });
 
-      call.on("stream", async (remoteStream) => {
-        remoteVideo.srcObject = remoteStream;
-        statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor!`;
-        await iniciarCronometro();
-      });
-
-      call.on("close", () => {
-        statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
-      });
-
-      call.on("error", (err) => {
-        console.error("Erro na chamada:", err);
-      });
+    peer.on("disconnected", () => {
+      statusEl.textContent = "Reconectando...";
+      try { peer.reconnect(); } catch(_) {}
+      if (currentCall && localStream) {
+        setTimeout(() => {
+          const newCall = peer.call(currentCall.peer, localStream);
+          handleCallEvents(newCall);
+        }, 2000);
+      }
     });
 
     peer.on("error", (err) => {
       console.error("Erro PeerJS:", err);
+    });
+  }
+
+  function handleCallEvents(call) {
+    currentCall = call;
+
+    call.on("stream", async (remoteStream) => {
+      remoteStream.getTracks().forEach(track => track.enabled = true);
+      remoteVideo.srcObject = remoteStream;
+      try {
+        await remoteVideo.play();
+      } catch {
+        console.warn("⚠️ Requer interação do usuário para liberar som");
+      }
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor!`;
+      await iniciarCronometro();
+    });
+
+    call.peerConnection?.addEventListener("track", (ev) => {
+      if (ev.streams && ev.streams[0]) {
+        ev.streams[0].getTracks().forEach(track => track.enabled = true);
+        remoteVideo.srcObject = ev.streams[0];
+        remoteVideo.play().catch(() => console.warn("⚠️ Usuário precisa clicar para liberar som"));
+      }
+    });
+
+    call.on("close", () => {
+      statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
+    });
+
+    call.on("error", (err) => {
+      console.error("Erro na chamada:", err);
     });
   }
 

@@ -460,7 +460,40 @@ async def alunos_status_completo(prof_email: str):
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": "Erro ao buscar status dos alunos", "erro": str(e)})
-        
+
+
+@app.get("/ver-professor/{aluno_nome}")
+async def ver_professor(aluno_nome: str):
+    try:
+        aluno_normalizado = aluno_nome.strip().lower()
+
+        # Procurar vínculo do aluno
+        docs = db.collection("alunos_professor") \
+                 .where("aluno", "==", aluno_normalizado) \
+                 .limit(1).stream()
+
+        doc = next(docs, None)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Aluno não possui professor vinculado")
+
+        dados = doc.to_dict()
+        professor_email = dados.get("professor")
+
+        # Retorna só as infos básicas do professor
+        return {
+            "aluno": aluno_normalizado,
+            "professor": professor_email
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("Erro ao buscar professor vinculado:", e)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro interno ao buscar professor"}
+        )
+
         
 @app.get("/alunos-status-completo/{prof_email}")
 async def alunos_status_completo(prof_email: str):

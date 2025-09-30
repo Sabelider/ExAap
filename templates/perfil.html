@@ -483,16 +483,18 @@
 <script>
 async function toggleProfessor() { 
   try {
-    // Envia o nome real do aluno (sem normalizar)
-    const res = await fetch(`/meu-professor-status/${encodeURIComponent(nomeAluno)}`);
+    
+    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
     if (!res.ok) {
-      throw new Error("Não foi possível buscar status do professor");
+      throw new Error("Não foi possível buscar dados do professor");
     }
 
     const data = await res.json();
 
+    // Remove modal anterior, se existir
     document.getElementById("modal-professor")?.remove();
 
+    // Overlay escuro de fundo
     const overlay = document.createElement("div");
     overlay.id = "modal-professor";
     overlay.style.position = "fixed";
@@ -506,33 +508,34 @@ async function toggleProfessor() {
     overlay.style.alignItems = "center";
     overlay.style.zIndex = "1000";
 
+    // Caixa central
     const box = document.createElement("div");
     box.style.background = "linear-gradient(135deg, #1abc9c, #16a085)";
     box.style.color = "white";
     box.style.padding = "20px";
     box.style.borderRadius = "12px";
     box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-    box.style.maxWidth = "360px";
+    box.style.maxWidth = "380px";
     box.style.width = "80%";
     box.style.textAlign = "center";
     box.style.fontFamily = "'Nunito', sans-serif";
 
-    const statusOnline = data.online 
-      ? `<span style="color:#2ecc71; font-weight:bold;">🟢 Online</span>` 
-      : `<span style="color:#e74c3c; font-weight:bold;">🔴 Offline</span>`;
-
+    // Monta conteúdo do modal
     box.innerHTML = `
       <h3 style="margin-bottom: 15px; font-size: 18px;">
         📘 Professor Vinculado
       </h3>
       <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Aluno:</strong> ${data.aluno}
+        <strong>Aluno:</strong> ${nomeAluno}
       </p>
       <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Professor:</strong> ${data.professor}
+        <strong>Professor:</strong> ${data.professor || "Não encontrado"}
       </p>
       <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Status:</strong> ${statusOnline}
+        <strong>Disciplina:</strong> ${data.disciplina || "Desconhecida"}
+      </p>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <strong>Email:</strong> ${data.email || "N/A"}
       </p>
       <button id="fechar-prof-btn" 
         style="margin-top: 15px; padding: 8px 14px; background: white; 
@@ -545,6 +548,7 @@ async function toggleProfessor() {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
+    // Fechar modal
     document.getElementById("fechar-prof-btn").onclick = () => overlay.remove();
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 

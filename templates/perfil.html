@@ -483,7 +483,6 @@
 <script>
 async function toggleProfessor() { 
   try {
-    
     const alunoNormalizado = (nomeAluno || "").trim().toLowerCase();
 
     const res = await fetch(`/meu-professor-status/${encodeURIComponent(alunoNormalizado)}`);

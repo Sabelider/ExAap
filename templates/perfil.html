@@ -182,6 +182,20 @@
     display: block;
   }
 
+  /* Bloco que mostra o professor vinculado */
+.professor-box {
+  margin: 12px 15px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #16a085;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
   /* === Modal padrão === */
   .custom-modal-overlay {
     position: fixed;
@@ -418,21 +432,17 @@
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
 
-  <!-- Botão Ver Professor -->
+ <!-- Botão Ver Professor -->
 <div class="acao" onclick="carregarProfessorDoAluno()">
   <i class="fa-solid fa-user-tie"></i>
   <span>Ver Professor</span>
 </div>
 
 <!-- Caixa onde será exibido o professor vinculado -->
-<div id="professor-vinculado" style="
-     margin-top: 10px; 
-     font-family: 'Nunito', sans-serif; 
-     font-size: 14px; 
-     font-weight: bold; 
-     color: #16a085;">
+<div id="professor-vinculado" class="professor-box">
   <!-- Aqui aparecerá o resultado da função -->
 </div>
+
 
 <script>
   function getNomeAluno() {

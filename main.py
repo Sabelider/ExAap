@@ -4161,3 +4161,37 @@ async def ajustar_progresso_ingles():
 @app.get("/info-pagamentos", response_class=HTMLResponse)
 async def info_pagamentos(request: Request):
     return templates.TemplateResponse("info_pagamentos.html", {"request": request})
+
+@app.post("/desvincular-aluno")
+async def desvincular_aluno(data: dict):
+    try:
+        professor = data.get("professor", "").strip().lower()
+        aluno = data.get("aluno", "").strip().lower()
+
+        if not professor or not aluno:
+            return JSONResponse(status_code=400, content={"detail": "Professor ou aluno inválido"})
+
+        # 1️⃣ Remover vínculo na coleção alunos_professor
+        query = db.collection("alunos_professor") \
+                  .where("professor", "==", professor) \
+                  .where("aluno", "==", aluno) \
+                  .stream()
+
+        for doc in query:
+            db.collection("alunos_professor").document(doc.id).delete()
+
+        # 2️⃣ Atualizar campo "vinculado" = false na coleção alunos
+        aluno_query = db.collection("alunos") \
+                        .where("nome", "==", aluno) \
+                        .limit(1).stream()
+
+        aluno_doc = next(aluno_query, None)
+        if aluno_doc:
+            db.collection("alunos").document(aluno_doc.id).update({"vinculado": False})
+
+        return {"status": "success", "message": f"Aluno {aluno} desvinculado do professor {professor}"}
+
+    except Exception as e:
+        print("Erro ao desvincular aluno:", e)
+        return JSONResponse(status_code=500, content={"detail": "Erro interno", "erro": str(e)})
+

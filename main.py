@@ -1807,7 +1807,7 @@ async def verificar_aluno(request: Request):
 @app.get("/professor-do-aluno/{nome_aluno}")
 async def professor_do_aluno(nome_aluno: str):
     try:
-        # Normaliza o nome do aluno (igual em todo o sistema)
+        # 🔹 Normaliza de novo para garantir consistência
         aluno_normalizado = nome_aluno.strip().lower()
 
         # Buscar vínculo do aluno em alunos_professor
@@ -1819,7 +1819,11 @@ async def professor_do_aluno(nome_aluno: str):
         if not vinculo_doc:
             return JSONResponse(
                 status_code=404,
-                content={"professor": None, "disciplina": None, "mensagem": "Aluno não vinculado a nenhum professor"}
+                content={
+                    "professor": None,
+                    "disciplina": None,
+                    "mensagem": f"Aluno '{aluno_normalizado}' não vinculado a nenhum professor"
+                }
             )
 
         vinculo_data = vinculo_doc.to_dict()
@@ -1830,7 +1834,7 @@ async def professor_do_aluno(nome_aluno: str):
 
         # Buscar dados do professor na coleção professores_online
         prof_query = db.collection("professores_online") \
-                       .where("email", "==", professor_email.strip()) \
+                       .where("email", "==", professor_email.strip().lower()) \
                        .limit(1).stream()
         prof_doc = next(prof_query, None)
 
@@ -1842,16 +1846,18 @@ async def professor_do_aluno(nome_aluno: str):
         return {
             "professor": prof_data.get("nome_completo", "Desconhecido"),
             "disciplina": prof_data.get("area_formacao", "Desconhecida"),
-            "email": professor_email
+            "email": professor_email.strip().lower()
         }
 
     except Exception as e:
         print("Erro ao buscar professor do aluno:", e)
         return JSONResponse(
             status_code=500,
-            content={"detail": "Erro interno ao buscar professor do aluno", "erro": str(e)}
+            content={
+                "detail": "Erro interno ao buscar professor do aluno",
+                "erro": str(e)
+            }
         )
-
 
 
 @app.get("/meu-professor-status/{nome_aluno}") 

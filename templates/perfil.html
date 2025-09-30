@@ -483,12 +483,12 @@
 <script>
 async function toggleProfessor() { 
   try {
-    // garante que nomeAluno é normalizado igual ao backend
-    const alunoNormalizado = (nomeAluno || "").trim().toLowerCase().replace(/ /g, "_");
+    
+    const alunoNormalizado = (nomeAluno || "").trim().toLowerCase();
 
-    const res = await fetch(`/ver-professor/${encodeURIComponent(alunoNormalizado)}`);
+    const res = await fetch(`/meu-professor-status/${encodeURIComponent(alunoNormalizado)}`);
     if (!res.ok) {
-      throw new Error("Não foi possível buscar professor");
+      throw new Error("Não foi possível buscar status do professor");
     }
 
     const data = await res.json();
@@ -519,15 +519,22 @@ async function toggleProfessor() {
     box.style.textAlign = "center";
     box.style.fontFamily = "'Nunito', sans-serif";
 
+    const statusOnline = data.online 
+      ? `<span style="color:#2ecc71; font-weight:bold;">🟢 Online</span>` 
+      : `<span style="color:#e74c3c; font-weight:bold;">🔴 Offline</span>`;
+
     box.innerHTML = `
       <h3 style="margin-bottom: 15px; font-size: 18px;">
         📘 Professor Vinculado
       </h3>
       <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Aluno:</strong> ${data.aluno}
+        <strong>Aluno:</strong> ${alunoNormalizado}
       </p>
       <p style="margin: 10px 0; font-size: 14px;">
         <strong>Professor:</strong> ${data.professor}
+      </p>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <strong>Status:</strong> ${statusOnline}
       </p>
       <button id="fechar-prof-btn" 
         style="margin-top: 15px; padding: 8px 14px; background: white; 

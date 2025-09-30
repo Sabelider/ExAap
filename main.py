@@ -1805,37 +1805,53 @@ async def verificar_aluno(request: Request):
 
 
 @app.get("/professor-do-aluno/{nome_aluno}")
-async def obter_professor_do_aluno(nome_aluno: str):
+async def professor_do_aluno(nome_aluno: str):
     try:
-        # Buscar o documento do aluno na coleção "alunos_professor"
-        alunos_ref = db.collection("alunos_professor")
-        query = alunos_ref.where("aluno", "==", nome_aluno.strip()).limit(1).stream()
-        aluno_doc = next(query, None)
+        # Normaliza o nome do aluno (igual em todo o sistema)
+        aluno_normalizado = nome_aluno.strip().lower()
 
-        if not aluno_doc:
-            raise HTTPException(status_code=404, detail="Aluno não vinculado a nenhum professor.")
+        # Buscar vínculo do aluno em alunos_professor
+        query = db.collection("alunos_professor") \
+                  .where("aluno", "==", aluno_normalizado) \
+                  .limit(1).stream()
+        vinculo_doc = next(query, None)
 
-        dados = aluno_doc.to_dict()
-        professor_email = dados.get("professor")
+        if not vinculo_doc:
+            return JSONResponse(
+                status_code=404,
+                content={"professor": None, "disciplina": None, "mensagem": "Aluno não vinculado a nenhum professor"}
+            )
+
+        vinculo_data = vinculo_doc.to_dict()
+        professor_email = vinculo_data.get("professor")
 
         if not professor_email:
-            raise HTTPException(status_code=404, detail="Email do professor não encontrado.")
+            return {"professor": "Desconhecido", "disciplina": "Desconhecida"}
 
-        # Verificar se o professor está online na coleção "professores_online"
-        prof_online_ref = db.collection("professores_online").where("email", "==", professor_email).limit(1).stream()
-        prof_doc = next(prof_online_ref, None)
+        # Buscar dados do professor na coleção professores_online
+        prof_query = db.collection("professores_online") \
+                       .where("email", "==", professor_email.strip()) \
+                       .limit(1).stream()
+        prof_doc = next(prof_query, None)
 
-        online_status = False
-        if prof_doc:
-            online_status = prof_doc.to_dict().get("online", False)
+        if not prof_doc:
+            return {"professor": "Desconhecido", "disciplina": "Desconhecida"}
 
-        return JSONResponse(content={
-            "professor": professor_email,
-            "online": online_status
-        })
+        prof_data = prof_doc.to_dict()
+
+        return {
+            "professor": prof_data.get("nome_completo", "Desconhecido"),
+            "disciplina": prof_data.get("area_formacao", "Desconhecida"),
+            "email": professor_email
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("Erro ao buscar professor do aluno:", e)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro interno ao buscar professor do aluno", "erro": str(e)}
+        )
+
 
 
 @app.get("/meu-professor-status/{nome_aluno}") 

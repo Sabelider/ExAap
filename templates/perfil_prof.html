@@ -968,6 +968,34 @@ async function verAulasDadas(nomeAluno) {
   }
 }
 
+// Função para desvincular aluno
+async function desvincularAluno(nomeAluno, professorEmail) {
+  if (!confirm(`Tens certeza que desejas desvincular o aluno ${nomeAluno}?`)) return;
+
+  try {
+    const res = await fetch("/desvincular-aluno", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        aluno: nomeAluno,
+        professor: professorEmail
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Aluno desvinculado com sucesso.");
+      listarMeusAlunos(); // 🔄 Atualiza a lista
+    } else {
+      alert("Erro: " + data.detail);
+    }
+  } catch (err) {
+    console.error("Erro ao desvincular:", err);
+    alert("Erro ao tentar desvincular o aluno.");
+  }
+}
+  
 async function carregarUltimasAulas(professorEmail) {
     try {
       const resposta = await fetch("/ultimas-aulas", {

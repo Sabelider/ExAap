@@ -425,9 +425,50 @@
 </div>
 
 <!-- Caixa onde será exibido o professor vinculado -->
-<div id="professor-vinculado">
+<div id="professor-vinculado" style="
+     margin-top: 10px; 
+     font-family: 'Nunito', sans-serif; 
+     font-size: 14px; 
+     font-weight: bold; 
+     color: #16a085;">
   <!-- Aqui aparecerá o resultado da função -->
-</div>   
+</div>
+
+<script>
+  function getNomeAluno() {
+    let nome = localStorage.getItem("alunoNome");
+    if (!nome || nome.trim() === "") {
+      nome = "{{ aluno.nome }}"; // fallback do backend
+      if (nome && nome !== "{{ aluno.nome }}") {
+        localStorage.setItem("alunoNome", nome.trim().toLowerCase());
+      }
+    }
+    return nome.trim().toLowerCase();
+  }
+
+  // Função para buscar professor vinculado
+  async function carregarProfessorDoAluno() {
+    try {
+      const nomeAluno = getNomeAluno(); // 🔹 agora pega do mesmo lugar
+      if (!nomeAluno) {
+        console.error("Nome do aluno não definido");
+        return;
+      }
+
+      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+      if (!res.ok) throw new Error("Erro ao buscar professor");
+
+      const data = await res.json();
+
+      document.getElementById("professor-vinculado").innerText =
+        data.professor
+          ? `${data.professor} (${data.disciplina})`
+          : "Nenhum professor vinculado";
+    } catch (e) {
+      console.error("Erro ao carregar professor:", e);
+    }
+  }
+</script>
       
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -550,10 +591,10 @@ function fecharDesafio() {
 let professorSelecionado = null;
 let modalChatAberta = false;
 
-
+// ⚠️ nomeAluno precisa vir do backend ou Firebase
 let nomeAluno = window.nomeAluno || "aluno_teste"; 
 
-
+// 👉 Função que estava faltando
 function abrirChatAluno() {
   document.getElementById('chat-modal-aluno').style.display = 'block';
   listarProfessoresChat();
@@ -564,11 +605,11 @@ function fecharChatAluno() {
   document.getElementById('chat-modal-aluno').style.display = 'none';
 }
 
-
+// Abrir chat direto com professor
 function abrirChatProfessor(professorEmail) {
   professorSelecionado = professorEmail;
 
-
+  // Evitar múltiplos modais
   if (modalChatAberta) {
     document.querySelector('.overlay-chat')?.remove();
     modalChatAberta = false;
@@ -1233,48 +1274,6 @@ function traduzirDia(diaAbreviado) {
   }
 };
 
-function getNomeAluno() {
-    let nome = localStorage.getItem("alunoNome");
-    if (!nome || nome.trim() === "") {
-      nome = "{{ aluno.nome }}"; // fallback do backend
-      if (nome && nome !== "{{ aluno.nome }}") {
-        localStorage.setItem("alunoNome", nome.trim().toLowerCase());
-      }
-    }
-    return nome.trim().toLowerCase();
-  }
-
-  // Função para buscar professor vinculado
-  async function carregarProfessorDoAluno() {
-    try {
-      const nomeAluno = getNomeAluno(); 
-      if (!nomeAluno) {
-        console.error("Nome do aluno não definido");
-        return;
-      }
-
-      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error("Erro ao buscar professor");
-
-      const data = await res.json();
-
-      const professorDiv = document.getElementById("professor-vinculado");
-
-      // aplica os estilos via JS
-      professorDiv.style.marginTop = "10px";
-      professorDiv.style.fontFamily = "'Nunito', sans-serif";
-      professorDiv.style.fontSize = "14px";
-      professorDiv.style.fontWeight = "bold";
-      professorDiv.style.color = "#16a085";
-
-      professorDiv.innerText = data.professor
-        ? `${data.professor} (${data.disciplina})`
-        : "Nenhum professor vinculado";
-    } catch (e) {
-      console.error("Erro ao carregar professor:", e);
-    }
-  }
-  
 window.verNotificacao = async function () {
   try {
     const response = await fetch("/verificar-notificacao", {

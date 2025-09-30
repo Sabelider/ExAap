@@ -1838,11 +1838,11 @@ async def obter_professor_do_aluno(nome_aluno: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/meu-professor-status/{nome_aluno}")
+@app.get("/meu-professor-status/{nome_aluno}") 
 async def meu_professor_status(nome_aluno: str):
     try:
-        # Normalizar nome do aluno (como em /vincular-aluno)
-        nome_aluno_input = nome_aluno.strip().lower()
+        # Normalizar nome do aluno (aceita underscores ou espaços)
+        nome_aluno_input = nome_aluno.strip().lower().replace("_", " ")
 
         # Procurar o aluno na coleção "alunos"
         alunos_ref = db.collection("alunos").stream()

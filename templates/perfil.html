@@ -418,8 +418,8 @@
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
 
-  <!-- Novo botão Ver Professor -->
-<div class="acao" onclick="carregarProfessorDoAluno(nomeAluno)">
+<!-- Novo botão Ver Professor -->
+<div class="acao" onclick="carregarProfessorDoAluno()">
   <i class="fa-solid fa-user-tie"></i>
   <span>Ver Professor</span>
 </div>
@@ -433,6 +433,33 @@
      color: #16a085;">
   <!-- Aqui aparecerá o resultado da função -->
 </div>
+
+<script>
+  // Nome do aluno vindo do backend
+  const nomeAluno = "{{ nome_aluno }}";
+
+  // Função para buscar professor vinculado
+  async function carregarProfessorDoAluno() {
+    try {
+      if (!nomeAluno || nomeAluno.trim() === "") {
+        console.error("Nome do aluno não definido");
+        return;
+      }
+
+      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+      if (!res.ok) throw new Error("Erro ao buscar professor");
+
+      const data = await res.json();
+
+      document.getElementById("professor-vinculado").innerText =
+        data.professor
+          ? `${data.professor} (${data.disciplina})`
+          : "Nenhum professor vinculado";
+    } catch (e) {
+      console.error("Erro ao carregar professor:", e);
+    }
+  }
+</script>
 
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -489,28 +516,6 @@
 <!-- Notificação centralizada -->
 <div id="notificacao-mensagem" class="notificacao-container"></div>
 
-<script>
-  const nomeAluno = "{{ nome_aluno }}"; // 🔹 Corrigir aqui para o nome real do aluno
-
-  async function carregarProfessorDoAluno() {
-    try {
-      if (!nomeAluno || nomeAluno.trim() === "") {
-        console.error("Nome do aluno não definido");
-        return;
-      }
-
-      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error("Erro ao buscar professor");
-
-      const data = await res.json();
-
-      document.getElementById("professor-vinculado").innerText =
-        data.professor ? `${data.professor} (${data.disciplina})` : "Nenhum professor vinculado";
-    } catch (e) {
-      console.error("Erro ao carregar professor:", e);
-    }
-  }
-  
 </script>
 
 

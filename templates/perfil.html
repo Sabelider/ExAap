@@ -483,17 +483,18 @@
 <script>
 async function toggleProfessor() { 
   try {
-    const res = await fetch(`/ver-professor/${encodeURIComponent(nomeAluno)}`);
+    // garante que nomeAluno é normalizado igual ao backend
+    const alunoNormalizado = (nomeAluno || "").trim().toLowerCase().replace(/ /g, "_");
+
+    const res = await fetch(`/ver-professor/${encodeURIComponent(alunoNormalizado)}`);
     if (!res.ok) {
       throw new Error("Não foi possível buscar professor");
     }
 
     const data = await res.json();
 
-    // Remove modal antigo se já existir
     document.getElementById("modal-professor")?.remove();
 
-    // Criar overlay
     const overlay = document.createElement("div");
     overlay.id = "modal-professor";
     overlay.style.position = "fixed";
@@ -507,7 +508,6 @@ async function toggleProfessor() {
     overlay.style.alignItems = "center";
     overlay.style.zIndex = "1000";
 
-    // Caixa central estilizada no padrão do site
     const box = document.createElement("div");
     box.style.background = "linear-gradient(135deg, #1abc9c, #16a085)";
     box.style.color = "white";
@@ -540,21 +540,15 @@ async function toggleProfessor() {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    // Fechar ao clicar no botão
-    document.getElementById("fechar-prof-btn").onclick = () => {
-      overlay.remove();
-    };
-
-    // Fechar clicando fora da caixa
-    overlay.onclick = (e) => {
-      if (e.target === overlay) overlay.remove();
-    };
+    document.getElementById("fechar-prof-btn").onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
   } catch (err) {
     console.error("Erro ao abrir professor:", err);
     alert("Erro ao carregar dados do professor.");
   }
 }
+
 </script>
 
 <p id="mensagem-feedback" style="margin-top: 10px; font-weight: bold;"></p>

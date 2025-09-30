@@ -418,48 +418,11 @@
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
 
-<!-- Novo botão Ver Professor -->
-<div class="acao" onclick="carregarProfessorDoAluno()">
-  <i class="fa-solid fa-user-tie"></i>
-  <span>Ver Professor</span>
+  <div class="acao" onclick="toggleProfessor()">
+    <i class="fa-solid fa-user-tie"></i>
+    <span>Ver Professor</span>
+  </div>
 </div>
-
-<!-- Caixa onde será exibido o professor vinculado -->
-<div id="professor-vinculado" style="
-     margin-top: 10px; 
-     font-family: 'Nunito', sans-serif; 
-     font-size: 14px; 
-     font-weight: bold; 
-     color: #16a085;">
-  <!-- Aqui aparecerá o resultado da função -->
-</div>
-
-<script>
-  // Nome do aluno vindo do backend
-  const nomeAluno = "{{ nome_aluno }}";
-
-  // Função para buscar professor vinculado
-  async function carregarProfessorDoAluno() {
-    try {
-      if (!nomeAluno || nomeAluno.trim() === "") {
-        console.error("Nome do aluno não definido");
-        return;
-      }
-
-      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error("Erro ao buscar professor");
-
-      const data = await res.json();
-
-      document.getElementById("professor-vinculado").innerText =
-        data.professor
-          ? `${data.professor} (${data.disciplina})`
-          : "Nenhum professor vinculado";
-    } catch (e) {
-      console.error("Erro ao carregar professor:", e);
-    }
-  }
-</script>
 
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -516,8 +479,18 @@
 <!-- Notificação centralizada -->
 <div id="notificacao-mensagem" class="notificacao-container"></div>
 
-</script>
+<script>
+function toggleDesafio() {
+    const desafio = document.getElementById('container-desafio');
+    desafio.style.display = (desafio.style.display === 'none' || desafio.style.display === '') 
+        ? 'block' 
+        : 'none';
+}
 
+function fecharDesafio() {
+    document.getElementById('container-desafio').style.display = 'none';
+}
+</script>
 
 <p id="mensagem-feedback" style="margin-top: 10px; font-weight: bold;"></p>
 </div>
@@ -1438,80 +1411,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 };
 
-async function toggleProfessor() {
-  try {
-    const res = await fetch(`/ver-professor/${encodeURIComponent(nomeAluno)}`);
-    if (!res.ok) {
-      throw new Error("Não foi possível buscar professor");
-    }
-
-    const data = await res.json();
-
-    // Remove modal antigo se já existir
-    document.getElementById("modal-professor")?.remove();
-
-    // Criar overlay
-    const overlay = document.createElement("div");
-    overlay.id = "modal-professor";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-    overlay.style.display = "flex";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.zIndex = "1000";
-
-    // Caixa central
-    const box = document.createElement("div");
-    box.style.background = "white";
-    box.style.padding = "20px";
-    box.style.borderRadius = "10px";
-    box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-    box.style.maxWidth = "350px";
-    box.style.width = "80%";
-    box.style.textAlign = "center";
-    box.style.fontFamily = "Arial, sans-serif";
-
-    box.innerHTML = `
-      <h3 style="margin-bottom: 15px; font-size: 18px; color: #2c3e50;">
-        📘 Professor Vinculado
-      </h3>
-      <p style="margin: 10px 0; font-size: 15px;">
-        <strong>Aluno:</strong> ${data.aluno}
-      </p>
-      <p style="margin: 10px 0; font-size: 15px;">
-        <strong>Professor:</strong> ${data.professor}
-      </p>
-      <button id="fechar-prof-btn" 
-        style="margin-top: 15px; padding: 8px 14px; background: #1abc9c; 
-               color: white; border: none; border-radius: 6px; 
-               cursor: pointer; font-size: 14px;">
-        Fechar
-      </button>
-    `;
-
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    // Fechar ao clicar no botão
-    document.getElementById("fechar-prof-btn").onclick = () => {
-      overlay.remove();
-    };
-
-    // Fechar clicando fora da caixa
-    overlay.onclick = (e) => {
-      if (e.target === overlay) overlay.remove();
-    };
-
-  } catch (err) {
-    console.error("Erro ao abrir professor:", err);
-    alert("Erro ao carregar dados do professor.");
-  }
-}
-  
 window.subirNivel = async function () {
   try {
     const resposta = await fetch("https://beckend-exaap.onrender.com/subir-nivel", {

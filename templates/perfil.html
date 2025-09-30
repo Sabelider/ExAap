@@ -483,9 +483,8 @@
 <script>
 async function toggleProfessor() { 
   try {
-    const alunoNormalizado = (nomeAluno || "").trim().toLowerCase();
-
-    const res = await fetch(`/meu-professor-status/${encodeURIComponent(alunoNormalizado)}`);
+    // Envia o nome real do aluno (sem normalizar)
+    const res = await fetch(`/meu-professor-status/${encodeURIComponent(nomeAluno)}`);
     if (!res.ok) {
       throw new Error("Não foi possível buscar status do professor");
     }
@@ -527,7 +526,7 @@ async function toggleProfessor() {
         📘 Professor Vinculado
       </h3>
       <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Aluno:</strong> ${alunoNormalizado}
+        <strong>Aluno:</strong> ${data.aluno}
       </p>
       <p style="margin: 10px 0; font-size: 14px;">
         <strong>Professor:</strong> ${data.professor}

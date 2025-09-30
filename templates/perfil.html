@@ -419,10 +419,19 @@
   </div>
 
   <!-- Novo botão Ver Professor -->
-  <div class="acao" onclick="toggleProfessor()">
-    <i class="fa-solid fa-user-tie"></i>
-    <span>Ver Professor</span>
-  </div>
+<div class="acao" onclick="carregarProfessorDoAluno(nomeAluno)">
+  <i class="fa-solid fa-user-tie"></i>
+  <span>Ver Professor</span>
+</div>
+
+<!-- Caixa onde será exibido o professor vinculado -->
+<div id="professor-vinculado" style="
+     margin-top: 10px; 
+     font-family: 'Nunito', sans-serif; 
+     font-size: 14px; 
+     font-weight: bold; 
+     color: #16a085;">
+  <!-- Aqui aparecerá o resultado da função -->
 </div>
 
 <!-- Link para ícones -->
@@ -481,80 +490,17 @@
 <div id="notificacao-mensagem" class="notificacao-container"></div>
 
 <script>
-async function toggleProfessor() { 
+async function carregarProfessorDoAluno(nomeAluno) {
   try {
-    
     const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-    if (!res.ok) {
-      throw new Error("Não foi possível buscar dados do professor");
-    }
+    if (!res.ok) throw new Error("Erro ao buscar professor");
 
     const data = await res.json();
 
-    // Remove modal anterior, se existir
-    document.getElementById("modal-professor")?.remove();
-
-    // Overlay escuro de fundo
-    const overlay = document.createElement("div");
-    overlay.id = "modal-professor";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-    overlay.style.display = "flex";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.zIndex = "1000";
-
-    // Caixa central
-    const box = document.createElement("div");
-    box.style.background = "linear-gradient(135deg, #1abc9c, #16a085)";
-    box.style.color = "white";
-    box.style.padding = "20px";
-    box.style.borderRadius = "12px";
-    box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-    box.style.maxWidth = "380px";
-    box.style.width = "80%";
-    box.style.textAlign = "center";
-    box.style.fontFamily = "'Nunito', sans-serif";
-
-    // Monta conteúdo do modal
-    box.innerHTML = `
-      <h3 style="margin-bottom: 15px; font-size: 18px;">
-        📘 Professor Vinculado
-      </h3>
-      <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Aluno:</strong> ${nomeAluno}
-      </p>
-      <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Professor:</strong> ${data.professor || "Não encontrado"}
-      </p>
-      <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Disciplina:</strong> ${data.disciplina || "Desconhecida"}
-      </p>
-      <p style="margin: 10px 0; font-size: 14px;">
-        <strong>Email:</strong> ${data.email || "N/A"}
-      </p>
-      <button id="fechar-prof-btn" 
-        style="margin-top: 15px; padding: 8px 14px; background: white; 
-               color: #16a085; border: none; border-radius: 6px; 
-               cursor: pointer; font-size: 14px; font-weight: bold;">
-        Fechar
-      </button>
-    `;
-
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    // Fechar modal
-    document.getElementById("fechar-prof-btn").onclick = () => overlay.remove();
-    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-
-  } catch (err) {
-    console.error("Erro ao abrir professor:", err);
-    alert("Erro ao carregar dados do professor.");
+    document.getElementById("professor-vinculado").innerText =
+      data.professor ? `${data.professor} (${data.disciplina})` : "Nenhum professor vinculado";
+  } catch (e) {
+    console.error("Erro ao carregar professor:", e);
   }
 }
 

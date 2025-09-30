@@ -465,7 +465,7 @@ async def alunos_status_completo(prof_email: str):
 @app.get("/ver-professor/{aluno_nome}")
 async def ver_professor(aluno_nome: str):
     try:
-        aluno_normalizado = aluno_nome.strip().lower()
+        aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
 
         # Procurar vínculo do aluno
         docs = db.collection("alunos_professor") \
@@ -479,7 +479,6 @@ async def ver_professor(aluno_nome: str):
         dados = doc.to_dict()
         professor_email = dados.get("professor")
 
-        # Retorna só as infos básicas do professor
         return {
             "aluno": aluno_normalizado,
             "professor": professor_email
@@ -493,7 +492,6 @@ async def ver_professor(aluno_nome: str):
             status_code=500,
             content={"detail": "Erro interno ao buscar professor"}
         )
-
         
 @app.get("/alunos-status-completo/{prof_email}")
 async def alunos_status_completo(prof_email: str):

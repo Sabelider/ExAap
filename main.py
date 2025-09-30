@@ -1841,8 +1841,11 @@ async def obter_professor_do_aluno(nome_aluno: str):
 @app.get("/meu-professor-status/{nome_aluno}") 
 async def meu_professor_status(nome_aluno: str):
     try:
-        # Normalizar nome do aluno (aceita underscores ou espaços)
-        nome_aluno_input = nome_aluno.strip().lower().replace("_", " ")
+        # Nome recebido da URL
+        nome_original = nome_aluno.strip()
+
+        # Normalizar para comparação (aceita underscores ou espaços)
+        nome_aluno_input = nome_original.lower().replace("_", " ")
 
         # Procurar o aluno na coleção "alunos"
         alunos_ref = db.collection("alunos").stream()
@@ -1856,6 +1859,7 @@ async def meu_professor_status(nome_aluno: str):
 
         if not aluno_doc:
             return JSONResponse(content={
+                "aluno": nome_original,
                 "professor": "Aluno não encontrado",
                 "online": False
             }, status_code=404)
@@ -1869,6 +1873,7 @@ async def meu_professor_status(nome_aluno: str):
 
         if not vinculo_doc:
             return JSONResponse(content={
+                "aluno": nome_original,
                 "professor": "Nenhum professor vinculado",
                 "online": False
             }, status_code=404)
@@ -1878,6 +1883,7 @@ async def meu_professor_status(nome_aluno: str):
         online_status = dados_vinculo.get("online", False)
 
         return JSONResponse(content={
+            "aluno": nome_original,
             "professor": professor_nome,
             "online": online_status
         }, status_code=200)

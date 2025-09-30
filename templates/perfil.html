@@ -417,12 +417,23 @@
     <i id="icone-aulas" class="fa-solid fa-chalkboard-teacher"></i>
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
-
-  <div class="acao" onclick="toggleProfessor()">
-    <i class="fa-solid fa-user-tie"></i>
-    <span>Ver Professor</span>
-  </div>
+   
+<!-- Botão Ver Professor -->
+<div class="acao" onclick="carregarProfessorDoAluno()">
+  <i class="fa-solid fa-user-tie"></i>
+  <span>Ver Professor</span>
 </div>
+
+<!-- Caixa onde será exibido o professor vinculado -->
+<div id="professor-vinculado" style="
+     margin-top: 10px; 
+     font-family: 'Nunito', sans-serif; 
+     font-size: 14px; 
+     font-weight: bold; 
+     color: #16a085;">
+  <!-- Aqui aparecerá o resultado da função -->
+</div>
+
 
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -864,7 +875,41 @@ function abrirPagamentos() {
     console.error("Erro no onSnapshot:", e);
   }
 });
+  
+  function getNomeAluno() {
+    let nome = localStorage.getItem("alunoNome");
+    if (!nome || nome.trim() === "") {
+      nome = "{{ aluno.nome }}"; // fallback do backend
+      if (nome && nome !== "{{ aluno.nome }}") {
+        localStorage.setItem("alunoNome", nome.trim().toLowerCase());
+      }
+    }
+    return nome.trim().toLowerCase();
+  }
 
+  // Função para buscar professor vinculado
+  async function carregarProfessorDoAluno() {
+    try {
+      const nomeAluno = getNomeAluno(); // 🔹 agora pega do mesmo lugar
+      if (!nomeAluno) {
+        console.error("Nome do aluno não definido");
+        return;
+      }
+
+      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+      if (!res.ok) throw new Error("Erro ao buscar professor");
+
+      const data = await res.json();
+
+      document.getElementById("professor-vinculado").innerText =
+        data.professor
+          ? `${data.professor} (${data.disciplina})`
+          : "Nenhum professor vinculado";
+    } catch (e) {
+      console.error("Erro ao carregar professor:", e);
+    }
+  }
+  
 // Função auxiliar para exibir modal
   function mostrarModalAulas(htmlContent) {
     // Remove qualquer modal anterior

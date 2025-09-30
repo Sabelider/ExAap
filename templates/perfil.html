@@ -490,21 +490,29 @@
 <div id="notificacao-mensagem" class="notificacao-container"></div>
 
 <script>
-async function carregarProfessorDoAluno(nomeAluno) {
-  try {
-    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-    if (!res.ok) throw new Error("Erro ao buscar professor");
+  const nomeAluno = "{{ nome_aluno }}"; // 🔹 Corrigir aqui para o nome real do aluno
 
-    const data = await res.json();
+  async function carregarProfessorDoAluno() {
+    try {
+      if (!nomeAluno || nomeAluno.trim() === "") {
+        console.error("Nome do aluno não definido");
+        return;
+      }
 
-    document.getElementById("professor-vinculado").innerText =
-      data.professor ? `${data.professor} (${data.disciplina})` : "Nenhum professor vinculado";
-  } catch (e) {
-    console.error("Erro ao carregar professor:", e);
+      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+      if (!res.ok) throw new Error("Erro ao buscar professor");
+
+      const data = await res.json();
+
+      document.getElementById("professor-vinculado").innerText =
+        data.professor ? `${data.professor} (${data.disciplina})` : "Nenhum professor vinculado";
+    } catch (e) {
+      console.error("Erro ao carregar professor:", e);
+    }
   }
-}
-
+  
 </script>
+
 
 <p id="mensagem-feedback" style="margin-top: 10px; font-weight: bold;"></p>
 </div>

@@ -834,7 +834,7 @@ async function listarMeusAlunos() {
   }
 }
 
-// Abrir chat do professor com o aluno
+// Abrir chat do professor com o aluno (atualizado para novo estilo)
 async function abrirChatProfessorDoAluno(nomeAluno) {
   const modal = document.getElementById("chat-modal-aluno");
   modal.style.display = "flex";
@@ -850,8 +850,9 @@ async function abrirChatProfessorDoAluno(nomeAluno) {
 
     professorSelecionado = data.email;
     document.getElementById("professor-nome").innerText = data.professor;
-    document.getElementById("professor-disciplina").innerText = data.disciplina;
+    document.getElementById("professor-disciplina").innerText = data.disciplina || "---";
 
+    // Carregar mensagens iniciais
     carregarMensagens(data.mensagens || []);
 
     // Evita múltiplos intervalos
@@ -869,7 +870,7 @@ async function abrirChatProfessorDoAluno(nomeAluno) {
       try {
         await fetch("/enviar-mensagem", {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             aluno: nomeAluno,
             professor: professorSelecionado,
@@ -896,7 +897,7 @@ function fecharChatAluno() {
   if (chatInterval) clearInterval(chatInterval);
 }
 
-// Carregar mensagens
+// Carregar mensagens (atualizado para novo estilo)
 async function carregarMensagens(mensagensIniciais = null) {
   if (!alunoSelecionado || !professorSelecionado) return;
 
@@ -912,7 +913,7 @@ async function carregarMensagens(mensagensIniciais = null) {
 
     msgs.forEach(m => {
       const div = document.createElement('div');
-      div.className = m.remetente === 'professor' ? 'chat-message professor' : 'chat-message aluno';
+      div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
       div.textContent = m.mensagem;
       container.appendChild(div);
     });

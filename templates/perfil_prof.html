@@ -695,9 +695,11 @@ async function mostrarAulasDaSemana() {
       alert("Erro ao iniciar a chamada.");
     }
   }
-
+  
 let alunoSelecionado = null;
 let modalChatAberta = false;
+let professorSelecionado = null;
+let chatInterval = null;
 
 async function listarMeusAlunos() {
   const emailProfessorLogado = "{{ professor.email }}";
@@ -730,69 +732,41 @@ async function listarMeusAlunos() {
         </div>
       `;
 
+      // Função auxiliar para criar botões
+      const criarBotao = (texto, onClick) => {
+        const btn = document.createElement('button');
+        btn.textContent = texto;
+        btn.className = 'botao-padrao';
+        btn.onclick = (e) => { e.stopPropagation(); onClick(); };
+        return btn;
+      };
+
       // Botão Dar Aula
       if (aluno.online) {
-        const iniciarBtn = document.createElement('button');
-        iniciarBtn.textContent = 'Dar Aula';
-        iniciarBtn.className = 'botao-padrao';
-        iniciarBtn.onclick = (e) => {
-          e.stopPropagation();
-          iniciarChamada(aluno.nome, emailProfessorLogado);
-        };
-        card.appendChild(iniciarBtn);
+        card.appendChild(criarBotao('Dar Aula', () => iniciarChamada(aluno.nome, emailProfessorLogado)));
       }
 
       // Botão Informações
-      const infoBtn = document.createElement('button');
-      infoBtn.textContent = 'Informações';
-      infoBtn.className = 'botao-padrao';
-      infoBtn.onclick = (e) => {
-        e.stopPropagation();
-        exibirInformacoesAluno(aluno);
-      };
-      card.appendChild(infoBtn);
+      card.appendChild(criarBotao('Informações', () => exibirInformacoesAluno(aluno)));
 
+      // Botão Chat (funcional)
       const chatBtn = document.createElement('button');
       chatBtn.innerHTML = '<i class="fa-solid fa-comment"></i> Chat';
       chatBtn.className = 'botao-padrao';
       chatBtn.onclick = (e) => {
         e.stopPropagation();
-       // Aqui usamos o nome do aluno para abrir o chat dele
-       const nomeAluno = aluno.nome.toLowerCase();
-       abrirChatProfessorDoAluno(nomeAluno);
-     };
-     card.appendChild(chatBtn);
+        abrirChatProfessorDoAluno(aluno.nome.toLowerCase());
+      };
+      card.appendChild(chatBtn);
 
       // Botão Desvincular
-      const desvincularBtn = document.createElement('button');
-      desvincularBtn.textContent = 'Desvincular';
-      desvincularBtn.className = 'botao-padrao';
-      desvincularBtn.onclick = (e) => {
-        e.stopPropagation();
-        desvincularAluno(aluno.nome, emailProfessorLogado);
-      };
-      card.appendChild(desvincularBtn);
+      card.appendChild(criarBotao('Desvincular', () => desvincularAluno(aluno.nome, emailProfessorLogado)));
 
       // Botão Horário
-      const horarioBtn = document.createElement('button');
-      horarioBtn.textContent = 'Horário';
-      horarioBtn.className = 'botao-padrao';
-      horarioBtn.onclick = (e) => {
-        e.stopPropagation();
-        alunoSelecionado = aluno.nome;
-        abrirCalendario();
-      };
-      card.appendChild(horarioBtn);
+      card.appendChild(criarBotao('Horário', () => { alunoSelecionado = aluno.nome; abrirCalendario(); }));
 
       // Botão Aulas Dadas
-      const aulasBtn = document.createElement('button');
-      aulasBtn.textContent = 'Aulas dadas';
-      aulasBtn.className = 'botao-padrao';
-      aulasBtn.onclick = (e) => {
-        e.stopPropagation();
-        verAulasDadas(aluno.nome);
-      };
-      card.appendChild(aulasBtn);
+      card.appendChild(criarBotao('Aulas dadas', () => verAulasDadas(aluno.nome)));
 
       container.appendChild(card);
     });
@@ -800,6 +774,96 @@ async function listarMeusAlunos() {
   } catch (error) {
     console.error("Erro ao buscar alunos:", error);
     alert("Erro ao buscar alunos.");
+  }
+}
+
+// Abrir chat do professor com o aluno
+async function abrirChatProfessorDoAluno(nomeAluno) {
+  const modal = document.getElementById("chat-modal-aluno");
+  modal.style.display = "flex";
+  modalChatAberta = true;
+  alunoSelecionado = nomeAluno;
+
+  try {
+    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+    if (!res.ok) throw new Error("Não foi possível buscar professor do aluno");
+
+    const data = await res.json();
+    if (!data.professor || !data.email) return;
+
+    professorSelecionado = data.email;
+    document.getElementById("professor-nome").innerText = data.professor;
+    document.getElementById("professor-disciplina").innerText = data.disciplina;
+
+    carregarMensagens(data.mensagens || []);
+
+    // Evita múltiplos intervalos
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(() => {
+      if (modalChatAberta) carregarMensagens();
+    }, 2000);
+
+    // Enviar mensagem
+    document.getElementById("enviar-msg").onclick = async () => {
+      const input = document.getElementById("input-msg");
+      const mensagem = input.value.trim();
+      if (!mensagem) return;
+
+      try {
+        await fetch("/enviar-mensagem", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            aluno: nomeAluno,
+            professor: professorSelecionado,
+            mensagem,
+            remetente: "professor"
+          })
+        });
+        input.value = "";
+        carregarMensagens();
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+      }
+    };
+
+  } catch (err) {
+    console.error("Erro ao abrir chat do aluno:", err);
+  }
+}
+
+// Fechar chat
+function fecharChatAluno() {
+  document.getElementById("chat-modal-aluno").style.display = "none";
+  modalChatAberta = false;
+  if (chatInterval) clearInterval(chatInterval);
+}
+
+// Carregar mensagens
+async function carregarMensagens(mensagensIniciais = null) {
+  if (!alunoSelecionado || !professorSelecionado) return;
+
+  try {
+    let msgs = mensagensIniciais;
+    if (!msgs) {
+      const res = await fetch(`/buscar-mensagens/${professorSelecionado}/${alunoSelecionado}`);
+      msgs = await res.json();
+    }
+
+    const container = document.getElementById('mensagens-chat');
+    container.innerHTML = "";
+
+    msgs.forEach(m => {
+      const div = document.createElement('div');
+      div.className = m.remetente === 'professor' ? 'chat-message professor' : 'chat-message aluno';
+      div.textContent = m.mensagem;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+
+  } catch (err) {
+    console.error("Erro ao carregar mensagens:", err);
   }
 }
 

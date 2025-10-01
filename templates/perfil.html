@@ -126,6 +126,127 @@
     color: #2c3e50;
   }
 
+    body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    max-width: 480px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  #chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .top-bar {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .top-bar img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid white;
+  }
+
+  .top-bar .info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .top-bar .info h2 {
+    font-size: 1rem;
+    margin: 0;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .top-bar .info p {
+    margin: 2px 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+  }
+
+  .mensagens-chat {
+    flex: 1;
+    padding: 15px;
+    background: #f9fbfd;
+    overflow-y: auto;
+  }
+
+  .msg-professor, .msg-aluno {
+    max-width: 70%;
+    margin-bottom: 12px;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+
+  .msg-professor {
+    background: #00c9ff;
+    color: white;
+    margin-right: auto;
+    border-bottom-left-radius: 0;
+  }
+
+  .msg-aluno {
+    background: #92fe9d;
+    color: #2c3e50;
+    margin-left: auto;
+    border-bottom-right-radius: 0;
+  }
+
+  .input-chat {
+    display: flex;
+    border-top: 1px solid #e0e0e0;
+    background: white;
+    padding: 10px;
+  }
+
+  .input-chat input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 12px;
+    border-radius: 25px;
+    background: #f0f2f5;
+    margin-right: 10px;
+    font-size: 0.9rem;
+  }
+
+  .input-chat button {
+    border: none;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    color: white;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .input-chat button:hover {
+    transform: scale(1.1);
+  }
+
   /* Ícone de notificação animado */
   @keyframes tremer {
     0%, 100% { transform: rotate(0deg); }
@@ -571,85 +692,48 @@ function fecharDesafio() {
   </div>
 </div>
 
-<!-- Modal do Chat do Aluno -->
-<div id="chat-modal-aluno" class="chat-overlay" style="display:none;">
-  <div class="chat-modal">
-    <!-- Cabeçalho -->
-    <div class="chat-header">
-      <h3>Conversar com Professor</h3>
-      <button onclick="fecharChatAluno()">&times;</button>
+<!-- Container principal do chat -->
+<div id="chat-container">
+  <!-- Barra superior com nome e disciplina do professor -->
+  <div class="top-bar" id="top-bar-professor">
+    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="professor">
+    <div class="info">
+      <h2 id="professor-nome">Carregando...</h2>
+      <p id="professor-disciplina">---</p>
     </div>
+  </div>
 
-    <!-- Barra de pesquisa -->
-    <div class="chat-search">
-      <input type="text" id="pesquisar-professor" 
-             placeholder="Pesquisar professor..."
-             onkeyup="filtrarProfessores()">
-      <button type="button" onclick="forcarBuscaProfessor()">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </button>
-    </div>
+  <!-- Área de mensagens -->
+  <div id="mensagens-chat" class="mensagens-chat"></div>
 
-    <!-- Lista dinâmica de professores -->
-    <div id="lista-professores-chat" class="chat-list"></div>
+  <!-- Input de mensagem -->
+  <div class="input-chat">
+    <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
+    <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+
 <script>
 let professorSelecionado = null;
 let modalChatAberta = false;
 
-// ⚠️ nomeAluno precisa vir do backend ou Firebase
-let nomeAluno = window.nomeAluno || "aluno_teste"; 
-
-// 👉 Função que estava faltando
-function abrirChatAluno() {
-  document.getElementById('chat-modal-aluno').style.display = 'block';
-  listarProfessoresChat();
+function getNomeAluno() {
+  let nome = localStorage.getItem("alunoNome");
+  if (!nome || nome.trim() === "") {
+    nome = "{{ aluno.nome }}"; 
+    if (nome && nome !== "{{ aluno.nome }}") {
+      localStorage.setItem("alunoNome", nome.trim().toLowerCase());
+    }
+  }
+  return nome.trim().toLowerCase();
 }
 
-// Fechar modal principal
-function fecharChatAluno() {
-  document.getElementById('chat-modal-aluno').style.display = 'none';
-}
-
-// Abrir chat direto com professor
 function abrirChatProfessor(professorEmail) {
   professorSelecionado = professorEmail;
-
-  // Evitar múltiplos modais
-  if (modalChatAberta) {
-    document.querySelector('.overlay-chat')?.remove();
-    modalChatAberta = false;
-  }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay-chat';
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-chat';
-
-  modal.innerHTML = `
-    <button class="fechar-btn"><i class="fa-solid fa-xmark"></i></button>
-    <h3>Chat com ${professorEmail}</h3>
-    <div id="mensagens-chat" class="mensagens-chat"></div>
-    <div class="input-chat">
-      <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
-      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-  modalChatAberta = true;
-
-  // Fechar modal
-  modal.querySelector('.fechar-btn').onclick = () => {
-    overlay.remove();
-    modalChatAberta = false;
-  };
+  const nomeAluno = getNomeAluno(); 
 
   // Enviar mensagem
   modal.querySelector('#enviar-msg').onclick = async () => {
@@ -697,59 +781,11 @@ function abrirChatProfessor(professorEmail) {
   }
 
   carregarMensagens();
-  // Atualizar chat a cada 2s
   setInterval(() => {
     if (modalChatAberta) carregarMensagens();
   }, 2000);
 }
 
-// Buscar professores vinculados ao aluno
-async function listarProfessoresChat() {
-  const container = document.getElementById('lista-professores-chat');
-  container.innerHTML = '';
-
-  try {
-    const res = await fetch(`/meus-professores-status/${encodeURIComponent(nomeAluno)}`);
-    const lista = await res.json();
-
-    if (!res.ok || lista.length === 0) {
-      container.innerHTML = '<p>Nenhum professor encontrado.</p>';
-      return;
-    }
-
-    lista.forEach(prof => {
-      const profDiv = document.createElement('div');
-      profDiv.className = 'professor-item';
-      profDiv.innerHTML = `
-        <span>${prof.nome} - ${prof.disciplina} ${prof.online ? '(Online)' : '(Offline)'}</span>
-        <button class="botao-padrao">Chat</button>
-      `;
-      // ⚠️ usa prof.professor (email/id salvo), não prof.nome
-      profDiv.querySelector('button').onclick = () => abrirChatProfessor(prof.professor);
-      container.appendChild(profDiv);
-    });
-
-  } catch (err) {
-    console.error("Erro ao listar professores:", err);
-    container.innerHTML = '<p>Erro ao carregar professores.</p>';
-  }
-}
-
-// Filtrar professores na lista
-function filtrarProfessores() {
-  const filtro = document.getElementById('pesquisar-professor').value.toLowerCase();
-  document.querySelectorAll('.professor-item').forEach(item => {
-    const nome = item.querySelector('span').textContent.toLowerCase();
-    item.style.display = nome.includes(filtro) ? '' : 'none';
-  });
-}
-
-function forcarBuscaProfessor() {
-  listarProfessoresChat();
-}
-
-// Chamar lista inicial
-listarProfessoresChat();
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">

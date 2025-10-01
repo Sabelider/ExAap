@@ -606,17 +606,14 @@
     <span id="texto-aulas">Aulas Ativas</span>
   </div>
 
- <!-- Botão Ver Professor -->
+<!-- Botão Ver Professor -->
 <div class="acao" onclick="carregarProfessorDoAluno()">
   <i class="fa-solid fa-user-tie"></i>
   <span>Ver Professor</span>
 </div>
 
-
-<div id="professor-vinculado" class="professor-box">
-  
-</div>
-
+<!-- Container Professor -->
+<div id="professor-vinculado" class="professor-box" style="display:none;"></div>
 
 <script>
   function getNomeAluno() {
@@ -630,7 +627,6 @@
     return nome.trim().toLowerCase();
   }
 
-  
   async function carregarProfessorDoAluno() {
     try {
       const nomeAluno = getNomeAluno(); 
@@ -643,14 +639,38 @@
       if (!res.ok) throw new Error("Erro ao buscar professor");
 
       const data = await res.json();
+      const container = document.getElementById("professor-vinculado");
 
-      document.getElementById("professor-vinculado").innerText =
-        data.professor
-          ? `${data.professor} (${data.disciplina})`
-          : "Nenhum professor vinculado";
+      if (data.professor) {
+        container.style.display = "block";
+        container.innerHTML = `
+          <div class="professor-container">
+            <span><strong>${data.professor}</strong> (${data.disciplina || "-"})</span>
+            <button class="fechar-professor" onclick="fecharProfessor()">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        container.style.display = "block";
+        container.innerHTML = `
+          <div class="professor-container">
+            <span>Nenhum professor vinculado</span>
+            <button class="fechar-professor" onclick="fecharProfessor()">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        `;
+      }
     } catch (e) {
       console.error("Erro ao carregar professor:", e);
     }
+  }
+
+  function fecharProfessor() {
+    const container = document.getElementById("professor-vinculado");
+    container.style.display = "none";
+    container.innerHTML = "";
   }
 </script>
       

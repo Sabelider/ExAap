@@ -849,7 +849,6 @@ async function listarMeusAlunos() {
   }
 }
 
-// Abrir chat do professor com o aluno (atualizado para novo estilo)
 // Abrir chat do professor com o aluno (nome do aluno no topo)
 async function abrirChatProfessorDoAluno(nomeAluno) {
   const modal = document.getElementById("chat-modal-aluno");
@@ -915,7 +914,7 @@ function fecharChatAluno() {
   if (chatInterval) clearInterval(chatInterval);
 }
 
-// Carregar mensagens (atualizado para novo estilo)
+
 async function carregarMensagens(mensagensIniciais = null) {
   if (!alunoSelecionado || !professorSelecionado) return;
 
@@ -929,10 +928,46 @@ async function carregarMensagens(mensagensIniciais = null) {
     const container = document.getElementById('mensagens-chat');
     container.innerHTML = "";
 
+    const hoje = new Date().toDateString(); 
+
     msgs.forEach(m => {
       const div = document.createElement('div');
       div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
-      div.textContent = m.mensagem;
+
+      // Criar elemento de mensagem com texto
+      const msgText = document.createElement('span');
+      msgText.textContent = m.mensagem;
+      div.appendChild(msgText);
+
+      // Formatar timestamp
+      if (m.timestamp) {
+        const dataMsg = new Date(m.timestamp); 
+        let horarioTexto = "";
+
+        if (dataMsg.toDateString() === hoje) {
+          // Só hora e minuto
+          const h = String(dataMsg.getHours()).padStart(2, '0');
+          const min = String(dataMsg.getMinutes()).padStart(2, '0');
+          horarioTexto = `${h}:${min}`;
+        } else {
+          // Data completa
+          const d = String(dataMsg.getDate()).padStart(2, '0');
+          const mth = String(dataMsg.getMonth() + 1).padStart(2, '0');
+          const y = dataMsg.getFullYear();
+          const h = String(dataMsg.getHours()).padStart(2, '0');
+          const min = String(dataMsg.getMinutes()).padStart(2, '0');
+          horarioTexto = `${d}/${mth}/${y} ${h}:${min}`;
+        }
+
+        const horaSpan = document.createElement('span');
+        horaSpan.style.display = 'block';
+        horaSpan.style.fontSize = '0.7rem';
+        horaSpan.style.color = 'rgba(0,0,0,0.5)';
+        horaSpan.style.marginTop = '2px';
+        horaSpan.textContent = horarioTexto;
+        div.appendChild(horaSpan);
+      }
+
       container.appendChild(div);
     });
 

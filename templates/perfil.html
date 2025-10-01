@@ -386,77 +386,130 @@
     transform: scale(0.95);
   }
 
-  /* === Estilo para chat === */
-  .chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 400px;
-    max-height: 60vh;
-    overflow: hidden;
-    border-radius: 12px;
-    border: 1px solid #dfe6e9;
-    background: #ffffff;
-  }
+/* Modal flutuante */
+#chat-modal-aluno {
+  position: fixed;
+  bottom: 70px; /* acima da barra inferior */
+  right: 20px;
+  width: 320px;
+  max-height: 500px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  display: none; /* inicial escondido */
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
 
-  .chat-messages {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    background: #f9fbfd;
-  }
+/* Container interno */
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
-  .chat-message {
-    margin: 8px 0;
-    padding: 10px 14px;
-    border-radius: 12px;
-    max-width: 75%;
-    word-wrap: break-word;
-    font-size: 14px;
-  }
+/* Top-bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  padding: 10px;
+  color: white;
+}
 
-  .chat-message.professor {
-    background: #d1f7d6;
-    align-self: flex-start;
-  }
+.top-bar i {
+  font-size: 1.5rem;
+}
 
-  .chat-message.aluno {
-    background: #a8e4ff;
-    align-self: flex-end;
-  }
+.top-bar h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+}
 
-  .chat-input {
-    display: flex;
-    border-top: 1px solid #dcdde1;
-    padding: 8px;
-    background: #f5f7fa;
-  }
+.top-bar .fechar-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: white;
+  cursor: pointer;
+}
 
-  .chat-input input {
-    flex: 1;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    padding: 8px 12px;
-    outline: none;
-    font-size: 14px;
-  }
+/* Área de mensagens */
+.chat-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  background: #f5f7fa;
+}
 
-  .chat-input button {
-    background: linear-gradient(45deg, #00c9ff, #92fe9d);
-    border: none;
-    color: #fff;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    margin-left: 8px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
+/* Mensagens */
+.chat-message {
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 70%;
+  word-wrap: break-word;
+  font-size: 0.9rem;
+}
 
-  .chat-input button:hover {
-    transform: scale(1.1);
-  }
+.chat-message.professor {
+  background: #d1f7d6;
+  align-self: flex-start;
+}
 
-  
+.chat-message.aluno {
+  background: #a8e4ff;
+  align-self: flex-end;
+}
+
+/* Input */
+.chat-input {
+  display: flex;
+  border-top: 1px solid #dcdde1;
+  padding: 8px;
+  background: #fff;
+}
+
+.chat-input input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.chat-input button {
+  width: 38px;
+  height: 38px;
+  margin-left: 8px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.chat-input button:hover {
+  transform: scale(1.1);
+}
+
+/* Scrollbar estilizado */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+ 
   .aluno-item {
     background: #f9f9f9;
     border-radius: 12px;
@@ -731,9 +784,10 @@ function getNomeAluno() {
   return nome.trim().toLowerCase();
 }
 
-// Abre o chat modal
+// Abrir chat
 async function abrirChatAluno() {
-  document.getElementById("chat-modal-aluno").style.display = "block";
+  const modal = document.getElementById("chat-modal-aluno");
+  modal.style.display = "flex";
   modalChatAberta = true;
 
   const nomeAluno = getNomeAluno();
@@ -750,7 +804,6 @@ async function abrirChatAluno() {
 
     professorSelecionado = data.email;
     document.getElementById("professor-nome").innerText = data.professor;
-    document.getElementById("professor-disciplina").innerText = data.disciplina;
 
     carregarMensagens();
 
@@ -759,22 +812,19 @@ async function abrirChatAluno() {
       const mensagem = input.value.trim();
       if (!mensagem) return;
 
-      try {
-        await fetch("/enviar-mensagem", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            aluno: nomeAluno,
-            professor: professorSelecionado,
-            mensagem,
-            remetente: "aluno"
-          })
-        });
-        input.value = "";
-        carregarMensagens();
-      } catch (err) {
-        console.error("Erro ao enviar mensagem:", err);
-      }
+      await fetch("/enviar-mensagem", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          aluno: nomeAluno,
+          professor: professorSelecionado,
+          mensagem,
+          remetente: "aluno"
+        })
+      });
+
+      input.value = "";
+      carregarMensagens();
     };
 
     setInterval(() => {
@@ -783,6 +833,34 @@ async function abrirChatAluno() {
 
   } catch (err) {
     console.error("Erro ao iniciar chat:", err);
+  }
+}
+
+// Fechar chat
+function fecharChatAluno() {
+  document.getElementById("chat-modal-aluno").style.display = "none";
+  modalChatAberta = false;
+}
+
+// Carregar mensagens
+async function carregarMensagens() {
+  const nomeAluno = getNomeAluno();
+  try {
+    const res = await fetch(`/buscar-mensagens/${professorSelecionado}/${nomeAluno}`);
+    const msgs = await res.json();
+    const container = document.getElementById('mensagens-chat');
+    container.innerHTML = "";
+
+    msgs.forEach(m => {
+      const div = document.createElement('div');
+      div.className = m.remetente === 'professor' ? 'chat-message professor' : 'chat-message aluno';
+      div.textContent = m.mensagem;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    console.error("Erro ao buscar mensagens:", err);
   }
 }
 

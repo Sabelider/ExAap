@@ -105,36 +105,50 @@
     font-weight: bold;
     border-color: #218838;
   }
+/* Mensagens */
+.msg-professor, .msg-aluno {
+  max-width: 70%;
+  margin-bottom: 12px;
+  padding: 10px 15px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
 
-   /* Mensagens */
-  .msg-professor, .msg-aluno {
-    max-width: 70%;
-    margin-bottom: 12px;
-    padding: 10px 15px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    word-wrap: break-word;
-  }
+.msg-professor {
+  background: #00c9ff;
+  color: white;
+  margin-right: auto;
+  border-bottom-left-radius: 0;
+}
 
-  .msg-professor {
-    background: #00c9ff;
-    color: white;
-    margin-right: auto;
-    border-bottom-left-radius: 0;
-  }
+.msg-aluno {
+  background: #92fe9d;
+  color: #2c3e50;
+  margin-left: auto;
+  border-bottom-right-radius: 0;
+}
 
-  .msg-aluno {
-    background: #92fe9d;
-    color: #2c3e50;
-    margin-left: auto;
-    border-bottom-right-radius: 0;
-  }
+/* Hover no botão enviar */
+.input-chat button:hover {
+  transform: scale(1.1);
+}
 
-  /* Hover no botão enviar */
-  .input-chat button:hover {
-    transform: scale(1.1);
-  }
+/* Botão de fechar modal */
+.fechar-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.fechar-btn:hover {
+  transform: scale(1.2);
+}
 
   .botao-padrao {
     background: linear-gradient(135deg, #00c9ff, #92fe9d);
@@ -507,24 +521,25 @@
   <input type="hidden" name="email" id="prof-email-hidden">
 </form>
 
-<!-- Modal do chat atualizado -->
 <div id="chat-modal-aluno" style="display: none; position: fixed; top: 0; left: 0; 
      width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+  
   <div id="chat-container" style="background: white; width: 400px; max-width: 90%; height: 500px; display: flex; flex-direction: column; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
     
-    <!-- Barra superior -->
+    <!-- Barra superior com botão fechar -->
     <div class="top-bar" style="background: linear-gradient(135deg, #00c9ff, #92fe9d); padding: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div class="info" style="display: flex; flex-direction: column;">
         <h2 id="professor-nome" style="font-size: 1rem; margin: 0; color: #ffffff; font-weight: 600;">Carregando...</h2>
         <p id="professor-disciplina" style="margin: 2px 0; color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">---</p>
       </div>
-      <button class="fechar-btn" onclick="fecharChatAluno()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
+      <!-- Botão de fechar -->
+      <button class="fechar-btn" onclick="fecharChatAluno()" style="background:none; border:none; color:white; font-size:1.5rem; font-weight:bold; cursor:pointer;">✖</button>
     </div>
 
     <!-- Área de mensagens -->
     <div id="mensagens-chat" class="mensagens-chat" style="flex: 1; overflow-y: auto; padding: 15px; background: #f9fbfd;"></div>
 
-    <!-- Input -->
+    <!-- Input de mensagem -->
     <div class="input-chat" style="display: flex; border-top: 1px solid #e0e0e0; background: white; padding: 10px;">
       <input type="text" id="input-msg" placeholder="Escreva uma mensagem..." style="flex: 1; border: none; outline: none; padding: 12px; border-radius: 25px; background: #f0f2f5; margin-right: 10px; font-size: 0.9rem;">
       <button id="enviar-msg" style="border: none; background: linear-gradient(135deg, #00c9ff, #92fe9d); color: white; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease;">➤</button>
@@ -835,6 +850,7 @@ async function listarMeusAlunos() {
 }
 
 // Abrir chat do professor com o aluno (atualizado para novo estilo)
+// Abrir chat do professor com o aluno (nome do aluno no topo)
 async function abrirChatProfessorDoAluno(nomeAluno) {
   const modal = document.getElementById("chat-modal-aluno");
   modal.style.display = "flex";
@@ -849,7 +865,9 @@ async function abrirChatProfessorDoAluno(nomeAluno) {
     if (!data.professor || !data.email) return;
 
     professorSelecionado = data.email;
-    document.getElementById("professor-nome").innerText = data.professor;
+
+    // Mostrar o nome do ALUNO no topo do chat
+    document.getElementById("professor-nome").innerText = nomeAluno;
     document.getElementById("professor-disciplina").innerText = data.disciplina || "---";
 
     // Carregar mensagens iniciais

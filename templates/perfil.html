@@ -686,35 +686,35 @@ function fecharDesafio() {
     <i class="fa-solid fa-circle-info"></i>
     Informações
   </div>
-  <div class="item" onclick="abrirChatAluno()">
-    <i class="fa-solid fa-comments"></i>
-    Chat
-  </div>
+<!-- Botão que abre o chat -->
+<div class="item" onclick="abrirChatAluno()">
+  <i class="fa-solid fa-comments"></i>
+  Chat
 </div>
 
-<!-- Container principal do chat -->
-<div id="chat-container">
-  <!-- Barra superior com nome e disciplina do professor -->
-  <div class="top-bar" id="top-bar-professor">
-    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="professor">
-    <div class="info">
-      <h2 id="professor-nome">Carregando...</h2>
-      <p id="professor-disciplina">---</p>
+<!-- Modal do chat (inicialmente oculto) -->
+<div id="chat-modal-aluno" style="display: none;">
+  <div id="chat-container">
+    <!-- Barra superior com nome e disciplina do professor -->
+    <div class="top-bar" id="top-bar-professor">
+      <i class="fa-solid fa-chalkboard-user" style="font-size: 1.5rem; color: white;"></i>
+      <h2 id="professor-nome" style="margin-left: 10px;">Carregando...</h2>
+      <p id="professor-disciplina" style="margin-left: auto; color: rgba(255,255,255,0.9); font-size: 0.9rem;">---</p>
+      <button class="fechar-btn" onclick="fecharChatAluno()">✖</button>
     </div>
-  </div>
 
-  <!-- Área de mensagens -->
-  <div id="mensagens-chat" class="mensagens-chat"></div>
+    <!-- Área de mensagens -->
+    <div id="mensagens-chat" class="mensagens-chat"></div>
 
-  <!-- Input de mensagem -->
-  <div class="input-chat">
-    <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
-    <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
+    <!-- Input de mensagem -->
+    <div class="input-chat">
+      <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
+      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
   </div>
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 
 <script>
 let professorSelecionado = null;
@@ -731,61 +731,88 @@ function getNomeAluno() {
   return nome.trim().toLowerCase();
 }
 
-function abrirChatProfessor(professorEmail) {
-  professorSelecionado = professorEmail;
-  const nomeAluno = getNomeAluno(); 
+// Abre o chat modal
+async function abrirChatAluno() {
+  document.getElementById("chat-modal-aluno").style.display = "block";
+  modalChatAberta = true;
 
-  // Enviar mensagem
-  modal.querySelector('#enviar-msg').onclick = async () => {
-    const input = modal.querySelector('#input-msg');
-    const mensagem = input.value.trim();
-    if (!mensagem) return;
+  const nomeAluno = getNomeAluno();
+  try {
+    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+    if (!res.ok) throw new Error("Não foi possível buscar professor vinculado");
 
-    try {
-      await fetch("/enviar-mensagem", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          aluno: nomeAluno,
-          professor: professorEmail,
-          mensagem,
-          remetente: "aluno"
-        })
-      });
-      input.value = "";
-      carregarMensagens();
-    } catch (err) {
-      console.error("Erro ao enviar mensagem:", err);
+    const data = await res.json();
+
+    if (!data.professor || !data.email) {
+      document.getElementById("professor-nome").innerText = "Nenhum professor vinculado";
+      return;
     }
-  };
 
-  // Carregar mensagens
-  async function carregarMensagens() {
-    try {
-      const res = await fetch(`/buscar-mensagens/${professorEmail}/${nomeAluno}`);
-      const msgs = await res.json();
-      const container = modal.querySelector('#mensagens-chat');
-      container.innerHTML = "";
+    professorSelecionado = data.email;
+    document.getElementById("professor-nome").innerText = data.professor;
+    document.getElementById("professor-disciplina").innerText = data.disciplina;
 
-      msgs.forEach(m => {
-        const div = document.createElement('div');
-        div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
-        div.textContent = m.mensagem;
-        container.appendChild(div);
-      });
+    carregarMensagens();
 
-      container.scrollTop = container.scrollHeight;
-    } catch (err) {
-      console.error("Erro ao buscar mensagens:", err);
-    }
+    document.getElementById("enviar-msg").onclick = async () => {
+      const input = document.getElementById("input-msg");
+      const mensagem = input.value.trim();
+      if (!mensagem) return;
+
+      try {
+        await fetch("/enviar-mensagem", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            aluno: nomeAluno,
+            professor: professorSelecionado,
+            mensagem,
+            remetente: "aluno"
+          })
+        });
+        input.value = "";
+        carregarMensagens();
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+      }
+    };
+
+    setInterval(() => {
+      if (modalChatAberta) carregarMensagens();
+    }, 2000);
+
+  } catch (err) {
+    console.error("Erro ao iniciar chat:", err);
   }
-
-  carregarMensagens();
-  setInterval(() => {
-    if (modalChatAberta) carregarMensagens();
-  }, 2000);
 }
 
+// Fecha o chat modal
+function fecharChatAluno() {
+  document.getElementById("chat-modal-aluno").style.display = "none";
+  modalChatAberta = false;
+}
+
+// Buscar mensagens
+async function carregarMensagens() {
+  const nomeAluno = getNomeAluno();
+  try {
+    const res = await fetch(`/buscar-mensagens/${professorSelecionado}/${nomeAluno}`);
+    const msgs = await res.json();
+    const container = document.getElementById('mensagens-chat');
+    container.innerHTML = "";
+
+    msgs.forEach(m => {
+      const div = document.createElement('div');
+      div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
+      div.textContent = m.mensagem;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    console.error("Erro ao buscar mensagens:", err);
+  }
+}
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">

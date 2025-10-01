@@ -368,62 +368,69 @@ async def meus_alunos_status(prof_email: str):
         )
 
 
-# 🔹 Rota para enviar mensagem (aluno ou professor)
 @app.post("/enviar-mensagem")
-async def enviar_mensagem(info: MensagemInfo):
+async def enviar_mensagem(request: Request):
     try:
-        aluno = info.aluno.strip().lower()
-        professor = info.professor.strip().lower()
+        data = await request.json()
+        aluno = data.get("aluno", "").strip().lower()
+        professor = data.get("professor", "").strip().lower()
+        mensagem = data.get("mensagem", "").strip()
+        remetente = data.get("remetente", "").strip().lower()
 
-        docs = db.collection('alunos_professor') \
-                 .where('aluno', '==', aluno) \
-                 .where('professor', '==', professor).stream()
+        if not aluno or not professor or not mensagem:
+            return JSONResponse(status_code=400, content={"detail": "Dados incompletos"})
 
-        for doc in docs:
-            doc_ref = db.collection('alunos_professor').document(doc.id)
+        # Buscar vínculo
+        query = db.collection("alunos_professor") \
+                  .where("aluno", "==", aluno) \
+                  .where("professor", "==", professor) \
+                  .limit(1).stream()
+        vinculo_doc = next(query, None)
 
-            nova_msg = {
-                'remetente': info.remetente.lower(),  # "aluno" ou "professor"
-                'mensagem': info.mensagem,
-                'timestamp': datetime.datetime.utcnow().isoformat()
-            }
+        if not vinculo_doc:
+            return JSONResponse(status_code=404, content={"detail": "Vínculo não encontrado"})
 
-            # Garante que o campo chat exista
-            d = doc.to_dict()
-            if 'chat' not in d:
-                doc_ref.update({'chat': []})
+        doc_ref = db.collection("alunos_professor").document(vinculo_doc.id)
 
-            # Adiciona mensagem ao chat
-            doc_ref.update({
-                'chat': firestore.ArrayUnion([nova_msg])
-            })
+        # Mensagem nova
+        nova_mensagem = {
+            "remetente": remetente,
+            "mensagem": mensagem,
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
-            return {"status": "ok", "mensagem": "Mensagem enviada com sucesso"}
+        # Adiciona ao array de mensagens
+        doc_ref.update({
+            "mensagens": firestore.ArrayUnion([nova_mensagem])
+        })
 
-        return JSONResponse(status_code=404, content={"detail": "Aluno/Professor não encontrados"})
+        return {"status": "sucesso", "mensagem": nova_mensagem}
 
     except Exception as e:
+        print("Erro ao enviar mensagem:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 
-# 🔹 Rota para buscar mensagens entre aluno e professor
 @app.get("/buscar-mensagens/{professor}/{aluno}")
 async def buscar_mensagens(professor: str, aluno: str):
     try:
-        docs = db.collection('alunos_professor') \
-                 .where('aluno', '==', aluno.strip().lower()) \
-                 .where('professor', '==', professor.strip().lower()).stream()
+        aluno_normalizado = aluno.strip().lower()
+        professor_normalizado = professor.strip().lower()
 
-        for doc in docs:
-            d = doc.to_dict()
-            if 'chat' not in d:
-                db.collection('alunos_professor').document(doc.id).update({'chat': []})
-                return []
-            return d['chat']
+        query = db.collection("alunos_professor") \
+                  .where("aluno", "==", aluno_normalizado) \
+                  .where("professor", "==", professor_normalizado) \
+                  .limit(1).stream()
+        vinculo_doc = next(query, None)
 
-        return []
+        if not vinculo_doc:
+            return []
+
+        data = vinculo_doc.to_dict()
+        return data.get("mensagens", [])
 
     except Exception as e:
+        print("Erro ao buscar mensagens:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 

@@ -137,17 +137,33 @@
 
 /* Botão de fechar modal */
 .fechar-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
   background: none;
   border: none;
-  color: white;
+  color: #333;
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
   transition: transform 0.2s ease;
+  z-index: 1001;
 }
 
 .fechar-btn:hover {
   transform: scale(1.2);
+  color: #e74c3c;
+}
+
+/* Garante que o modal tenha posição relativa */
+.modal-info {
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
   .botao-padrao {

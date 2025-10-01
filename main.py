@@ -1814,10 +1814,8 @@ async def verificar_aluno(request: Request):
 @app.get("/professor-do-aluno/{nome_aluno}")
 async def professor_do_aluno(nome_aluno: str):
     try:
-        # 🔹 Normaliza de novo para garantir consistência
         aluno_normalizado = nome_aluno.strip().lower()
 
-        # Buscar vínculo do aluno em alunos_professor
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", aluno_normalizado) \
                   .limit(1).stream()
@@ -1839,7 +1837,6 @@ async def professor_do_aluno(nome_aluno: str):
         if not professor_email:
             return {"professor": "Desconhecido", "disciplina": "Desconhecida"}
 
-        # Buscar dados do professor na coleção professores_online
         prof_query = db.collection("professores_online") \
                        .where("email", "==", professor_email.strip().lower()) \
                        .limit(1).stream()
@@ -1853,17 +1850,15 @@ async def professor_do_aluno(nome_aluno: str):
         return {
             "professor": prof_data.get("nome_completo", "Desconhecido"),
             "disciplina": prof_data.get("area_formacao", "Desconhecida"),
-            "email": professor_email.strip().lower()
+            "email": professor_email.strip().lower(),
+            "mensagens": vinculo_data.get("mensagens", [])  # 🔹 já retorna as mensagens
         }
 
     except Exception as e:
         print("Erro ao buscar professor do aluno:", e)
         return JSONResponse(
             status_code=500,
-            content={
-                "detail": "Erro interno ao buscar professor do aluno",
-                "erro": str(e)
-            }
+            content={"detail": "Erro interno ao buscar professor do aluno", "erro": str(e)}
         )
 
 

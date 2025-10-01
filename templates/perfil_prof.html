@@ -752,15 +752,16 @@ async function listarMeusAlunos() {
       };
       card.appendChild(infoBtn);
 
-      // Botão Chat
       const chatBtn = document.createElement('button');
       chatBtn.innerHTML = '<i class="fa-solid fa-comment"></i> Chat';
       chatBtn.className = 'botao-padrao';
       chatBtn.onclick = (e) => {
         e.stopPropagation();
-        abrirChatAluno(aluno.nome);
-      };
-      card.appendChild(chatBtn);
+       // Aqui usamos o nome do aluno para abrir o chat dele
+       const nomeAluno = aluno.nome.toLowerCase();
+       abrirChatProfessorDoAluno(nomeAluno);
+     };
+     card.appendChild(chatBtn);
 
       // Botão Desvincular
       const desvincularBtn = document.createElement('button');
@@ -802,89 +803,52 @@ async function listarMeusAlunos() {
   }
 }
 
-// Função de chat
-function abrirChatAluno(alunoNome) {
-  alunoSelecionado = alunoNome;
-
-  if (modalChatAberta) {
-    document.querySelector('.overlay-chat')?.remove();
-    modalChatAberta = false;
-  }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay-chat';
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-chat';
-
-  modal.innerHTML = `
-    <button class="fechar-btn"><i class="fa-solid fa-xmark"></i></button>
-    <h3>Chat com ${alunoNome}</h3>
-    <div id="mensagens-chat" class="mensagens-chat"></div>
-    <div class="input-chat">
-      <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
-      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+// Função para abrir chat a partir do professor
+async function abrirChatProfessorDoAluno(nomeAluno) {
+  const modal = document.getElementById("chat-modal-aluno");
+  modal.style.display = "flex";
   modalChatAberta = true;
 
-  // Fechar modal
-  modal.querySelector('.fechar-btn').onclick = () => {
-    overlay.remove();
-    modalChatAberta = false;
-  };
+  try {
+    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+    if (!res.ok) throw new Error("Não foi possível buscar professor do aluno");
 
-  // Enviar mensagem
-  modal.querySelector('#enviar-msg').onclick = async () => {
-    const input = modal.querySelector('#input-msg');
-    const mensagem = input.value.trim();
-    if (!mensagem) return;
+    const data = await res.json();
+    if (!data.professor || !data.email) return;
 
-    try {
+    professorSelecionado = data.email;
+    document.getElementById("professor-nome").innerText = data.professor;
+    document.getElementById("professor-disciplina").innerText = data.disciplina;
+
+    carregarMensagens(data.mensagens || []);
+
+    document.getElementById("enviar-msg").onclick = async () => {
+      const input = document.getElementById("input-msg");
+      const mensagem = input.value.trim();
+      if (!mensagem) return;
+
       await fetch("/enviar-mensagem", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-          aluno: alunoNome,
-          professor: "{{ professor.email }}",
+          aluno: nomeAluno,
+          professor: professorSelecionado,
           mensagem,
-          remetente: "professor"   // 🔹 agora identifica quem está enviando
+          remetente: "professor"
         })
       });
+
       input.value = "";
       carregarMensagens();
-    } catch (err) {
-      console.error("Erro ao enviar mensagem:", err);
-    }
-  };
+    };
 
-  // Carregar mensagens
-  async function carregarMensagens() {
-    try {
-      const res = await fetch(`/buscar-mensagens/{{ professor.email }}/${alunoNome}`);
-      const msgs = await res.json();
-      const container = modal.querySelector('#mensagens-chat');
-      container.innerHTML = "";
-      msgs.forEach(m => {
-        const div = document.createElement('div');
-        div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
-        div.textContent = m.mensagem;
-        container.appendChild(div);
-      });
-      container.scrollTop = container.scrollHeight;
-    } catch (err) {
-      console.error("Erro ao buscar mensagens:", err);
-    }
+    setInterval(() => {
+      if (modalChatAberta) carregarMensagens();
+    }, 2000);
+
+  } catch (err) {
+    console.error("Erro ao abrir chat do aluno:", err);
   }
-
-  carregarMensagens();
-  // Atualizar chat a cada 2s
-  setInterval(() => {
-    if (modalChatAberta) carregarMensagens();
-  }, 2000);
 }
 
 let modalAberta = false;

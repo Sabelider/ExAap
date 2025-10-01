@@ -392,11 +392,11 @@ async def enviar_mensagem(request: Request):
 
         doc_ref = db.collection("alunos_professor").document(vinculo_doc.id)
 
-        # Mensagem nova
+        # Mensagem nova com timestamp do servidor Firebase
         nova_mensagem = {
             "remetente": remetente,
             "mensagem": mensagem,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": firestore.SERVER_TIMESTAMP
         }
 
         # Adiciona ao array de mensagens
@@ -427,12 +427,40 @@ async def buscar_mensagens(professor: str, aluno: str):
             return []
 
         data = vinculo_doc.to_dict()
-        return data.get("mensagens", [])
+        mensagens = data.get("mensagens", [])
+
+        mensagens_formatadas = []
+        for m in mensagens:
+            msg = {
+                "mensagem": m.get("mensagem"),
+                "remetente": m.get("remetente"),
+            }
+
+            timestamp = m.get("timestamp")
+            if not timestamp:
+                # Se não tiver timestamp, gera agora
+                timestamp = datetime.utcnow()
+            elif hasattr(timestamp, "timestamp"):
+                # Firestore retorna google.cloud.firestore_v1._helpers.Timestamp
+                timestamp = timestamp.to_datetime()
+
+            # Sempre serializar como ISO (compatível com JS)
+            if isinstance(timestamp, datetime):
+                msg["timestamp"] = timestamp.isoformat()
+            else:
+                msg["timestamp"] = str(timestamp)
+
+            mensagens_formatadas.append(msg)
+
+        # Ordena mensagens pelo timestamp antes de devolver
+        mensagens_formatadas.sort(key=lambda x: x["timestamp"])
+
+        return mensagens_formatadas
 
     except Exception as e:
         print("Erro ao buscar mensagens:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
-
+        
 
 # 🔹 Status completo com last_seen
 @app.get("/alunos-status-completo/{prof_email}")

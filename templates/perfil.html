@@ -456,10 +456,10 @@
     return nome.trim().toLowerCase();
   }
 
-  // Função para buscar professor vinculado
+  
   async function carregarProfessorDoAluno() {
     try {
-      const nomeAluno = getNomeAluno(); // 🔹 agora pega do mesmo lugar
+      const nomeAluno = getNomeAluno(); 
       if (!nomeAluno) {
         console.error("Nome do aluno não definido");
         return;

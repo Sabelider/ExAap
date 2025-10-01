@@ -803,54 +803,6 @@ async function listarMeusAlunos() {
   }
 }
 
-// Função para abrir chat a partir do professor
-async function abrirChatProfessorDoAluno(nomeAluno) {
-  const modal = document.getElementById("chat-modal-aluno");
-  modal.style.display = "flex";
-  modalChatAberta = true;
-
-  try {
-    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-    if (!res.ok) throw new Error("Não foi possível buscar professor do aluno");
-
-    const data = await res.json();
-    if (!data.professor || !data.email) return;
-
-    professorSelecionado = data.email;
-    document.getElementById("professor-nome").innerText = data.professor;
-    document.getElementById("professor-disciplina").innerText = data.disciplina;
-
-    carregarMensagens(data.mensagens || []);
-
-    document.getElementById("enviar-msg").onclick = async () => {
-      const input = document.getElementById("input-msg");
-      const mensagem = input.value.trim();
-      if (!mensagem) return;
-
-      await fetch("/enviar-mensagem", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          aluno: nomeAluno,
-          professor: professorSelecionado,
-          mensagem,
-          remetente: "professor"
-        })
-      });
-
-      input.value = "";
-      carregarMensagens();
-    };
-
-    setInterval(() => {
-      if (modalChatAberta) carregarMensagens();
-    }, 2000);
-
-  } catch (err) {
-    console.error("Erro ao abrir chat do aluno:", err);
-  }
-}
-
 let modalAberta = false;
 
 function exibirInformacoesAluno(aluno) {

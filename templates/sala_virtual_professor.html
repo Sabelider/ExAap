@@ -138,231 +138,251 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
-  <script>
-    const statusSpan = document.getElementById("status");
-    const localVideo = document.getElementById("localVideo");
-    const remoteVideo = document.getElementById("remoteVideo");
-    const cronometro = document.getElementById("cronometro");
-    const confirmarAulaBtn = document.getElementById("confirmarAulaBtn");
-    const chamarAlunoBtn = document.getElementById("chamarAlunoBtn");
-    const ativarAudioBtn = document.getElementById("ativarAudioBtn");
+<script>
+  const statusSpan = document.getElementById("status");
+  const localVideo = document.getElementById("localVideo");
+  const remoteVideo = document.getElementById("remoteVideo");
+  const cronometro = document.getElementById("cronometro");
+  const confirmarAulaBtn = document.getElementById("confirmarAulaBtn");
+  const chamarAlunoBtn = document.getElementById("chamarAlunoBtn");
+  const ativarAudioBtn = document.getElementById("ativarAudioBtn");
 
-    const email = "{{ email }}";
-    const aluno = "{{ aluno }}";
+  const email = "{{ email }}";
+  const aluno = "{{ aluno }}";
 
-    let localStream;
-    let peer;
-    let currentCall;
-    let meuPeerId = "";
-    let tempoRestante = 3900;
-    let intervalo;
-    let remoteStreamRef;
+  let localStream;
+  let peer;
+  let currentCall;
+  let meuPeerId = "";
+  let tempoRestante = 1260; // 21 minutos
+  let intervalo;
+  let remoteStreamRef;
+  let etapa = 1; // controle da aula (1ª, 2ª, 3ª)
+  let reconexaoTimer;
 
-    remoteVideo.muted = true;
+  remoteVideo.muted = true;
 
-    remoteVideo.onloadedmetadata = () => {
+  remoteVideo.onloadedmetadata = () => {
+    remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+  };
+  remoteVideo.onpause = () => {
+    remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && remoteVideo.srcObject) {
       remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-    };
-    remoteVideo.onpause = () => {
-      remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-    };
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && remoteVideo.srcObject) {
-        remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+    }
+  });
+
+  function ativarAudio() {
+    if (remoteVideo.srcObject) {
+      remoteVideo.srcObject.getAudioTracks().forEach(t => t.enabled = true);
+    }
+    remoteVideo.muted = false;
+    remoteVideo.play().then(() => ativarAudioBtn.style.display = "none");
+  }
+
+  async function startCamera() {
+    try {
+      statusSpan.textContent = "Solicitando acesso à câmera e microfone...";
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+      localVideo.srcObject = localStream;
+      statusSpan.textContent = "Câmera pronta. Conectando...";
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao acessar câmera e microfone.");
+      statusSpan.textContent = "Erro ao acessar câmera/mic";
+      throw err;
+    }
+  }
+
+  function initPeer() {
+    peer = new Peer({
+      config: {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" }
+        ]
       }
     });
 
-    function ativarAudio() {
-      if (remoteVideo.srcObject) {
-        remoteVideo.srcObject.getAudioTracks().forEach(t => t.enabled = true);
+    peer.on("open", (id) => {
+      meuPeerId = id;
+      statusSpan.textContent = "Conectado. Aguardando chamada...";
+    });
+
+    peer.on("call", (call) => {
+      if (!localStream) {
+        const wait = setInterval(() => {
+          if (localStream) {
+            clearInterval(wait);
+            call.answer(localStream);
+            handleCallEvents(call);
+          }
+        }, 100);
+      } else {
+        call.answer(localStream);
+        handleCallEvents(call);
       }
-      remoteVideo.muted = false;
-      remoteVideo.play().then(() => ativarAudioBtn.style.display = "none");
-    }
+    });
 
-    async function startCamera() {
-      try {
-        statusSpan.textContent = "Solicitando acesso à câmera e microfone...";
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-        });
-        localVideo.srcObject = localStream;
-        statusSpan.textContent = "Câmera pronta. Conectando...";
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao acessar câmera e microfone.");
-        statusSpan.textContent = "Erro ao acessar câmera/mic";
-        throw err;
+    peer.on("error", (err) => {
+      console.error("Erro PeerJS:", err);
+      statusSpan.textContent = "Erro PeerJS: " + err.type;
+      if (["network", "server-error", "socket-error", "unavailable-id"].includes(err.type)) {
+        try { peer.destroy(); } catch (_) {}
+        setTimeout(() => initPeer(), 1200);
       }
-    }
+    });
 
-    function initPeer() {
-      peer = new Peer({
-        config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" }
-            // { urls: "turn:seu-turn.example.com:3478", username: "user", credential: "pass" }
-          ]
-        }
-      });
+    peer.on("disconnected", () => {
+      statusSpan.textContent = "Desconectado. Tentando reconectar...";
+      try { peer.reconnect(); } catch(_) {}
+      if (currentCall) {
+        setTimeout(() => {
+          if (localStream && currentCall.peer) {
+            const newCall = peer.call(currentCall.peer, localStream);
+            handleCallEvents(newCall);
+          }
+        }, 2000);
+      }
+    });
+  }
 
-      peer.on("open", (id) => {
-        meuPeerId = id;
-        statusSpan.textContent = "Conectado. Aguardando chamada...";
-      });
+  function handleCallEvents(call) {
+    currentCall = call;
 
-      peer.on("call", (call) => {
-        if (!localStream) {
-          const wait = setInterval(() => {
-            if (localStream) {
-              clearInterval(wait);
-              call.answer(localStream);
-              handleCallEvents(call);
-            }
-          }, 100);
-        } else {
-          call.answer(localStream);
-          handleCallEvents(call);
-        }
-      });
+    call.on("stream", (remoteStream) => {
+      remoteStreamRef = remoteStream;
+      remoteStream.getTracks().forEach(track => track.enabled = true);
+      remoteVideo.srcObject = remoteStream;
+      remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+      statusSpan.innerHTML = `Conectado! (Etapa ${etapa}/3)`;
+      iniciarCronometro();
+    });
 
-      peer.on("error", (err) => {
-        console.error("Erro PeerJS:", err);
-        statusSpan.textContent = "Erro PeerJS: " + err.type;
-        if (["network", "server-error", "socket-error", "unavailable-id"].includes(err.type)) {
-          try { peer.destroy(); } catch (_) {}
-          setTimeout(() => initPeer(), 1200);
-        }
-      });
+    call.on("close", () => {
+      statusSpan.innerHTML = "Conexão encerrada.";
+      limparRemoto();
+    });
 
-      peer.on("disconnected", () => {
-        statusSpan.textContent = "Desconectado. Tentando reconectar...";
-        try { peer.reconnect(); } catch(_) {}
-        if (currentCall) {
-          setTimeout(() => {
-            if (localStream && currentCall.peer) {
-              const newCall = peer.call(currentCall.peer, localStream);
-              handleCallEvents(newCall);
-            }
-          }, 2000);
-        }
-      });
-    }
+    call.on("error", () => {
+      statusSpan.textContent = "Erro na chamada";
+      limparRemoto();
+    });
 
-    function handleCallEvents(call) {
-      currentCall = call;
-
-      call.on("stream", (remoteStream) => {
-        remoteStreamRef = remoteStream;
-        remoteStream.getTracks().forEach(track => track.enabled = true);
-        remoteVideo.srcObject = remoteStream;
+    call.peerConnection?.addEventListener("track", (ev) => {
+      if (ev.streams && ev.streams[0]) {
+        remoteStreamRef = ev.streams[0];
+        remoteVideo.srcObject = remoteStreamRef;
         remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-        statusSpan.innerHTML = "Conectado!";
-        iniciarCronometro();
-      });
-
-      call.on("close", () => {
-        statusSpan.innerHTML = "Conexão encerrada.";
-        confirmarAulaBtn.style.display = "inline-block";
-        limparRemoto();
-      });
-
-      call.on("error", () => {
-        statusSpan.textContent = "Erro na chamada";
-        confirmarAulaBtn.style.display = "inline-block";
-        limparRemoto();
-      });
-
-      call.peerConnection?.addEventListener("track", (ev) => {
-        if (ev.streams && ev.streams[0]) {
-          remoteStreamRef = ev.streams[0];
-          remoteVideo.srcObject = remoteStreamRef;
-          remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-        }
-      });
-    }
-
-    function limparRemoto() {
-      if (remoteVideo.srcObject) {
-        try { remoteVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (_) {}
       }
-      remoteVideo.srcObject = null;
-    }
+    });
+  }
 
-    function enviarIdAoPerfil() {
-      if (!meuPeerId) {
-        alert("Ainda conectando... aguarde.");
+  function limparRemoto() {
+    if (remoteVideo.srcObject) {
+      try { remoteVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (_) {}
+    }
+    remoteVideo.srcObject = null;
+  }
+
+  function enviarIdAoPerfil() {
+    if (!meuPeerId) {
+      alert("Ainda conectando... aguarde.");
+      return;
+    }
+    chamarAlunoBtn.style.display = "none";
+
+    fetch("/enviar-id-aula", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ peer_id: meuPeerId, email: email.trim().toLowerCase(), aluno: aluno.trim().toLowerCase() })
+    })
+    .then(res => res.ok ? alert("✅ ID enviado!") : Promise.reject("Falha"))
+    .catch(() => {
+      alert("⚠️ Erro ao enviar ID.");
+      chamarAlunoBtn.style.display = "inline-block";
+    });
+  }
+
+  function iniciarCronometro() {
+    cronometro.style.display = "block";
+    tempoRestante = 1260; // 21 minutos
+    clearInterval(intervalo);
+    clearTimeout(reconexaoTimer);
+
+    intervalo = setInterval(() => {
+      if (tempoRestante <= 0) {
+        clearInterval(intervalo);
+        cronometro.textContent = "00:00";
+        encerrarChamada();
         return;
       }
-      chamarAlunoBtn.style.display = "none";
+      tempoRestante--;
+      const m = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
+      const s = (tempoRestante % 60).toString().padStart(2, '0');
+      cronometro.textContent = `${m}:${s}`;
+    }, 1000);
+  }
 
-      fetch("/enviar-id-aula", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ peer_id: meuPeerId, email: email.trim().toLowerCase(), aluno: aluno.trim().toLowerCase() })
-      })
-      .then(res => res.ok ? alert("✅ ID enviado!") : Promise.reject("Falha"))
-      .catch(() => {
-        alert("⚠️ Erro ao enviar ID.");
-        chamarAlunoBtn.style.display = "inline-block";
-      });
-    }
+  function encerrarChamada() {
+    try { currentCall?.close(); } catch (_) {}
+    limparRemoto();
 
-    function iniciarCronometro() {
-      cronometro.style.display = "block";
-      tempoRestante = 3900;
-      clearInterval(intervalo);
-      intervalo = setInterval(() => {
-        if (tempoRestante <= 0) {
-          clearInterval(intervalo);
-          cronometro.textContent = "00:00";
-          encerrarChamada();
-          return;
-        }
-        tempoRestante--;
-        const m = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
-        const s = (tempoRestante % 60).toString().padStart(2, '0');
-        cronometro.textContent = `${m}:${s}`;
-      }, 1000);
-    }
-
-    function encerrarChamada() {
-      try { currentCall?.close(); } catch (_) {}
-      limparRemoto();
-      statusSpan.textContent = "⏱️ Aula encerrada";
+    if (etapa < 3) {
+      statusSpan.textContent = `⏱️ Etapa ${etapa} encerrada. Intervalo de 5 minutos...`;
+      etapa++;
+      iniciarReconexaoAposIntervalo();
+    } else {
+      statusSpan.textContent = "✅ Aula finalizada após 3 blocos de 21 minutos.";
       confirmarAulaBtn.style.display = "inline-block";
     }
+  }
 
-    function registrarAula() {
-      confirmarAulaBtn.disabled = true;
-      fetch("/registrar-aula", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ professor: email.trim().toLowerCase(), aluno: aluno.trim().toLowerCase() })
-      })
-      .then(res => {
-        if (res.ok) {
-          alert("✔️ Aula registrada!");
-          confirmarAulaBtn.style.display = "none";
-        } else {
-          throw new Error();
-        }
-      })
-      .catch(() => {
-        alert("❌ Falha ao registrar aula.");
-        confirmarAulaBtn.disabled = false;
-      });
-    }
-
-    (async () => {
-      try {
-        await startCamera();
+  function iniciarReconexaoAposIntervalo() {
+    reconexaoTimer = setTimeout(() => {
+      statusSpan.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
+      if (currentCall?.peer && localStream) {
+        const newCall = peer.call(currentCall.peer, localStream);
+        handleCallEvents(newCall);
+      } else {
         initPeer();
-        statusSpan.textContent = "Pronto. Envie o ID ao aluno.";
-      } catch (_) {}
-    })();
-  </script>
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+  }
+
+  function registrarAula() {
+    confirmarAulaBtn.disabled = true;
+    fetch("/registrar-aula", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ professor: email.trim().toLowerCase(), aluno: aluno.trim().toLowerCase() })
+    })
+    .then(res => {
+      if (res.ok) {
+        alert("✔️ Aula registrada!");
+        confirmarAulaBtn.style.display = "none";
+      } else {
+        throw new Error();
+      }
+    })
+    .catch(() => {
+      alert("❌ Falha ao registrar aula.");
+      confirmarAulaBtn.disabled = false;
+    });
+  }
+
+  (async () => {
+    try {
+      await startCamera();
+      initPeer();
+      statusSpan.textContent = "Pronto. Envie o ID ao aluno.";
+    } catch (_) {}
+  })();
+</script>
 </body>
 </html>

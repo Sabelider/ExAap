@@ -173,8 +173,7 @@
           { urls: "stun:stun2.l.google.com:19302" },
           { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
           { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-          { urls: "turn:xirsys.com:3478", username: "testuser", credential: "testpassword" }
+          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
         ]
       },
       debug: 2
@@ -185,10 +184,22 @@
       statusSpan.textContent = "🔗 Conectado ao servidor de chamadas.";
     });
 
+    // ✅ Aguarda o stream estar pronto antes de responder à chamada
     peer.on("call", call => {
-      call.answer(localStream);
-      enhanceCallQuality(call);
-      handleCallEvents(call);
+      if (!localStream) {
+        const esperar = setInterval(() => {
+          if (localStream) {
+            clearInterval(esperar);
+            call.answer(localStream);
+            enhanceCallQuality(call);
+            handleCallEvents(call);
+          }
+        }, 200);
+      } else {
+        call.answer(localStream);
+        enhanceCallQuality(call);
+        handleCallEvents(call);
+      }
     });
 
     peer.on("error", err => {
@@ -218,11 +229,20 @@
 
   function handleCallEvents(call) {
     currentCall = call;
+
+    // ✅ Usa tanto "stream" quanto "track" para garantir exibição do vídeo
     call.on("stream", stream => {
       remoteStreamRef = stream;
       remoteVideo.srcObject = stream;
       remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
       statusSpan.textContent = "📡 Conectado com o aluno - transmissão otimizada";
+    });
+
+    call.peerConnection?.addEventListener("track", ev => {
+      if (ev.streams && ev.streams[0]) {
+        remoteVideo.srcObject = ev.streams[0];
+        remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+      }
     });
 
     call.on("close", () => {

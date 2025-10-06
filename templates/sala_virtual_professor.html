@@ -157,9 +157,73 @@
   let tempoRestante = 1260; // 21 minutos
   let intervalo;
   let remoteStreamRef;
-  let etapa = 1; // controle da aula (1ª, 2ª, 3ª)
-  let reconexaoTimer;
+  let etapa = 1;
+  let intervaloVisual;
+  let somTocado = false;
 
+  // === ELEMENTOS VISUAIS DO INTERVALO ===
+  const intervaloContainer = document.createElement("div");
+  intervaloContainer.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+  `;
+
+  const circulo = document.createElement("div");
+  circulo.style.cssText = `
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: conic-gradient(#00c9ff, #92fe9d, #00c9ff);
+    animation: girar 4s linear infinite;
+    box-shadow: 0 0 30px rgba(0, 201, 255, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  `;
+
+  const tempoIntervalo = document.createElement("div");
+  tempoIntervalo.style.cssText = `
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #fff;
+    position: absolute;
+  `;
+
+  const avisoInicio = document.createElement("div");
+  avisoInicio.style.cssText = `
+    margin-top: 30px;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #ffeb3b;
+    text-align: center;
+  `;
+
+  intervaloContainer.appendChild(circulo);
+  intervaloContainer.appendChild(tempoIntervalo);
+  intervaloContainer.appendChild(avisoInicio);
+  document.body.appendChild(intervaloContainer);
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    @keyframes girar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // === SOM DE AVISO ===
+  const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+
+  // === FUNÇÕES PRINCIPAIS ===
   remoteVideo.muted = true;
 
   remoteVideo.onloadedmetadata = () => {
@@ -313,7 +377,7 @@
     cronometro.style.display = "block";
     tempoRestante = 1260; // 21 minutos
     clearInterval(intervalo);
-    clearTimeout(reconexaoTimer);
+    clearTimeout(intervaloVisual);
 
     intervalo = setInterval(() => {
       if (tempoRestante <= 0) {
@@ -336,23 +400,51 @@
     if (etapa < 3) {
       statusSpan.textContent = `⏱️ Etapa ${etapa} encerrada. Intervalo de 5 minutos...`;
       etapa++;
-      iniciarReconexaoAposIntervalo();
+      mostrarIntervaloVisual();
     } else {
       statusSpan.textContent = "✅ Aula finalizada após 3 blocos de 21 minutos.";
       confirmarAulaBtn.style.display = "inline-block";
     }
   }
 
-  function iniciarReconexaoAposIntervalo() {
-    reconexaoTimer = setTimeout(() => {
-      statusSpan.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
-      if (currentCall?.peer && localStream) {
-        const newCall = peer.call(currentCall.peer, localStream);
-        handleCallEvents(newCall);
-      } else {
-        initPeer();
+  // === INTERVALO VISUAL BONITO COM SOM DE AVISO ===
+  function mostrarIntervaloVisual() {
+    let tempo = 300; // 5 minutos
+    somTocado = false;
+    intervaloContainer.style.display = "flex";
+    avisoInicio.textContent = "";
+    atualizarIntervaloVisual();
+
+    intervaloVisual = setInterval(() => {
+      tempo--;
+      atualizarIntervaloVisual();
+      if (tempo === 60 && !somTocado) {
+        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o início da próxima etapa!";
+        somAviso.play().catch(() => console.log("Som bloqueado pelo navegador."));
+        somTocado = true;
       }
-    }, 5 * 60 * 1000); // 5 minutos
+      if (tempo <= 0) {
+        clearInterval(intervaloVisual);
+        intervaloContainer.style.display = "none";
+        iniciarReconexaoAposIntervalo();
+      }
+    }, 1000);
+
+    function atualizarIntervaloVisual() {
+      const m = Math.floor(tempo / 60).toString().padStart(2, '0');
+      const s = (tempo % 60).toString().padStart(2, '0');
+      tempoIntervalo.textContent = `${m}:${s}`;
+    }
+  }
+
+  function iniciarReconexaoAposIntervalo() {
+    statusSpan.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
+    if (currentCall?.peer && localStream) {
+      const newCall = peer.call(currentCall.peer, localStream);
+      handleCallEvents(newCall);
+    } else {
+      initPeer();
+    }
   }
 
   function registrarAula() {

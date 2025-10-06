@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sala Virtual - Alta Qualidade</title>
+  <title>Sala Virtual - Professor (Alta Qualidade)</title>
   <style>
     body {
       margin: 0;
@@ -70,6 +70,7 @@
       border: none;
       z-index: 30;
     }
+    #confirmarAulaBtn:hover { background-color: #ff8800; }
     #chamarAlunoBtn {
       position: fixed;
       bottom: 20px;
@@ -85,6 +86,7 @@
       cursor: pointer;
       z-index: 30;
     }
+    #chamarAlunoBtn:hover { background-color: darkgreen; }
     #ativarAudioBtn {
       display: none;
       position: fixed;
@@ -99,12 +101,13 @@
       cursor: pointer;
       z-index: 30;
     }
+    #ativarAudioBtn:hover { background: #1669b2; }
   </style>
 </head>
 <body>
   <div id="info" style="position:fixed; top:10px; left:10px; z-index:25; background:rgba(0,0,0,.35); padding:8px 12px; border-radius:8px;">
     <div><strong>Status:</strong> <span id="status">Inicializando câmera...</span></div>
-    <div id="cronometro">00:00</div>
+    <div id="cronometro">01:05:00</div>
   </div>
 
   <div class="video-container">
@@ -112,140 +115,140 @@
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
 
-  <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar Aluno</button>
-  <button id="confirmarAulaBtn" onclick="registrarAula()">Confirmar Aula</button>
+  <button id="chamarAlunoBtn" onclick="enviarIdAoPerfil()">Chamar o Aluno</button>
+  <button id="confirmarAulaBtn" onclick="registrarAula()">Confirmar aula dada?</button>
   <button id="ativarAudioBtn" onclick="ativarAudio()">Ativar Som</button>
 
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.3/dist/peerjs.min.js"></script>
 
 <script>
   const statusSpan = document.getElementById("status");
   const localVideo = document.getElementById("localVideo");
   const remoteVideo = document.getElementById("remoteVideo");
+  const cronometro = document.getElementById("cronometro");
+  const confirmarAulaBtn = document.getElementById("confirmarAulaBtn");
+  const chamarAlunoBtn = document.getElementById("chamarAlunoBtn");
+  const ativarAudioBtn = document.getElementById("ativarAudioBtn");
+
   const email = "{{ email }}";
   const aluno = "{{ aluno }}";
-  let localStream, peer, currentCall, remoteStreamRef, meuPeerId;
-  let etapa = 1, tempoRestante = 1260, intervalo;
 
-  // === CONFIGURAÇÃO DE VÍDEO DE ALTA QUALIDADE ===
-  const mediaConstraints = {
-    video: {
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
-      frameRate: { ideal: 60, max: 60 },
-      facingMode: "user"
-    },
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-      channelCount: 2,
-      sampleRate: 48000
-    }
-  };
+  let localStream, peer, currentCall, meuPeerId = "", remoteStreamRef;
 
-  // === FUNÇÃO PARA MELHORAR BITRATE ===
-  function otimizarTransmissao(pc) {
-    const sender = pc.getSenders().find(s => s.track?.kind === "video");
-    if (sender) {
-      const params = sender.getParameters();
-      if (!params.encodings) params.encodings = [{}];
-      params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
-      params.encodings[0].scaleResolutionDownBy = 1;
-      sender.setParameters(params);
-    }
-  }
-
-  // === INICIAR CÂMERA ===
   async function startCamera() {
-    localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    localVideo.srcObject = localStream;
-    statusSpan.textContent = "🎥 Câmera pronta";
+    try {
+      statusSpan.textContent = "🎥 Iniciando câmera e microfone com qualidade máxima...";
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, max: 60 },
+          facingMode: "user"
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 2,
+          sampleRate: 48000,
+          sampleSize: 16
+        }
+      });
+      localVideo.srcObject = localStream;
+      statusSpan.textContent = "✅ Câmera e áudio prontos.";
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao acessar câmera/microfone.");
+    }
   }
 
-  // === CONFIGURAR PEERJS COM SERVIDORES ROBUSTOS ===
   function initPeer() {
     peer = new Peer({
       config: {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
           { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
           { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+          { urls: "turn:xirsys.com:3478", username: "testuser", credential: "testpassword" }
         ]
       },
-      debug: 1
+      debug: 2
     });
 
     peer.on("open", id => {
       meuPeerId = id;
-      statusSpan.textContent = "✅ Pronto para chamar aluno";
+      statusSpan.textContent = "🔗 Conectado ao servidor de chamadas.";
     });
 
     peer.on("call", call => {
       call.answer(localStream);
-      handleCall(call);
+      enhanceCallQuality(call);
+      handleCallEvents(call);
     });
 
     peer.on("error", err => {
-      console.warn("Erro PeerJS:", err);
-      statusSpan.textContent = "Erro de conexão, reconectando...";
+      console.error("PeerJS error:", err);
+      statusSpan.textContent = "Erro de rede, reconectando...";
       setTimeout(() => initPeer(), 2000);
     });
-
-    peer.on("disconnected", () => {
-      peer.reconnect();
-    });
   }
 
-  // === GERENCIAR EVENTOS DE CHAMADA ===
-  function handleCall(call) {
-    currentCall = call;
-
-    call.peerConnection.onconnectionstatechange = () => {
-      const state = call.peerConnection.connectionState;
-      if (state === "failed" || state === "disconnected") {
-        statusSpan.textContent = "🔁 Tentando recuperar chamada...";
-        setTimeout(() => iniciarReconexao(call.peer), 1500);
-      }
-    };
-
-    call.on("stream", remoteStream => {
-      remoteStreamRef = remoteStream;
-      remoteVideo.srcObject = remoteStream;
-      remoteVideo.play().catch(() => {});
-      otimizarTransmissao(call.peerConnection);
-      statusSpan.textContent = "📡 Conectado com qualidade máxima";
-    });
-
-    call.on("close", () => statusSpan.textContent = "❌ Chamada encerrada");
-  }
-
-  function iniciarReconexao(peerId) {
-    if (peerId && localStream) {
-      const newCall = peer.call(peerId, localStream);
-      handleCall(newCall);
+  function enhanceCallQuality(call) {
+    const pc = call.peerConnection;
+    if (pc) {
+      pc.getSenders().forEach(sender => {
+        if (sender.track && sender.track.kind === "video") {
+          const params = sender.getParameters();
+          params.degradationPreference = "maintain-framerate";
+          params.encodings = [{
+            maxBitrate: 4000000, // 4 Mbps
+            minBitrate: 1000000,
+            scaleResolutionDownBy: 1.0
+          }];
+          sender.setParameters(params);
+        }
+      });
     }
   }
 
-  // === ENVIAR ID PARA O PERFIL ===
+  function handleCallEvents(call) {
+    currentCall = call;
+    call.on("stream", stream => {
+      remoteStreamRef = stream;
+      remoteVideo.srcObject = stream;
+      remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+      statusSpan.textContent = "📡 Conectado com o aluno - transmissão otimizada";
+    });
+
+    call.on("close", () => {
+      statusSpan.textContent = "Conexão encerrada, tentando reconectar...";
+      setTimeout(() => initPeer(), 2000);
+    });
+
+    call.on("error", err => {
+      console.warn("Erro na chamada:", err);
+      setTimeout(() => initPeer(), 2000);
+    });
+  }
+
   function enviarIdAoPerfil() {
-    if (!meuPeerId) return alert("Aguarde conexão com servidor...");
+    if (!meuPeerId) {
+      alert("Aguardando conexão ao servidor...");
+      return;
+    }
+    chamarAlunoBtn.style.display = "none";
     fetch("/enviar-id-aula", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ peer_id: meuPeerId, email, aluno })
-    }).then(() => alert("✅ ID enviado ao aluno!"));
+    }).then(r => r.ok ? alert("✅ ID enviado ao aluno!") : alert("Erro ao enviar ID."));
   }
 
-  // === ATIVAR ÁUDIO SE BLOQUEADO ===
-  function ativarAudio() {
-    remoteVideo.muted = false;
-    remoteVideo.play();
-    document.getElementById("ativarAudioBtn").style.display = "none";
-  }
-
-  // === EXECUÇÃO ===
   (async () => {
     await startCamera();
     initPeer();

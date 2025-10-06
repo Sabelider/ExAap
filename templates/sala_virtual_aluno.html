@@ -60,206 +60,485 @@
 
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
-  <script>
+ <script>
   const statusEl = document.getElementById("status");
   const localVideo = document.getElementById("localVideo");
   const remoteVideo = document.getElementById("remoteVideo");
+  const notificacao = document.getElementById("notificacao");
+  const pagamento = document.getElementById("pagamento");
+  const btnSim = document.getElementById("sim");
+  const btnNao = document.getElementById("nao");
+  const btnPagamento = document.getElementById("fazerPagamento");
+  // opcional: botão de ativar audio se quiser controlar autoplay manual
+  let ativarAudioBtn = document.getElementById("ativarAudioBtn");
+  if (!ativarAudioBtn) {
+    ativarAudioBtn = document.createElement("button");
+    ativarAudioBtn.id = "ativarAudioBtn";
+    ativarAudioBtn.textContent = "Ativar som";
+    ativarAudioBtn.style.cssText = "display:none; position:fixed; bottom:20px; right:20px; z-index:9999;";
+    document.body.appendChild(ativarAudioBtn);
+  }
 
   const aluno = "{{ aluno }}";
   const professor = "{{ professor }}";
 
-  let peer, localStream, currentCall, reconnectTimer;
+  let peer;
+  let localStream;
+  let currentCall;
   let etapa = 1;
+  let intervaloVisual;
+  let somTocado = false;
+  let statsInterval;
+  let reconnectTimer;
 
-  // === 1️⃣ Inicializar Câmera com Qualidade Alta + Filtros ===
+  // === ELEMENTO VISUAL DO INTERVALO (mantido) ===
+  const intervaloContainer = document.createElement("div");
+  intervaloContainer.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+  `;
+  const circulo = document.createElement("div");
+  circulo.style.cssText = `
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: conic-gradient(#00c9ff, #92fe9d, #00c9ff);
+    animation: girar 4s linear infinite;
+    box-shadow: 0 0 30px rgba(0, 201, 255, 0.6);
+    display: flex; justify-content: center; align-items: center;
+  `;
+  const tempoIntervalo = document.createElement("div");
+  tempoIntervalo.style.cssText = `
+    font-size: 2.5em; font-weight: bold; color: #fff; position: absolute;
+  `;
+  const avisoInicio = document.createElement("div");
+  avisoInicio.style.cssText = `
+    margin-top: 30px; font-size: 1.3em; font-weight: 600;
+    color: #ffeb3b; text-align: center;
+  `;
+  intervaloContainer.appendChild(circulo);
+  intervaloContainer.appendChild(tempoIntervalo);
+  intervaloContainer.appendChild(avisoInicio);
+  document.body.appendChild(intervaloContainer);
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  `;
+  document.head.appendChild(style);
+
+  // === SOM DE AVISO ===
+  const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+
+  // === 1) Start camera (wait until ready) ===
   async function startCamera() {
     try {
+      statusEl.textContent = "🎥 Inicializando câmera e microfone...";
+      // constraints equilibradas para compatibilidade e qualidade
       localStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 60, max: 60 },
-          facingMode: "user"
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          latency: 0,
-          channelCount: 2
-        }
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
       localVideo.srcObject = localStream;
+      // mute local preview so it doesn't create echo loops
+      try { localVideo.muted = true; } catch(_) {}
+      statusEl.textContent = "✅ Câmera pronta";
+      console.log("[aluno] localStream ready");
       return true;
     } catch (err) {
-      console.error("Erro ao acessar câmera/microfone:", err);
-      statusEl.textContent = "❌ Falha ao iniciar câmera/microfone";
+      console.error("[aluno] erro startCamera:", err);
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao acessar câmera/microfone`;
       return false;
     }
   }
 
-  // === 2️⃣ Otimizar parâmetros de transmissão ===
-  function otimizarStream(peerConnection) {
-    const senders = peerConnection.getSenders();
-    senders.forEach(sender => {
-      if (sender.track && sender.track.kind === "video") {
-        const params = sender.getParameters();
-        if (!params.encodings) params.encodings = [{}];
-        params.encodings[0].maxBitrate = 3_000_000; // 3 Mbps
-        params.encodings[0].minBitrate = 800_000;
-        params.encodings[0].maxFramerate = 60;
-        sender.setParameters(params).catch(() => {});
-      }
-    });
-  }
-
-  // === 3️⃣ Inicializar Peer com ICE/TURN avançado ===
-  function initPeerAndConnect(peerIdDoProfessor) {
+  // === 2) Helper para criar Peer (apenas uma vez) ===
+  function createPeer() {
+    if (peer) return peer;
     peer = new Peer({
       config: {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
           { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
+          // TURN públicos/medidos (úteis se STUN falhar). Ajuste para o seu TURN real em produção.
           { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-          { urls: "turn:turn.anyfirewall.com:443?transport=tcp", username: "webrtc", credential: "webrtc" }
-        ],
-        iceTransportPolicy: "all"
+          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+        ]
       },
       debug: 1
     });
 
     peer.on("open", () => {
-      statusEl.textContent = "🔗 Conectando ao professor...";
-      currentCall = peer.call(peerIdDoProfessor, localStream, { metadata: { role: "aluno" } });
-      handleCallEvents(currentCall);
+      console.log("[aluno] Peer open:", peer.id);
     });
 
-    peer.on("error", err => {
-      console.error("Erro PeerJS:", err);
-      statusEl.textContent = "⚠️ Problema na conexão. Tentando reconectar...";
-      tentarReconectar();
+    peer.on("disconnected", () => {
+      console.warn("[aluno] Peer disconnected -> tentando reconnect");
+      try { peer.reconnect(); } catch(e){ console.warn(e); }
+    });
+
+    peer.on("error", (err) => {
+      console.error("[aluno] Peer error:", err);
+      statusEl.textContent = "⚠️ Erro de conexão. Tentando novamente...";
+      // tenta recriar peer em alguns segundos
+      setTimeout(() => {
+        try { peer.destroy(); } catch(_) {}
+        peer = null;
+        createPeer();
+      }, 2000);
+    });
+
+    return peer;
+  }
+
+  // === 3) Chamar professor (garantindo localStream + peer aberto) ===
+  async function initPeerAndConnect(peerIdDoProfessor) {
+    try {
+      if (!localStream) {
+        statusEl.textContent = "⏳ Aguardando câmera...";
+        // aguarda até 3s pela câmera (ou retenta)
+        const waited = await waitForLocalStream(3000);
+        if (!waited) {
+          statusEl.textContent = "❌ Sem câmera disponível.";
+          return;
+        }
+      }
+
+      createPeer();
+
+      // aguarda peer abrir (máx 3s)
+      const opened = await waitForPeerOpen(3000);
+      if (!opened) {
+        statusEl.textContent = "⚠️ Erro ao inicializar canal de sinalização.";
+        // tenta criar novamente
+        setTimeout(() => initPeerAndConnect(peerIdDoProfessor), 1500);
+        return;
+      }
+
+      console.log("[aluno] chamando professor:", peerIdDoProfessor);
+      statusEl.innerHTML = `<i class="fa-solid fa-link"></i> Chamando professor...`;
+
+      // cria a chamada com opções e metadata
+      currentCall = peer.call(peerIdDoProfessor, localStream, { metadata: { role: "aluno" } });
+      handleCallEvents(currentCall);
+
+      // start stats monitor
+      startStatsMonitor();
+    } catch (err) {
+      console.error("[aluno] erro initPeerAndConnect:", err);
+      statusEl.textContent = "⚠️ Falha ao iniciar chamada. Retentando...";
+      setTimeout(() => buscarPeerIdEDiscar(), 2000);
+    }
+  }
+
+  function waitForLocalStream(timeout = 3000) {
+    return new Promise(resolve => {
+      if (localStream) return resolve(true);
+      const interval = setInterval(() => {
+        if (localStream) {
+          clearInterval(interval);
+          return resolve(true);
+        }
+      }, 200);
+      setTimeout(() => {
+        clearInterval(interval);
+        resolve(!!localStream);
+      }, timeout);
     });
   }
 
-  // === 4️⃣ Gerenciar chamada e qualidade ===
+  function waitForPeerOpen(timeout = 3000) {
+    return new Promise(resolve => {
+      if (!peer) createPeer();
+      if (peer && peer.open && peer.id) return resolve(true);
+      const interval = setInterval(() => {
+        if (peer && peer.open && peer.id) {
+          clearInterval(interval);
+          return resolve(true);
+        }
+        // older peer versions may expose ._open or peer.id
+        if (peer && peer.id) { clearInterval(interval); return resolve(true); }
+      }, 200);
+      setTimeout(() => { clearInterval(interval); resolve(!!(peer && peer.id)); }, timeout);
+    });
+  }
+
+  // === 4) Gerenciar eventos da chamada ===
   function handleCallEvents(call) {
     currentCall = call;
 
     call.on("stream", async (remoteStream) => {
+      console.log("[aluno] recebeu stream via on('stream')");
+      if (!remoteStream) return;
+      remoteStream.getTracks().forEach(t => t.enabled = true);
       remoteVideo.srcObject = remoteStream;
-      await remoteVideo.play().catch(() => console.warn("⚠️ Clique para liberar áudio"));
-      statusEl.textContent = `🟢 Conectado (Etapa ${etapa}/3)`;
-
-      const pc = call.peerConnection;
-      if (pc) otimizarStream(pc);
-      monitorarConexao(pc);
+      await remoteVideo.play().catch(() => {
+        console.warn("[aluno] autoplay bloqueado, mostre botão de áudio");
+        ativarAudioBtn.style.display = "inline-block";
+      });
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor! (Etapa ${etapa}/3)`;
       iniciarCronometroAula();
     });
 
-    call.on("iceconnectionstatechange", () => {
-      const state = call.peerConnection?.iceConnectionState;
-      if (["failed", "disconnected"].includes(state)) {
-        statusEl.textContent = "🔄 Reconectando automaticamente...";
-        tentarReconectar();
+    // fallback / garantia extra com 'track'
+    call.peerConnection?.addEventListener("track", (ev) => {
+      if (ev.streams && ev.streams[0]) {
+        console.log("[aluno] recebeu stream via 'track' event");
+        remoteVideo.srcObject = ev.streams[0];
+        remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
       }
     });
 
     call.on("close", () => {
-      statusEl.textContent = "🔴 Conexão encerrada.";
+      console.log("[aluno] chamada fechada");
+      statusSelocalAfterClose();
     });
 
     call.on("error", (err) => {
-      console.error("Erro de chamada:", err);
+      console.error("[aluno] erro na chamada:", err);
+      statusSelocalAfterClose();
+      // tenta reconectar
+      scheduleReconnect();
     });
-  }
 
-  // === 5️⃣ Monitorar a qualidade da conexão ===
-  function monitorarConexao(pc) {
-    if (!pc) return;
-    setInterval(async () => {
-      const stats = await pc.getStats();
-      stats.forEach(report => {
-        if (report.type === "outbound-rtp" && report.kind === "video") {
-          if (report.packetsLost > 10) {
-            statusEl.textContent = "📶 Rede instável... ajustando bitrate...";
-            const sender = pc.getSenders().find(s => s.track?.kind === "video");
-            if (sender) {
-              const params = sender.getParameters();
-              if (!params.encodings) params.encodings = [{}];
-              params.encodings[0].maxBitrate = 1_500_000; // reduz temporariamente
-              sender.setParameters(params).catch(()=>{});
-            }
-          }
+    // ice state monitor (reconectar se necessário)
+    if (call.peerConnection) {
+      call.peerConnection.onconnectionstatechange = () => {
+        const state = call.peerConnection.connectionState;
+        console.log("[aluno] connectionState:", state);
+        if (["failed", "disconnected"].includes(state)) {
+          statusEl.textContent = "🔄 Rede instável. Tentando reconectar...";
+          scheduleReconnect();
         }
-      });
-    }, 3000);
-  }
-
-  // === 6️⃣ Reconexão inteligente ===
-  function tentarReconectar() {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(async () => {
-      if (currentCall?.peer && localStream) {
-        const newCall = peer.call(currentCall.peer, localStream);
-        handleCallEvents(newCall);
-      } else {
-        await buscarPeerIdEDiscar();
-      }
-    }, 2000);
-  }
-
-  // === 7️⃣ Buscar ID do professor ===
-  async function buscarPeerIdEDiscar() {
-    try {
-      const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
-      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-      const data = await res.json();
-      if (data.peer_id) {
-        initPeerAndConnect(data.peer_id);
-      } else {
-        statusEl.textContent = "⏳ Aguardando o professor...";
-        setTimeout(buscarPeerIdEDiscar, 3000);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar ID:", err);
+      };
     }
   }
 
-  // === 8️⃣ Cronômetro e intervalos ===
-  function iniciarCronometroAula() {
-    let tempoRestante = 1260;
-    const cron = setInterval(() => {
-      tempoRestante--;
-      if (tempoRestante <= 0) {
-        clearInterval(cron);
-        encerrarEtapa();
+  function statusSelocalAfterClose() {
+    statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
+    if (remoteVideo.srcObject) {
+      try { remoteVideo.srcObject.getTracks().forEach(t => t.stop()); } catch(_) {}
+    }
+    remoteVideo.srcObject = null;
+  }
+
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      if (currentCall?.peer && localStream) {
+        try {
+          const newCall = peer.call(currentCall.peer, localStream);
+          handleCallEvents(newCall);
+        } catch (err) {
+          console.warn("[aluno] falha ao re-call:", err);
+          buscarPeerIdEDiscar();
+        }
+      } else {
+        buscarPeerIdEDiscar();
       }
+    }, 1500);
+  }
+
+  // === 5) Monitor de stats e ajuste adaptativo de bitrate ===
+  function startStatsMonitor() {
+    stopStatsMonitor();
+    if (!currentCall?.peerConnection) return;
+    const pc = currentCall.peerConnection;
+    statsInterval = setInterval(async () => {
+      try {
+        const stats = await pc.getStats();
+        stats.forEach(report => {
+          // ajusta conforme outbound-rtp vídeo
+          if (report.type === "outbound-rtp" && (report.kind === "video" || report.mediaType === "video")) {
+            const packetsLost = report.packetsLost || 0;
+            const rtt = report.roundTripTime || report.rtt || 0;
+            // se perda alta, diminui bitrate
+            if (packetsLost > 10 || rtt > 1.0) {
+              console.log("[aluno] rede instável -> reduzindo bitrate");
+              const sender = pc.getSenders().find(s => s.track?.kind === "video");
+              if (sender) {
+                const params = sender.getParameters();
+                if (!params.encodings) params.encodings = [{}];
+                params.encodings[0].maxBitrate = 800000; // 800kbps temporariamente
+                sender.setParameters(params).catch(()=>{});
+              }
+            } else {
+              // procura sender e garante bitrate mínimo aceitável
+              const sender = pc.getSenders().find(s => s.track?.kind === "video");
+              if (sender) {
+                const params = sender.getParameters();
+                if (!params.encodings) params.encodings = [{}];
+                params.encodings[0].maxBitrate = params.encodings[0].maxBitrate || 1500000;
+                sender.setParameters(params).catch(()=>{});
+              }
+            }
+          }
+        });
+      } catch (err) {
+        // ignora erros de getStats
+      }
+    }, 3000);
+  }
+  function stopStatsMonitor() {
+    if (statsInterval) { clearInterval(statsInterval); statsInterval = null; }
+  }
+
+  // === 6) Permissão + verificação e iniciar fluxo ===
+  async function verificarPermissaoEConectar() {
+    try {
+      const resp = await fetch(`/registrar-chamada`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aluno: aluno, professor: professor })
+      });
+      const result = await resp.json();
+      if (resp.ok && result.sala) {
+        buscarPeerIdEDiscar();
+      } else {
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Conexão não autorizada.`;
+      }
+    } catch (err) {
+      console.error("[aluno] erro verificarPermissao:", err);
+      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Falha ao verificar autorização.`;
+    }
+  }
+
+  // === 7) Buscar id do professor (com timeout e retry) ===
+  async function buscarPeerIdEDiscar() {
+    try {
+      const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+      let tentativas = 0;
+      const maxTentativas = 30;
+      statusEl.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Aguardando o professor iniciar a chamada...`;
+
+      while (tentativas < maxTentativas) {
+        const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+        const data = await res.json();
+        if (data && data.peer_id) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ID do professor encontrado, conectando...`;
+          // aguarda small delay p/ servidor propagar (evita race)
+          setTimeout(() => initPeerAndConnect(data.peer_id), 500);
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        tentativas++;
+      }
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Professor ausente.`;
+    } catch (err) {
+      console.error("[aluno] erro buscarPeerIdEDiscar:", err);
+      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Erro ao buscar ID.`;
+    }
+  }
+
+  // === 8) Cronometro da aula / encerrar etapa ===
+  function iniciarCronometroAula() {
+    let tempoRestante = 1260; // 21 min
+    const cronometro = setInterval(() => {
+      if (tempoRestante <= 0) {
+        clearInterval(cronometro);
+        encerrarEtapa();
+        return;
+      }
+      tempoRestante--;
     }, 1000);
   }
 
   function encerrarEtapa() {
-    try { currentCall?.close(); } catch(_) {}
+    try { currentCall?.close(); } catch (_) {}
+    stopStatsMonitor();
     remoteVideo.srcObject = null;
     if (etapa < 3) {
       etapa++;
-      statusEl.textContent = "⏱️ Intervalo de 5 minutos...";
-      setTimeout(iniciarReconexaoAposIntervalo, 300000);
+      statusEl.textContent = `⏱️ Etapa encerrada. Intervalo de 5 minutos...`;
+      mostrarIntervaloVisual();
     } else {
-      statusEl.textContent = "✅ Aula finalizada.";
+      statusEl.textContent = "✅ Aula finalizada após 3 blocos de 21 minutos.";
     }
   }
 
-  function iniciarReconexaoAposIntervalo() {
-    statusEl.textContent = "🔄 Reconectando...";
-    buscarPeerIdEDiscar();
+  // === 9) Intervalo visual com aviso aos 4 minutos (60s antes) e som ===
+  function mostrarIntervaloVisual() {
+    let tempo = 300; // 5 minutos
+    somTocado = false;
+    intervaloContainer.style.display = "flex";
+    avisoInicio.textContent = "";
+    atualizarIntervaloVisual();
+
+    intervaloVisual = setInterval(() => {
+      tempo--;
+      atualizarIntervaloVisual();
+
+      // aviso aos 60s restantes (ou seja, após 4 minutos)
+      if (tempo === 60 && !somTocado) {
+        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o início da próxima etapa!";
+        somAviso.play().catch(() => console.log("Som bloqueado pelo navegador."));
+        somTocado = true;
+      }
+
+      if (tempo <= 0) {
+        clearInterval(intervaloVisual);
+        intervaloContainer.style.display = "none";
+        iniciarReconexaoAposIntervalo();
+      }
+    }, 1000);
+
+    function atualizarIntervaloVisual() {
+      const m = Math.floor(tempo / 60).toString().padStart(2, "0");
+      const s = (tempo % 60).toString().padStart(2, "0");
+      tempoIntervalo.textContent = `${m}:${s}`;
+    }
   }
 
-  // === 9️⃣ Iniciar tudo ===
-  startCamera().then(ok => {
-    if (ok) buscarPeerIdEDiscar();
-  });
-  </script>
+  // === 10) Reconexão após intervalo ===
+  function iniciarReconexaoAposIntervalo() {
+    statusEl.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
+    // se já temos currentCall.peer tenta ligar novamente, se não busca o id do professor
+    if (currentCall?.peer && localStream) {
+      try {
+        const newCall = peer.call(currentCall.peer, localStream);
+        handleCallEvents(newCall);
+      } catch (err) {
+        buscarPeerIdEDiscar();
+      }
+    } else {
+      buscarPeerIdEDiscar();
+    }
+  }
+
+  // === 11) UI audio btn ===
+  ativarAudioBtn.onclick = () => {
+    if (remoteVideo.srcObject) {
+      try { remoteVideo.srcObject.getAudioTracks().forEach(t => t.enabled = true); } catch(_) {}
+    }
+    remoteVideo.muted = false;
+    remoteVideo.play().catch(()=>{});
+    ativarAudioBtn.style.display = "none";
+  };
+
+  // === 12) Pagamento / notificações ===
+  btnSim.onclick = () => { notificacao.style.display = "none"; pagamento.style.display = "block"; };
+  btnNao.onclick = () => { notificacao.style.display = "none"; };
+  btnPagamento.onclick = () => { window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`; };
+
+  // === 13) Início do fluxo ===
+  (async () => {
+    const ok = await startCamera();
+    if (ok) {
+      // cria peer imediatamente (melhora tempo de resposta)
+      createPeer();
+      verificarPermissaoEConectar();
+    }
+  })();
+</script>
 </body>
 </html>

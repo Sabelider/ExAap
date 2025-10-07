@@ -117,7 +117,7 @@
         height: 90px;
       }
     }
-  </style>
+ </style>
 </head>
 <body>
   <div id="info" style="position:fixed; top:10px; left:10px; z-index:25; background:rgba(0,0,0,.35); padding:8px 12px; border-radius:8px;">
@@ -161,7 +161,7 @@
   let intervaloVisual;
   let somTocado = false;
 
-  // === ELEMENTOS VISUAIS DO INTERVALO ===
+  // === INTERFACE DE INTERVALO VISUAL ===
   const intervaloContainer = document.createElement("div");
   intervaloContainer.style.cssText = `
     display: none;
@@ -213,69 +213,69 @@
 
   const style = document.createElement("style");
   style.innerHTML = `
-    @keyframes girar {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+    @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   `;
   document.head.appendChild(style);
 
   // === SOM DE AVISO ===
   const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
-  // === FUNÇÕES PRINCIPAIS ===
-  remoteVideo.muted = true;
-
-  remoteVideo.onloadedmetadata = () => {
-    remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-  };
-  remoteVideo.onpause = () => {
-    remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-  };
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && remoteVideo.srcObject) {
-      remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-    }
-  });
-
-  function ativarAudio() {
-    if (remoteVideo.srcObject) {
-      remoteVideo.srcObject.getAudioTracks().forEach(t => t.enabled = true);
-    }
-    remoteVideo.muted = false;
-    remoteVideo.play().then(() => ativarAudioBtn.style.display = "none");
-  }
-
+  // === MELHORIAS NA CÂMERA ===
   async function startCamera() {
     try {
-      statusSpan.textContent = "Solicitando acesso à câmera e microfone...";
+      statusSpan.textContent = "Acessando câmera e microfone...";
       localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        video: {
+          width: { ideal: 1920 }, // Full HD
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, max: 60 }, // FPS mais alto
+          aspectRatio: 16 / 9
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
+
+      // Força estabilização e otimização contínua
+      localStream.getVideoTracks().forEach(track => {
+        const settings = track.getSettings();
+        if (settings.frameRate < 30) {
+          track.applyConstraints({ frameRate: { ideal: 30, max: 30 } });
+        }
+      });
+
       localVideo.srcObject = localStream;
-      statusSpan.textContent = "Câmera pronta. Conectando...";
+      statusSpan.textContent = "Câmera pronta. Conecte-se ao aluno.";
     } catch (err) {
-      console.error(err);
-      alert("Erro ao acessar câmera e microfone.");
-      statusSpan.textContent = "Erro ao acessar câmera/mic";
+      console.error("Erro ao acessar câmera:", err);
+      statusSpan.textContent = "Erro ao acessar câmera/microfone.";
+      alert("⚠️ Não foi possível acessar a câmera ou microfone.");
       throw err;
     }
   }
 
+  // === CONFIGURAÇÃO DO PEER ===
   function initPeer() {
     peer = new Peer({
       config: {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" }
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          {
+            urls: "turn:relay1.expressturn.com:3478",
+            username: "efztest",
+            credential: "efzpass"
+          }
         ]
       }
     });
 
     peer.on("open", (id) => {
       meuPeerId = id;
-      statusSpan.textContent = "Conectado. Aguardando chamada...";
+      statusSpan.textContent = "Conectado. Pronto para chamar o aluno.";
     });
 
     peer.on("call", (call) => {
@@ -286,7 +286,7 @@
             call.answer(localStream);
             handleCallEvents(call);
           }
-        }, 100);
+        }, 200);
       } else {
         call.answer(localStream);
         handleCallEvents(call);
@@ -295,58 +295,35 @@
 
     peer.on("error", (err) => {
       console.error("Erro PeerJS:", err);
-      statusSpan.textContent = "Erro PeerJS: " + err.type;
-      if (["network", "server-error", "socket-error", "unavailable-id"].includes(err.type)) {
-        try { peer.destroy(); } catch (_) {}
-        setTimeout(() => initPeer(), 1200);
-      }
-    });
-
-    peer.on("disconnected", () => {
-      statusSpan.textContent = "Desconectado. Tentando reconectar...";
-      try { peer.reconnect(); } catch(_) {}
-      if (currentCall) {
-        setTimeout(() => {
-          if (localStream && currentCall.peer) {
-            const newCall = peer.call(currentCall.peer, localStream);
-            handleCallEvents(newCall);
-          }
-        }, 2000);
-      }
+      statusSpan.textContent = "Erro de conexão. Tentando restabelecer...";
+      try { peer.destroy(); } catch (_) {}
+      setTimeout(() => initPeer(), 1500);
     });
   }
 
+  // === GESTÃO DE CHAMADAS ===
   function handleCallEvents(call) {
     currentCall = call;
-
     call.on("stream", (remoteStream) => {
       remoteStreamRef = remoteStream;
-      remoteStream.getTracks().forEach(track => track.enabled = true);
       remoteVideo.srcObject = remoteStream;
       remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-      statusSpan.innerHTML = `Conectado! (Etapa ${etapa}/3)`;
+      statusSpan.textContent = `Conectado! (Etapa ${etapa}/3)`;
       iniciarCronometro();
     });
 
     call.on("close", () => {
-      statusSpan.innerHTML = "Conexão encerrada.";
+      statusSpan.textContent = "Conexão encerrada.";
       limparRemoto();
     });
 
     call.on("error", () => {
-      statusSpan.textContent = "Erro na chamada";
+      statusSpan.textContent = "Erro na chamada.";
       limparRemoto();
-    });
-
-    call.peerConnection?.addEventListener("track", (ev) => {
-      if (ev.streams && ev.streams[0]) {
-        remoteStreamRef = ev.streams[0];
-        remoteVideo.srcObject = remoteStreamRef;
-        remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
-      }
     });
   }
 
+  // === LIMPAR TRANSMISSÃO ===
   function limparRemoto() {
     if (remoteVideo.srcObject) {
       try { remoteVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (_) {}
@@ -354,30 +331,37 @@
     remoteVideo.srcObject = null;
   }
 
+  // === ENVIAR ID AO PERFIL ===
   function enviarIdAoPerfil() {
-    if (!meuPeerId) {
-      alert("Ainda conectando... aguarde.");
-      return;
-    }
+    if (!meuPeerId) return alert("Ainda conectando...");
     chamarAlunoBtn.style.display = "none";
-
     fetch("/enviar-id-aula", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ peer_id: meuPeerId, email: email.trim().toLowerCase(), aluno: aluno.trim().toLowerCase() })
+      body: JSON.stringify({
+        peer_id: meuPeerId,
+        email: email.trim().toLowerCase(),
+        aluno: aluno.trim().toLowerCase()
+      })
     })
-    .then(res => res.ok ? alert("✅ ID enviado!") : Promise.reject("Falha"))
-    .catch(() => {
-      alert("⚠️ Erro ao enviar ID.");
-      chamarAlunoBtn.style.display = "inline-block";
-    });
+      .then(res => {
+        if (res.ok) {
+          alert("✅ ID enviado ao aluno!");
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => {
+        alert("⚠️ Erro ao enviar ID.");
+        chamarAlunoBtn.style.display = "inline-block";
+      });
   }
 
+  // === CRONÔMETRO ===
   function iniciarCronometro() {
     cronometro.style.display = "block";
-    tempoRestante = 1260; // 21 minutos
+    tempoRestante = 1260;
     clearInterval(intervalo);
-    clearTimeout(intervaloVisual);
 
     intervalo = setInterval(() => {
       if (tempoRestante <= 0) {
@@ -387,12 +371,13 @@
         return;
       }
       tempoRestante--;
-      const m = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
-      const s = (tempoRestante % 60).toString().padStart(2, '0');
+      const m = Math.floor(tempoRestante / 60).toString().padStart(2, "0");
+      const s = (tempoRestante % 60).toString().padStart(2, "0");
       cronometro.textContent = `${m}:${s}`;
     }, 1000);
   }
 
+  // === ENCERRAR ETAPA ===
   function encerrarChamada() {
     try { currentCall?.close(); } catch (_) {}
     limparRemoto();
@@ -402,51 +387,45 @@
       etapa++;
       mostrarIntervaloVisual();
     } else {
-      statusSpan.textContent = "✅ Aula finalizada após 3 blocos de 21 minutos.";
+      statusSpan.textContent = "✅ Aula finalizada após 3 blocos.";
       confirmarAulaBtn.style.display = "inline-block";
     }
   }
 
-  // === INTERVALO VISUAL BONITO COM SOM DE AVISO ===
+  // === INTERVALO COM BOTÃO DE RECHAMAR ===
   function mostrarIntervaloVisual() {
-    let tempo = 300; // 5 minutos
+    let tempo = 300;
     somTocado = false;
     intervaloContainer.style.display = "flex";
     avisoInicio.textContent = "";
-    atualizarIntervaloVisual();
+    atualizarIntervalo();
 
     intervaloVisual = setInterval(() => {
       tempo--;
-      atualizarIntervaloVisual();
+      atualizarIntervalo();
+
       if (tempo === 60 && !somTocado) {
-        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o início da próxima etapa!";
-        somAviso.play().catch(() => console.log("Som bloqueado pelo navegador."));
+        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o próximo bloco!";
+        somAviso.play().catch(() => console.log("Som bloqueado."));
         somTocado = true;
       }
+
       if (tempo <= 0) {
         clearInterval(intervaloVisual);
         intervaloContainer.style.display = "none";
-        iniciarReconexaoAposIntervalo();
+        chamarAlunoBtn.style.display = "inline-block"; // ✅ aparece no final do intervalo
+        statusSpan.textContent = "Intervalo finalizado. Chame o aluno para a próxima etapa.";
       }
     }, 1000);
 
-    function atualizarIntervaloVisual() {
-      const m = Math.floor(tempo / 60).toString().padStart(2, '0');
-      const s = (tempo % 60).toString().padStart(2, '0');
+    function atualizarIntervalo() {
+      const m = Math.floor(tempo / 60).toString().padStart(2, "0");
+      const s = (tempo % 60).toString().padStart(2, "0");
       tempoIntervalo.textContent = `${m}:${s}`;
     }
   }
 
-  function iniciarReconexaoAposIntervalo() {
-    statusSpan.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
-    if (currentCall?.peer && localStream) {
-      const newCall = peer.call(currentCall.peer, localStream);
-      handleCallEvents(newCall);
-    } else {
-      initPeer();
-    }
-  }
-
+  // === REGISTRO DE AULA ===
   function registrarAula() {
     confirmarAulaBtn.disabled = true;
     fetch("/registrar-aula", {
@@ -458,9 +437,7 @@
       if (res.ok) {
         alert("✔️ Aula registrada!");
         confirmarAulaBtn.style.display = "none";
-      } else {
-        throw new Error();
-      }
+      } else throw new Error();
     })
     .catch(() => {
       alert("❌ Falha ao registrar aula.");
@@ -469,11 +446,8 @@
   }
 
   (async () => {
-    try {
-      await startCamera();
-      initPeer();
-      statusSpan.textContent = "Pronto. Envie o ID ao aluno.";
-    } catch (_) {}
+    await startCamera();
+    initPeer();
   })();
 </script>
 </body>

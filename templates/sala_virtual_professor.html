@@ -261,7 +261,7 @@
     call.on("close", () => statusSpan.textContent = "Conexão encerrada.");
   }
 
-  // 🔁 Reforço automático da transmissão
+  // 🔁 Reforço automático da transmissão (agora a cada 1 minuto)
   function iniciarReforcoAutomatico() {
     setInterval(async () => {
       if (!currentCall || !currentCall.peerConnection) return;
@@ -283,7 +283,7 @@
       } catch (e) {
         console.warn("Erro ao reforçar transmissão:", e);
       }
-    }, 240000); // 4 minutos
+    }, 60000); // 1 minuto
   }
 
   function iniciarCronometro() {

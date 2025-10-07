@@ -124,12 +124,12 @@
 </head>
 <body>
   <div class="video-container">
-    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="remoteVideo" autoplay playsinline preload="auto" disablePictureInPicture></video>
     <div class="blur-top"></div>
     <div class="blur-bottom"></div>
   </div>
 
-  <video id="localVideo" autoplay muted playsinline></video>
+  <video id="localVideo" autoplay muted playsinline preload="auto" disablePictureInPicture></video>
   <div id="status">🔎 Buscando chamada do professor...</div>
 
   <div id="notificacao">
@@ -143,9 +143,14 @@
     <button id="fazerPagamento">Fazer pagamento</button>
   </div>
 
+  <button id="reconectarBtn" style="display:none; position:fixed; bottom:20px; right:20px; padding:10px 20px; background:linear-gradient(135deg,#00c9ff,#92fe9d); border:none; border-radius:8px; color:#fff; font-weight:600; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.2);">
+    🔁 Chamar Professor
+  </button>
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
 <script>
   const statusEl = document.getElementById("status");
   const localVideo = document.getElementById("localVideo");
@@ -155,6 +160,7 @@
   const btnSim = document.getElementById("sim");
   const btnNao = document.getElementById("nao");
   const btnPagamento = document.getElementById("fazerPagamento");
+  const reconectarBtn = document.getElementById("reconectarBtn");
 
   const aluno = "{{ aluno }}";
   const professor = "{{ professor }}";
@@ -166,38 +172,29 @@
   let intervaloVisual;
   let somTocado = false;
 
-  // === ELEMENTO VISUAL DO INTERVALO ===
+  // === INTERVALO VISUAL ===
   const intervaloContainer = document.createElement("div");
   intervaloContainer.style.cssText = `
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.8);
-    z-index: 9999;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: #fff;
-    font-family: 'Nunito', sans-serif;
+    display:none; position:fixed; top:0; left:0;
+    width:100vw; height:100vh; background:rgba(0,0,0,0.8);
+    z-index:9999; justify-content:center; align-items:center;
+    flex-direction:column; color:#fff; font-family:'Nunito',sans-serif;
   `;
   const circulo = document.createElement("div");
   circulo.style.cssText = `
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    background: conic-gradient(#00c9ff, #92fe9d, #00c9ff);
-    animation: girar 4s linear infinite;
-    box-shadow: 0 0 30px rgba(0, 201, 255, 0.6);
-    display: flex; justify-content: center; align-items: center;
+    width:180px;height:180px;border-radius:50%;
+    background:conic-gradient(#00c9ff,#92fe9d,#00c9ff);
+    animation:girar 4s linear infinite; box-shadow:0 0 30px rgba(0,201,255,0.6);
+    display:flex;justify-content:center;align-items:center;
   `;
   const tempoIntervalo = document.createElement("div");
   tempoIntervalo.style.cssText = `
-    font-size: 2.5em; font-weight: bold; color: #fff; position: absolute;
+    font-size:2.5em;font-weight:bold;color:#fff;position:absolute;
   `;
   const avisoInicio = document.createElement("div");
   avisoInicio.style.cssText = `
-    margin-top: 30px; font-size: 1.3em; font-weight: 600;
-    color: #ffeb3b; text-align: center;
+    margin-top:30px;font-size:1.3em;font-weight:600;
+    color:#ffeb3b;text-align:center;
   `;
   intervaloContainer.appendChild(circulo);
   intervaloContainer.appendChild(tempoIntervalo);
@@ -206,25 +203,40 @@
 
   const style = document.createElement("style");
   style.innerHTML = `
-    @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes girar { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   `;
   document.head.appendChild(style);
 
-  // === SOM DE AVISO ===
   const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
-  // === CÂMERA ===
+  // === CÂMERA E OTIMIZAÇÃO ===
   async function startCamera() {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 60 }
+        },
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
       localVideo.srcObject = localStream;
+
+      // Otimiza bitrate (estabilidade e qualidade)
+      localStream.getTracks().forEach(track => {
+        const sender = currentCall?.peerConnection?.getSenders()?.find(s => s.track === track);
+        if (sender && sender.setParameters) {
+          const params = sender.getParameters();
+          if (!params.encodings) params.encodings = [{}];
+          params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps para vídeo HD
+          sender.setParameters(params);
+        }
+      });
+
       return true;
     } catch (err) {
       console.error("Erro ao acessar câmera/microfone:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Erro ao acessar câmera/microfone`;
+      statusEl.textContent = "⚠️ Falha ao iniciar câmera/microfone";
       return false;
     }
   }
@@ -235,116 +247,88 @@
       config: {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" }
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "turn:relay1.expressturn.com:3478", username: "efy", credential: "turnsecret" }
         ]
-      }
+      },
+      debug: 2
     });
 
     peer.on("open", () => {
-      statusEl.innerHTML = `<i class="fa-solid fa-link"></i> Conectando ao professor...`;
-      currentCall = peer.call(peerIdDoProfessor, localStream);
+      statusEl.textContent = "🔗 Conectando ao professor...";
+      currentCall = peer.call(peerIdDoProfessor, localStream, {
+        metadata: { aluno: aluno, qualidade: "HD" }
+      });
       handleCallEvents(currentCall);
     });
 
-    peer.on("disconnected", () => {
-      statusEl.textContent = "Reconectando...";
-      try { peer.reconnect(); } catch(_) {}
-      if (currentCall && localStream) {
-        setTimeout(() => {
-          const newCall = peer.call(currentCall.peer, localStream);
-          handleCallEvents(newCall);
-        }, 2000);
-      }
-    });
-
-    peer.on("error", (err) => {
-      console.error("Erro PeerJS:", err);
+    peer.on("error", err => {
+      console.error("PeerJS Error:", err);
+      statusEl.textContent = "Erro de conexão com o servidor.";
     });
   }
 
-  // === EVENTOS DA CHAMADA ===
+  // === EVENTOS DE CHAMADA ===
   function handleCallEvents(call) {
     currentCall = call;
-
     call.on("stream", async (remoteStream) => {
-      remoteStream.getTracks().forEach(track => track.enabled = true);
       remoteVideo.srcObject = remoteStream;
       await remoteVideo.play().catch(() => console.warn("⚠️ Clique para liberar som"));
-      statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Conectado com o professor! (Etapa ${etapa}/3)`;
+      statusEl.textContent = `🎥 Conectado com qualidade HD (Etapa ${etapa}/3)`;
       iniciarCronometroAula();
     });
-
-    call.on("close", () => {
-      statusEl.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> Conexão encerrada.`;
-    });
-
-    call.on("error", (err) => {
-      console.error("Erro na chamada:", err);
-    });
+    call.on("close", () => statusEl.textContent = "🔌 Conexão encerrada.");
+    call.on("error", err => console.error("Erro na chamada:", err));
   }
 
-  // === VERIFICAR SE O ALUNO PODE ENTRAR ===
+  // === FLUXO DE CONEXÃO ===
   async function verificarPermissaoEConectar() {
     try {
       const resp = await fetch(`/registrar-chamada`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aluno: aluno, professor: professor })
+        body: JSON.stringify({ aluno, professor })
       });
       const result = await resp.json();
       if (resp.ok && result.sala) buscarPeerIdEDiscar();
-      else statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Conexão não autorizada.`;
-    } catch (err) {
-      console.error("Erro ao verificar status:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Falha ao verificar autorização.`;
+      else statusEl.textContent = "❌ Conexão não autorizada.";
+    } catch {
+      statusEl.textContent = "⚠️ Erro ao verificar autorização.";
     }
   }
 
-  // === BUSCAR O ID DO PROFESSOR ===
   async function buscarPeerIdEDiscar() {
-    try {
-      const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
-      let tentativas = 0;
-      const maxTentativas = 30;
-      statusEl.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Aguardando o professor iniciar a chamada...`;
-
-      while (tentativas < maxTentativas) {
-        const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
-        const data = await res.json();
-
-        if (data.peer_id) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ID do professor encontrado, conectando...`;
-          initPeerAndConnect(data.peer_id);
-          return;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        tentativas++;
+    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+    let tentativas = 0;
+    const maxTentativas = 30;
+    statusEl.textContent = "⌛ Aguardando o professor iniciar a chamada...";
+    while (tentativas < maxTentativas) {
+      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+      const data = await res.json();
+      if (data.peer_id) {
+        initPeerAndConnect(data.peer_id);
+        return;
       }
-
-      statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Professor ausente.`;
-    } catch (err) {
-      console.error("Erro ao buscar ID do professor:", err);
-      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Erro ao buscar ID.`;
+      await new Promise(r => setTimeout(r, 2000));
+      tentativas++;
     }
+    statusEl.textContent = "🚫 Professor ausente.";
   }
 
-  // === CRONÔMETRO DA AULA ===
+  // === CRONÔMETRO ===
   function iniciarCronometroAula() {
-    let tempoRestante = 1260; // 21 min
+    let tempoRestante = 1260;
     const cronometro = setInterval(() => {
       if (tempoRestante <= 0) {
         clearInterval(cronometro);
         encerrarEtapa();
-        return;
-      }
-      tempoRestante--;
+      } else tempoRestante--;
     }, 1000);
   }
 
-  // === ENCERRAR ETAPA ===
+  // === ENCERRAMENTO DE ETAPA ===
   function encerrarEtapa() {
-    try { currentCall?.close(); } catch (_) {}
+    try { currentCall?.close(); } catch {}
     remoteVideo.srcObject = null;
     if (etapa < 3) {
       etapa++;
@@ -355,63 +339,53 @@
     }
   }
 
-  // === INTERVALO VISUAL ===
+  // === INTERVALO COM RECONEXÃO MANUAL ===
   function mostrarIntervaloVisual() {
     let tempo = 300;
     somTocado = false;
     intervaloContainer.style.display = "flex";
     avisoInicio.textContent = "";
-    atualizarIntervaloVisual();
+    atualizarIntervalo();
 
     intervaloVisual = setInterval(() => {
       tempo--;
-      atualizarIntervaloVisual();
-
+      atualizarIntervalo();
       if (tempo === 60 && !somTocado) {
         avisoInicio.textContent = "⚠️ Faltam 60 segundos para o início da próxima etapa!";
         somAviso.play().catch(() => console.log("Som bloqueado."));
         somTocado = true;
       }
-
       if (tempo <= 0) {
         clearInterval(intervaloVisual);
         intervaloContainer.style.display = "none";
-        iniciarReconexaoAposIntervalo();
+        statusEl.textContent = "🕓 Intervalo concluído. Clique para chamar o professor.";
+        reconectarBtn.style.display = "inline-block";
       }
     }, 1000);
 
-    function atualizarIntervaloVisual() {
+    function atualizarIntervalo() {
       const m = Math.floor(tempo / 60).toString().padStart(2, "0");
       const s = (tempo % 60).toString().padStart(2, "0");
       tempoIntervalo.textContent = `${m}:${s}`;
     }
   }
 
-  // === RECONEXÃO AUTOMÁTICA ===
-  function iniciarReconexaoAposIntervalo() {
-    statusEl.textContent = `🔄 Reconectando (Etapa ${etapa}/3)...`;
-    if (currentCall?.peer && localStream) {
-      const newCall = peer.call(currentCall.peer, localStream);
-      handleCallEvents(newCall);
-    } else {
-      buscarPeerIdEDiscar(); // reconecta ao professor novamente se peer caiu
-    }
-  }
+  // === BOTÃO MANUAL DE RECONEXÃO ===
+  reconectarBtn.onclick = async () => {
+    reconectarBtn.style.display = "none";
+    statusEl.textContent = "🔄 Reconectando...";
+    await buscarPeerIdEDiscar();
+  };
 
   // === PAGAMENTO ===
-  btnSim.onclick = () => {
-    notificacao.style.display = "none";
-    pagamento.style.display = "block";
-  };
+  btnSim.onclick = () => { notificacao.style.display = "none"; pagamento.style.display = "block"; };
   btnNao.onclick = () => (notificacao.style.display = "none");
   btnPagamento.onclick = () => {
     window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
   };
 
   // === INÍCIO ===
-  startCamera().then(ok => {
-    if (ok) verificarPermissaoEConectar();
-  });
+  startCamera().then(ok => { if (ok) verificarPermissaoEConectar(); });
 </script>
 </body>
 </html>

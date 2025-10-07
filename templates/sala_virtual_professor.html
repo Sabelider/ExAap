@@ -33,10 +33,10 @@
       position: absolute;
       bottom: 20px;
       right: 20px;
-      width: 160px;
-      height: 120px;
+      width: 180px;
+      height: 135px;
       border: 2px solid #fff;
-      border-radius: 8px;
+      border-radius: 10px;
       z-index: 10;
       background: #000;
       object-fit: cover;
@@ -46,10 +46,10 @@
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.4);
-      padding: 6px 14px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 18px;
       border-radius: 20px;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: bold;
       display: none;
       z-index: 20;
@@ -63,9 +63,9 @@
       background-color: #ffa500;
       color: black;
       font-weight: bold;
-      padding: 10px 18px;
+      padding: 12px 22px;
       border-radius: 10px;
-      font-size: 16px;
+      font-size: 18px;
       cursor: pointer;
       border: none;
       z-index: 30;
@@ -79,10 +79,10 @@
       background-color: green;
       color: white;
       font-weight: bold;
-      padding: 12px 22px;
+      padding: 14px 26px;
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      border-radius: 10px;
+      font-size: 18px;
       cursor: pointer;
       z-index: 30;
     }
@@ -102,12 +102,12 @@
       z-index: 30;
     }
     #ativarAudioBtn:hover { background: #1669b2; }
-    @media (min-width: 768px) {
-      #localVideo { width: 200px; height: 150px; }
-      #cronometro { font-size: 26px; padding: 8px 18px; }
-      #confirmarAulaBtn { font-size: 18px; padding: 12px 22px; }
-      #chamarAlunoBtn { font-size: 18px; padding: 14px 26px; }
+
+    @keyframes girar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
+
     @media (max-width: 767px) {
       #localVideo {
         top: 15px;
@@ -117,9 +117,7 @@
         height: 90px;
       }
     }
- <style>
-  @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-</style>
+  </style>
 </head>
 <body>
   <div id="info" style="position:fixed; top:10px; left:10px; z-index:25; background:rgba(0,0,0,.35); padding:8px 12px; border-radius:8px;">
@@ -136,9 +134,7 @@
   <button id="confirmarAulaBtn" onclick="registrarAula()">Confirmar aula dada?</button>
   <button id="ativarAudioBtn" onclick="ativarAudio()">Ativar Som</button>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <script>
   const statusSpan = document.getElementById("status");
@@ -152,221 +148,189 @@
   const email = "{{ email }}";
   const aluno = "{{ aluno }}";
 
-  let localStream;
-  let peer;
-  let currentCall;
-  let meuPeerId = "";
-  let tempoRestante = 1260; // 21 minutos = 1260 segundos
-  let intervalo;
-  let etapa = 1;
-  let intervaloVisual;
+  let localStream, peer, currentCall, meuPeerId = "";
+  let tempoRestante = 1260;
+  let intervalo, etapa = 1, intervaloVisual;
   let somTocado = false;
 
-  // === INTERFACE DE INTERVALO ===
-  const intervaloContainer = document.createElement("div");
-  intervaloContainer.style.cssText = `
+  const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+
+  // Elementos visuais do intervalo
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
     display: none;
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.85);
-    z-index: 9999;
+    background: rgba(0,0,0,0.8);
+    color: white;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    color: #fff;
+    z-index: 9999;
     font-family: 'Nunito', sans-serif;
   `;
-
   const circulo = document.createElement("div");
   circulo.style.cssText = `
-    width: 180px; height: 180px;
+    width: 200px; height: 200px;
     border-radius: 50%;
     background: conic-gradient(#00c9ff, #92fe9d, #00c9ff);
-    animation: girar 4s linear infinite;
-    box-shadow: 0 0 40px rgba(0, 201, 255, 0.7);
+    animation: girar 3s linear infinite;
     display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 0 25px #00c9ff;
   `;
+  const textoTempo = document.createElement("div");
+  textoTempo.style.cssText = `position:absolute; font-size:2.5em; font-weight:bold;`;
+  const aviso = document.createElement("div");
+  aviso.style.cssText = `margin-top:30px; font-size:1.3em; color:#ffeb3b;`;
+  overlay.appendChild(circulo);
+  overlay.appendChild(textoTempo);
+  overlay.appendChild(aviso);
+  document.body.appendChild(overlay);
 
-  const tempoIntervalo = document.createElement("div");
-  tempoIntervalo.style.cssText = `
-    font-size: 2.5em; font-weight: bold; color: #fff; position: absolute;
-  `;
-
-  const avisoInicio = document.createElement("div");
-  avisoInicio.style.cssText = `
-    margin-top: 30px; font-size: 1.3em; font-weight: 600;
-    color: #ffeb3b; text-align: center;
-  `;
-
-  intervaloContainer.appendChild(circulo);
-  intervaloContainer.appendChild(tempoIntervalo);
-  intervaloContainer.appendChild(avisoInicio);
-  document.body.appendChild(intervaloContainer);
-
-  const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-
-  // === INICIAR CÂMERA ===
   async function startCamera() {
     try {
-      statusSpan.textContent = "Acessando câmera e microfone...";
+      statusSpan.textContent = "🎥 Iniciando câmera...";
       localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-        audio: { echoCancellation: true, noiseSuppression: true }
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, max: 60 }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
       localVideo.srcObject = localStream;
-      statusSpan.textContent = "Câmera pronta.";
-    } catch (err) {
+      statusSpan.textContent = "✅ Câmera pronta.";
+    } catch (e) {
       alert("Erro ao acessar câmera/microfone.");
-      console.error(err);
     }
   }
 
-  // === CONFIGURAÇÃO DO PEER ===
   function initPeer() {
     peer = new Peer({
-      config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }
+      config: {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" }
+        ]
+      }
     });
 
     peer.on("open", id => {
       meuPeerId = id;
-      statusSpan.textContent = "Pronto para chamar o aluno.";
+      statusSpan.textContent = "Conectado. Aguardando chamada...";
     });
 
     peer.on("call", call => {
       call.answer(localStream);
-      handleCall(call);
-    });
-
-    peer.on("error", err => {
-      console.error("Erro PeerJS:", err);
-      setTimeout(() => initPeer(), 2000);
+      handleCallEvents(call);
     });
   }
 
-  // === GESTÃO DA CHAMADA ===
-  function handleCall(call) {
+  function handleCallEvents(call) {
     currentCall = call;
-    call.on("stream", remoteStream => {
-      remoteVideo.srcObject = remoteStream;
-      remoteVideo.play();
-      statusSpan.textContent = `🎥 Conectado - ${etapa}º Tempo`;
+    call.on("stream", stream => {
+      remoteVideo.srcObject = stream;
+      remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
+      statusSpan.textContent = `📡 Conectado - ${etapa}º tempo`;
       iniciarCronometro();
     });
-    call.on("close", () => limparConexao());
+
+    call.on("close", () => statusSpan.textContent = "Conexão encerrada.");
   }
 
-  // === ENVIAR ID PARA ALUNO ===
-  function enviarIdAoPerfil() {
-    chamarAlunoBtn.style.display = "none";
-    fetch("/enviar-id-aula", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        peer_id: meuPeerId,
-        email: email.trim().toLowerCase(),
-        aluno: aluno.trim().toLowerCase()
-      })
-    })
-    .then(res => {
-      if (res.ok) {
-        alert("✅ ID enviado ao aluno!");
-        statusSpan.textContent = "Aguardando o aluno conectar...";
-      } else throw new Error();
-    })
-    .catch(() => {
-      alert("Erro ao enviar ID.");
-      chamarAlunoBtn.style.display = "inline-block";
-    });
-  }
-
-  // === CRONÔMETRO DE 21 MINUTOS ===
   function iniciarCronometro() {
-    tempoRestante = 1260; // 21 minutos
+    cronometro.style.display = "block";
+    tempoRestante = 1260;
     clearInterval(intervalo);
     intervalo = setInterval(() => {
       if (tempoRestante <= 0) {
         clearInterval(intervalo);
-        encerrarTempo();
+        cronometro.textContent = "00:00";
+        encerrarChamada();
         return;
       }
       tempoRestante--;
-      const m = Math.floor(tempoRestante / 60).toString().padStart(2, "0");
-      const s = (tempoRestante % 60).toString().padStart(2, "0");
+      const m = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
+      const s = (tempoRestante % 60).toString().padStart(2, '0');
       cronometro.textContent = `${m}:${s}`;
     }, 1000);
   }
 
-  // === ENCERRAR TEMPO ===
-  function encerrarTempo() {
-    try { currentCall?.close(); } catch (_) {}
-    limparConexao();
-
+  function encerrarChamada() {
+    try { currentCall?.close(); } catch(_) {}
+    remoteVideo.srcObject = null;
     if (etapa < 3) {
+      statusSpan.textContent = `⏸️ ${etapa}º tempo encerrado. Intervalo de 5 minutos.`;
       etapa++;
-      mostrarIntervaloVisual();
+      mostrarIntervalo();
     } else {
+      statusSpan.textContent = "✅ Aula finalizada após 3 tempos de 21 minutos.";
       confirmarAulaBtn.style.display = "inline-block";
-      statusSpan.textContent = "✅ Aula finalizada após 3 tempos.";
     }
   }
 
-  // === INTERVALO VISUAL DE 5 MINUTOS ===
-  function mostrarIntervaloVisual() {
-    let tempo = 300; // 5 minutos
-    intervaloContainer.style.display = "flex";
-    avisoInicio.textContent = "";
+  function mostrarIntervalo() {
+    let tempo = 300;
     somTocado = false;
+    overlay.style.display = "flex";
+    atualizarTempo();
 
-    const atualizar = () => {
-      const m = Math.floor(tempo / 60).toString().padStart(2, "0");
-      const s = (tempo % 60).toString().padStart(2, "0");
-      tempoIntervalo.textContent = `${m}:${s}`;
-    };
-
-    atualizar();
     intervaloVisual = setInterval(() => {
       tempo--;
-      atualizar();
-
+      atualizarTempo();
       if (tempo === 60 && !somTocado) {
-        somAviso.play().catch(() => {});
-        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o próximo tempo!";
+        somAviso.play().catch(()=>{});
+        aviso.textContent = "⚠️ Faltam 60 segundos!";
         somTocado = true;
       }
-
       if (tempo <= 0) {
         clearInterval(intervaloVisual);
-        intervaloContainer.style.display = "none";
+        overlay.style.display = "none";
         chamarAlunoBtn.style.display = "inline-block";
-        statusSpan.textContent = `⏱️ Intervalo terminado. Pronto para o ${etapa}º Tempo.`;
       }
     }, 1000);
-  }
 
-  // === LIMPAR CONEXÃO ===
-  function limparConexao() {
-    if (remoteVideo.srcObject) {
-      remoteVideo.srcObject.getTracks().forEach(t => t.stop());
+    function atualizarTempo() {
+      const m = Math.floor(tempo / 60).toString().padStart(2, '0');
+      const s = (tempo % 60).toString().padStart(2, '0');
+      textoTempo.textContent = `${m}:${s}`;
     }
-    remoteVideo.srcObject = null;
   }
 
-  // === CONFIRMAR AULA ===
+  function enviarIdAoPerfil() {
+    if (!meuPeerId) return alert("Conectando ao servidor...");
+    chamarAlunoBtn.style.display = "none";
+    fetch("/enviar-id-aula", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ peer_id: meuPeerId, email, aluno })
+    }).then(r => r.ok ? alert("✅ ID enviado ao aluno!") : alert("Erro ao enviar ID."));
+  }
+
   function registrarAula() {
+    confirmarAulaBtn.disabled = true;
     fetch("/registrar-aula", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ professor: email, aluno: aluno })
-    })
-    .then(res => {
-      if (res.ok) alert("✔️ Aula registrada com sucesso!");
-      else throw new Error();
-    })
-    .catch(() => alert("❌ Erro ao registrar aula."));
+      body: JSON.stringify({ professor: email, aluno })
+    }).then(r => {
+      if (r.ok) {
+        alert("✔️ Aula registrada!");
+        confirmarAulaBtn.style.display = "none";
+      } else throw new Error();
+    }).catch(()=> {
+      alert("❌ Falha ao registrar aula.");
+      confirmarAulaBtn.disabled = false;
+    });
   }
 
-  (async () => {
+  (async()=>{
     await startCamera();
     initPeer();
   })();

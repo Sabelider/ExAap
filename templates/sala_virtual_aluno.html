@@ -57,11 +57,11 @@
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: 120px;
-    height: 90px;
+    width: 140px;
+    height: 100px;
     border: 2px solid #fff;
     z-index: 3;
-    border-radius: 6px;
+    border-radius: 8px;
     object-fit: cover;
     background: black;
   }
@@ -120,6 +120,21 @@
     cursor: pointer;
     border-radius: 5px;
   }
+
+  #reconectarBtn {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg,#00c9ff,#92fe9d);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  }
 </style>
 </head>
 <body>
@@ -143,13 +158,9 @@
     <button id="fazerPagamento">Fazer pagamento</button>
   </div>
 
-  <button id="reconectarBtn" style="display:none; position:fixed; bottom:20px; right:20px; padding:10px 20px; background:linear-gradient(135deg,#00c9ff,#92fe9d); border:none; border-radius:8px; color:#fff; font-weight:600; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.2);">
-    🔁 Chamar Professor
-  </button>
+  <button id="reconectarBtn">🔁 Chamar Professor</button>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <script>
   const statusEl = document.getElementById("status");
@@ -165,9 +176,7 @@
   const aluno = "{{ aluno }}";
   const professor = "{{ professor }}";
 
-  let peer;
-  let localStream;
-  let currentCall;
+  let peer, localStream, currentCall;
   let etapa = 1;
   let intervaloVisual;
   let somTocado = false;
@@ -188,9 +197,7 @@
     display:flex;justify-content:center;align-items:center;
   `;
   const tempoIntervalo = document.createElement("div");
-  tempoIntervalo.style.cssText = `
-    font-size:2.5em;font-weight:bold;color:#fff;position:absolute;
-  `;
+  tempoIntervalo.style.cssText = `font-size:2.5em;font-weight:bold;color:#fff;position:absolute;`;
   const avisoInicio = document.createElement("div");
   avisoInicio.style.cssText = `
     margin-top:30px;font-size:1.3em;font-weight:600;
@@ -202,41 +209,27 @@
   document.body.appendChild(intervaloContainer);
 
   const style = document.createElement("style");
-  style.innerHTML = `
-    @keyframes girar { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-  `;
+  style.innerHTML = `@keyframes girar { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }`;
   document.head.appendChild(style);
 
   const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
-  // === CÂMERA E OTIMIZAÇÃO ===
+  // === CÂMERA ===
   async function startCamera() {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 60 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, max: 60 }
         },
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
       localVideo.srcObject = localStream;
-
-      // Otimiza bitrate (estabilidade e qualidade)
-      localStream.getTracks().forEach(track => {
-        const sender = currentCall?.peerConnection?.getSenders()?.find(s => s.track === track);
-        if (sender && sender.setParameters) {
-          const params = sender.getParameters();
-          if (!params.encodings) params.encodings = [{}];
-          params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps para vídeo HD
-          sender.setParameters(params);
-        }
-      });
-
       return true;
     } catch (err) {
       console.error("Erro ao acessar câmera/microfone:", err);
-      statusEl.textContent = "⚠️ Falha ao iniciar câmera/microfone";
+      statusEl.textContent = "⚠️ Falha ao iniciar câmera/mic.";
       return false;
     }
   }
@@ -248,7 +241,8 @@
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "turn:relay1.expressturn.com:3478", username: "efy", credential: "turnsecret" }
+          { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+          { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
         ]
       },
       debug: 2
@@ -256,32 +250,32 @@
 
     peer.on("open", () => {
       statusEl.textContent = "🔗 Conectando ao professor...";
-      currentCall = peer.call(peerIdDoProfessor, localStream, {
-        metadata: { aluno: aluno, qualidade: "HD" }
-      });
-      handleCallEvents(currentCall);
+      const call = peer.call(peerIdDoProfessor, localStream, { metadata: { aluno } });
+      handleCallEvents(call);
     });
 
     peer.on("error", err => {
-      console.error("PeerJS Error:", err);
-      statusEl.textContent = "Erro de conexão com o servidor.";
+      console.error("PeerJS error:", err);
+      statusEl.textContent = "Erro de rede, tentando reconectar...";
+      setTimeout(() => buscarPeerIdEDiscar(), 3000);
     });
   }
 
   // === EVENTOS DE CHAMADA ===
   function handleCallEvents(call) {
     currentCall = call;
-    call.on("stream", async (remoteStream) => {
-      remoteVideo.srcObject = remoteStream;
-      await remoteVideo.play().catch(() => console.warn("⚠️ Clique para liberar som"));
-      statusEl.textContent = `🎥 Conectado com qualidade HD (Etapa ${etapa}/3)`;
+    call.on("stream", stream => {
+      remoteVideo.srcObject = stream;
+      remoteVideo.play().catch(() => console.log("Som bloqueado."));
+      statusEl.textContent = "📡 Conectado com o professor - transmissão HD";
       iniciarCronometroAula();
     });
+
     call.on("close", () => statusEl.textContent = "🔌 Conexão encerrada.");
-    call.on("error", err => console.error("Erro na chamada:", err));
+    call.on("error", err => console.warn("Erro de chamada:", err));
   }
 
-  // === FLUXO DE CONEXÃO ===
+  // === VERIFICAÇÃO E CONEXÃO ===
   async function verificarPermissaoEConectar() {
     try {
       const resp = await fetch(`/registrar-chamada`, {
@@ -298,12 +292,12 @@
   }
 
   async function buscarPeerIdEDiscar() {
-    const alunoNormalizado = aluno.trim().toLowerCase().replace(/\s/g, "");
+    const alunoNorm = aluno.trim().toLowerCase().replace(/\s/g, "");
     let tentativas = 0;
     const maxTentativas = 30;
-    statusEl.textContent = "⌛ Aguardando o professor iniciar a chamada...";
+    statusEl.textContent = "⌛ Aguardando o professor iniciar...";
     while (tentativas < maxTentativas) {
-      const res = await fetch(`/buscar-id-professor?aluno=${alunoNormalizado}`);
+      const res = await fetch(`/buscar-id-professor?aluno=${alunoNorm}`);
       const data = await res.json();
       if (data.peer_id) {
         initPeerAndConnect(data.peer_id);
@@ -318,73 +312,72 @@
   // === CRONÔMETRO ===
   function iniciarCronometroAula() {
     let tempoRestante = 1260;
-    const cronometro = setInterval(() => {
+    const cron = setInterval(() => {
       if (tempoRestante <= 0) {
-        clearInterval(cronometro);
+        clearInterval(cron);
         encerrarEtapa();
       } else tempoRestante--;
     }, 1000);
   }
 
-  // === ENCERRAMENTO DE ETAPA ===
+  // === ETAPA ===
   function encerrarEtapa() {
     try { currentCall?.close(); } catch {}
     remoteVideo.srcObject = null;
     if (etapa < 3) {
       etapa++;
-      statusEl.textContent = `⏱️ Etapa encerrada. Intervalo de 5 minutos...`;
+      statusEl.textContent = "⏱️ Etapa encerrada. Intervalo de 5 minutos...";
       mostrarIntervaloVisual();
     } else {
-      statusEl.textContent = "✅ Aula finalizada após 3 blocos de 21 minutos.";
+      statusEl.textContent = "✅ Aula finalizada após 3 blocos.";
     }
   }
 
-  // === INTERVALO COM RECONEXÃO MANUAL ===
+  // === INTERVALO ===
   function mostrarIntervaloVisual() {
     let tempo = 300;
     somTocado = false;
     intervaloContainer.style.display = "flex";
     avisoInicio.textContent = "";
-    atualizarIntervalo();
+    atualizar();
 
     intervaloVisual = setInterval(() => {
       tempo--;
-      atualizarIntervalo();
+      atualizar();
       if (tempo === 60 && !somTocado) {
-        avisoInicio.textContent = "⚠️ Faltam 60 segundos para o início da próxima etapa!";
+        avisoInicio.textContent = "⚠️ A próxima etapa começa em 60 segundos!";
         somAviso.play().catch(() => console.log("Som bloqueado."));
         somTocado = true;
       }
       if (tempo <= 0) {
         clearInterval(intervaloVisual);
         intervaloContainer.style.display = "none";
-        statusEl.textContent = "🕓 Intervalo concluído. Clique para chamar o professor.";
+        statusEl.textContent = "🕓 Intervalo concluído.";
         reconectarBtn.style.display = "inline-block";
       }
     }, 1000);
 
-    function atualizarIntervalo() {
+    function atualizar() {
       const m = Math.floor(tempo / 60).toString().padStart(2, "0");
       const s = (tempo % 60).toString().padStart(2, "0");
       tempoIntervalo.textContent = `${m}:${s}`;
     }
   }
 
-  // === BOTÃO MANUAL DE RECONEXÃO ===
   reconectarBtn.onclick = async () => {
     reconectarBtn.style.display = "none";
     statusEl.textContent = "🔄 Reconectando...";
     await buscarPeerIdEDiscar();
   };
 
-  // === PAGAMENTO ===
+  // === FEEDBACK E PAGAMENTO ===
   btnSim.onclick = () => { notificacao.style.display = "none"; pagamento.style.display = "block"; };
-  btnNao.onclick = () => (notificacao.style.display = "none");
+  btnNao.onclick = () => notificacao.style.display = "none";
   btnPagamento.onclick = () => {
     window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(aluno)}`;
   };
 
-  // === INÍCIO ===
+  // === INICIAR ===
   startCamera().then(ok => { if (ok) verificarPermissaoEConectar(); });
 </script>
 </body>

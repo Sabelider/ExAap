@@ -103,6 +103,19 @@
     }
     #ativarAudioBtn:hover { background: #1669b2; }
 
+    #reforcoNotificacao {
+      display: none;
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #00c9ff;
+      z-index: 40;
+    }
+
     @keyframes girar {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -125,6 +138,8 @@
     <div id="cronometro">00:00</div>
   </div>
 
+  <div id="reforcoNotificacao">🔁 Reforço de transmissão ativo...</div>
+
   <div class="video-container">
     <video id="localVideo" autoplay muted playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
@@ -144,6 +159,7 @@
   const confirmarAulaBtn = document.getElementById("confirmarAulaBtn");
   const chamarAlunoBtn = document.getElementById("chamarAlunoBtn");
   const ativarAudioBtn = document.getElementById("ativarAudioBtn");
+  const reforcoNotificacao = document.getElementById("reforcoNotificacao");
 
   const email = "{{ email }}";
   const aluno = "{{ aluno }}";
@@ -155,7 +171,7 @@
 
   const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
-  // Elementos visuais do intervalo
+  // Overlay do intervalo
   const overlay = document.createElement("div");
   overlay.style.cssText = `
     display: none;
@@ -239,9 +255,35 @@
       remoteVideo.play().catch(() => ativarAudioBtn.style.display = "inline-block");
       statusSpan.textContent = `📡 Conectado - ${etapa}º tempo`;
       iniciarCronometro();
+      iniciarReforcoAutomatico();
     });
 
     call.on("close", () => statusSpan.textContent = "Conexão encerrada.");
+  }
+
+  // 🔁 Reforço automático da transmissão
+  function iniciarReforcoAutomatico() {
+    setInterval(async () => {
+      if (!currentCall || !currentCall.peerConnection) return;
+      reforcoNotificacao.style.display = "block";
+      setTimeout(() => reforcoNotificacao.style.display = "none", 4000);
+
+      try {
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack.readyState === "ended") {
+          const novoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === "video");
+          sender.replaceTrack(novoStream.getVideoTracks()[0]);
+          localVideo.srcObject = novoStream;
+          localStream = novoStream;
+        } else {
+          const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === "video");
+          sender.setParameters({ encodings: [{ maxBitrate: 1500_000 }] });
+        }
+      } catch (e) {
+        console.warn("Erro ao reforçar transmissão:", e);
+      }
+    }, 240000); // 4 minutos
   }
 
   function iniciarCronometro() {

@@ -117,7 +117,9 @@
         height: 90px;
       }
     }
- </style>
+ <style>
+  @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
   <div id="info" style="position:fixed; top:10px; left:10px; z-index:25; background:rgba(0,0,0,.35); padding:8px 12px; border-radius:8px;">
@@ -154,7 +156,7 @@
   let peer;
   let currentCall;
   let meuPeerId = "";
-  let tempoRestante = 1260; // 21 minutos
+  let tempoRestante = 1260; // 21 minutos = 1260 segundos
   let intervalo;
   let etapa = 1;
   let intervaloVisual;
@@ -201,12 +203,6 @@
   intervaloContainer.appendChild(tempoIntervalo);
   intervaloContainer.appendChild(avisoInicio);
   document.body.appendChild(intervaloContainer);
-
-  const style = document.createElement("style");
-  style.innerHTML = `
-    @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  `;
-  document.head.appendChild(style);
 
   const somAviso = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
@@ -284,9 +280,9 @@
     });
   }
 
-  // === CRONÔMETRO ===
+  // === CRONÔMETRO DE 21 MINUTOS ===
   function iniciarCronometro() {
-    tempoRestante = 1260;
+    tempoRestante = 1260; // 21 minutos
     clearInterval(intervalo);
     intervalo = setInterval(() => {
       if (tempoRestante <= 0) {
@@ -317,7 +313,7 @@
 
   // === INTERVALO VISUAL DE 5 MINUTOS ===
   function mostrarIntervaloVisual() {
-    let tempo = 300;
+    let tempo = 300; // 5 minutos
     intervaloContainer.style.display = "flex";
     avisoInicio.textContent = "";
     somTocado = false;
@@ -343,7 +339,7 @@
         clearInterval(intervaloVisual);
         intervaloContainer.style.display = "none";
         chamarAlunoBtn.style.display = "inline-block";
-        statusSpan.textContent = `Intervalo terminado. Pronto para o ${etapa}º Tempo.`;
+        statusSpan.textContent = `⏱️ Intervalo terminado. Pronto para o ${etapa}º Tempo.`;
       }
     }, 1000);
   }

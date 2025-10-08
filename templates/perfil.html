@@ -444,63 +444,6 @@
   .custom-action-btn:active {
     transform: scale(0.95);
   }
-
-/* Container centralizado na tela */
-  #notificacao-mensagem {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
-    color: #fff;
-    padding: 40px 30px;
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
-    display: none;
-    z-index: 9999;
-    width: 90%;
-    max-width: 400px;
-    animation: fadeIn 0.5s ease;
-  }
-
-  #notificacao-mensagem p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    color: #eaeaea;
-  }
-
-  /* Botão Entrar */
-  .notificar-btn {
-    background: linear-gradient(135deg, #00c9ff, #92fe9d);
-    color: #000;
-    border: none;
-    border-radius: 12px;
-    padding: 12px 30px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  }
-
-  .notificar-btn:hover {
-    transform: scale(1.07);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
-    background: linear-gradient(135deg, #92fe9d, #00c9ff);
-  }
-
-  /* Efeito suave de entrada */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translate(-50%, -60%);
-    }
-    to {
-      opacity: 1;
-      transform: translate(-50%, -50%);
-    }
-  }
   
 /* Modal flutuante */
 #chat-modal-aluno {
@@ -1673,6 +1616,69 @@ window.verNotificacao = async function () {
     const iconeSino = document.getElementById("icone-sino");
     const textoSala = document.getElementById("texto-sala");
 
+    // === 🔹 INSERE O STYLE DIRETAMENTE NO DOCUMENTO ===
+    if (!document.getElementById("notificacao-style")) {
+      const style = document.createElement("style");
+      style.id = "notificacao-style";
+      style.innerHTML = `
+        #notificacao-mensagem {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+          color: #fff;
+          padding: 40px 30px;
+          border-radius: 20px;
+          text-align: center;
+          box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+          display: none;
+          z-index: 9999;
+          width: 90%;
+          max-width: 400px;
+          animation: fadeIn 0.5s ease;
+        }
+
+        #notificacao-mensagem p {
+          font-size: 1.2rem;
+          margin-bottom: 20px;
+          color: #eaeaea;
+        }
+
+        .notificar-btn {
+          background: linear-gradient(135deg, #00c9ff, #92fe9d);
+          color: #000;
+          border: none;
+          border-radius: 12px;
+          padding: 12px 30px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .notificar-btn:hover {
+          transform: scale(1.07);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+          background: linear-gradient(135deg, #92fe9d, #00c9ff);
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -60%);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // === 🔹 LÓGICA DA NOTIFICAÇÃO ===
     if (data.notificacao === true) {
       window.professorEmailAtual = data.professor_email;
 
@@ -1680,7 +1686,7 @@ window.verNotificacao = async function () {
         <p>A tua aula irá começar</p>
         <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Entrar</button>
       `;
-      notificacaoEl.style.display = "block"; // agora usa o container centralizado
+      notificacaoEl.style.display = "block";
       contadorAulas.innerText = "1";
 
       iconeSino.classList.add("notificacao-ativa");

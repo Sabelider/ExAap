@@ -851,6 +851,7 @@ function fecharDesafio() {
 <script>
 let professorSelecionado = null;
 let modalChatAberta = false;
+let chatInterval = null;
 
 function getNomeAluno() {
   let nome = localStorage.getItem("alunoNome");
@@ -863,13 +864,14 @@ function getNomeAluno() {
   return nome.trim().toLowerCase();
 }
 
-// Abrir chat
+// 🔹 Abrir chat do aluno
 async function abrirChatAluno() {
   const modal = document.getElementById("chat-modal-aluno");
   modal.style.display = "flex";
   modalChatAberta = true;
 
   const nomeAluno = getNomeAluno();
+
   try {
     const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
     if (!res.ok) throw new Error("Não foi possível buscar professor vinculado");
@@ -883,94 +885,113 @@ async function abrirChatAluno() {
 
     professorSelecionado = data.email;
     document.getElementById("professor-nome").innerText = data.professor;
+    document.getElementById("professor-disciplina").innerText = data.disciplina || "---";
 
     carregarMensagens();
 
+    // Evita múltiplos intervalos de atualização
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(() => {
+      if (modalChatAberta) carregarMensagens();
+    }, 2000);
+
+    // 🔹 Enviar mensagem
     document.getElementById("enviar-msg").onclick = async () => {
       const input = document.getElementById("input-msg");
       const mensagem = input.value.trim();
       if (!mensagem) return;
 
-      await fetch("/enviar-mensagem", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          aluno: nomeAluno,
-          professor: professorSelecionado,
-          mensagem,
-          remetente: "aluno"
-        })
-      });
-
-      input.value = "";
-      carregarMensagens();
+      try {
+        await fetch("/enviar-mensagem", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            aluno: nomeAluno,
+            professor: professorSelecionado,
+            mensagem,
+            remetente: "aluno"
+          })
+        });
+        input.value = "";
+        carregarMensagens();
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+      }
     };
-
-    setInterval(() => {
-      if (modalChatAberta) carregarMensagens();
-    }, 2000);
 
   } catch (err) {
     console.error("Erro ao iniciar chat:", err);
   }
 }
 
-// Fechar chat
+// 🔹 Fechar chat
 function fecharChatAluno() {
   document.getElementById("chat-modal-aluno").style.display = "none";
   modalChatAberta = false;
+  if (chatInterval) clearInterval(chatInterval);
 }
 
-// Carregar mensagens
+// 🔹 Carregar mensagens com hora e data
 async function carregarMensagens() {
   const nomeAluno = getNomeAluno();
+  if (!professorSelecionado) return;
+
   try {
     const res = await fetch(`/buscar-mensagens/${professorSelecionado}/${nomeAluno}`);
     const msgs = await res.json();
+
     const container = document.getElementById('mensagens-chat');
     container.innerHTML = "";
 
-    msgs.forEach(m => {
-      const div = document.createElement('div');
-      div.className = m.remetente === 'professor' ? 'chat-message professor' : 'chat-message aluno';
-      div.textContent = m.mensagem;
-      container.appendChild(div);
-    });
-
-    container.scrollTop = container.scrollHeight;
-  } catch (err) {
-    console.error("Erro ao buscar mensagens:", err);
-  }
-}
-
-// Fecha o chat modal
-function fecharChatAluno() {
-  document.getElementById("chat-modal-aluno").style.display = "none";
-  modalChatAberta = false;
-}
-
-// Buscar mensagens
-async function carregarMensagens() {
-  const nomeAluno = getNomeAluno();
-  try {
-    const res = await fetch(`/buscar-mensagens/${professorSelecionado}/${nomeAluno}`);
-    const msgs = await res.json();
-    const container = document.getElementById('mensagens-chat');
-    container.innerHTML = "";
+    const hoje = new Date().toDateString();
 
     msgs.forEach(m => {
       const div = document.createElement('div');
       div.className = m.remetente === 'professor' ? 'msg-professor' : 'msg-aluno';
-      div.textContent = m.mensagem;
+
+      // Texto da mensagem
+      const msgText = document.createElement('span');
+      msgText.textContent = m.mensagem;
+      div.appendChild(msgText);
+
+      // Mostrar hora e data
+      if (m.timestamp) {
+        const dataMsg = new Date(m.timestamp);
+        let horarioTexto = "";
+
+        if (dataMsg.toDateString() === hoje) {
+          const h = String(dataMsg.getHours()).padStart(2, '0');
+          const min = String(dataMsg.getMinutes()).padStart(2, '0');
+          horarioTexto = `${h}:${min}`;
+        } else {
+          const d = String(dataMsg.getDate()).padStart(2, '0');
+          const mth = String(dataMsg.getMonth() + 1).padStart(2, '0');
+          const y = dataMsg.getFullYear();
+          const h = String(dataMsg.getHours()).padStart(2, '0');
+          const min = String(dataMsg.getMinutes()).padStart(2, '0');
+          horarioTexto = `${d}/${mth}/${y} ${h}:${min}`;
+        }
+
+        const horaSpan = document.createElement('span');
+        horaSpan.style.display = 'block';
+        horaSpan.style.fontSize = '0.7rem';
+        horaSpan.style.color = 'rgba(0,0,0,0.5)';
+        horaSpan.style.marginTop = '2px';
+        horaSpan.textContent = horarioTexto;
+        div.appendChild(horaSpan);
+      }
+
       container.appendChild(div);
     });
 
     container.scrollTop = container.scrollHeight;
+
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
   }
 }
 </script>
+
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 

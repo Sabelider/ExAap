@@ -318,15 +318,15 @@ async def meus_alunos(prof_email: str):
         )
 
 
-# Modelo para enviar mensagem
+# 🔹 Modelo da mensagem
 class MensagemInfo(BaseModel):
     aluno: str
     professor: str
     mensagem: str
-    remetente: str  # 🔹 agora indicamos quem enviou: "aluno" ou "professor"
+    remetente: str  # "aluno" ou "professor"
 
 
-# 🔹 Atualiza coleção e garante campos mínimos sempre que professor abre seus alunos
+# 🔹 Atualiza coleção e garante campos obrigatórios
 @app.get("/meus-alunos-status/{prof_email}")
 async def meus_alunos_status(prof_email: str):
     try:
@@ -336,13 +336,13 @@ async def meus_alunos_status(prof_email: str):
         alunos = []
         for doc in docs:
             d = doc.to_dict()
-
             atualizacoes = {}
-            # Criar campos obrigatórios se não existirem
+
+            # Garante campos obrigatórios
             if 'dados_aluno' not in d:
                 atualizacoes['dados_aluno'] = {}
-            if 'chat' not in d:
-                atualizacoes['chat'] = []
+            if 'mensagens' not in d:  # 🔹 agora padronizado
+                atualizacoes['mensagens'] = []
 
             if atualizacoes:
                 db.collection('alunos_professor').document(doc.id).update(atualizacoes)
@@ -362,12 +362,11 @@ async def meus_alunos_status(prof_email: str):
         return alunos
 
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Erro ao buscar status dos alunos", "erro": str(e)}
-        )
+        print("❌ Erro em /meus-alunos-status:", e)
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 
+# 🔹 Enviar mensagem (aluno → professor ou professor → aluno)
 @app.post("/enviar-mensagem")
 async def enviar_mensagem(request: Request):
     try:
@@ -377,55 +376,64 @@ async def enviar_mensagem(request: Request):
         mensagem = data.get("mensagem", "").strip()
         remetente = data.get("remetente", "").strip().lower()
 
+        print(f"📨 Tentando enviar mensagem de '{remetente}' | Aluno: '{aluno}' | Prof: '{professor}'")
+
         if not aluno or not professor or not mensagem:
             return JSONResponse(status_code=400, content={"detail": "Dados incompletos"})
 
-        # Buscar vínculo
+        # Buscar vínculo entre aluno e professor
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", aluno) \
                   .where("professor", "==", professor) \
                   .limit(1).stream()
-        vinculo_doc = next(query, None)
 
-        if not vinculo_doc:
+        docs = list(query)
+        if not docs:
+            print("⚠️ Nenhum vínculo encontrado!")
             return JSONResponse(status_code=404, content={"detail": "Vínculo não encontrado"})
 
+        vinculo_doc = docs[0]
         doc_ref = db.collection("alunos_professor").document(vinculo_doc.id)
 
-        # Mensagem nova com timestamp do servidor Firebase
         nova_mensagem = {
             "remetente": remetente,
             "mensagem": mensagem,
             "timestamp": firestore.SERVER_TIMESTAMP
         }
 
-        # Adiciona ao array de mensagens
+        # Atualiza o array de mensagens
         doc_ref.update({
             "mensagens": firestore.ArrayUnion([nova_mensagem])
         })
 
+        print("✅ Mensagem enviada com sucesso:", nova_mensagem)
         return {"status": "sucesso", "mensagem": nova_mensagem}
 
     except Exception as e:
-        print("Erro ao enviar mensagem:", e)
+        print("❌ Erro ao enviar mensagem:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 
+# 🔹 Buscar mensagens trocadas entre professor e aluno
 @app.get("/buscar-mensagens/{professor}/{aluno}")
 async def buscar_mensagens(professor: str, aluno: str):
     try:
         aluno_normalizado = aluno.strip().lower()
         professor_normalizado = professor.strip().lower()
 
+        print(f"🗂️ Buscando mensagens entre '{professor_normalizado}' e '{aluno_normalizado}'")
+
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", aluno_normalizado) \
                   .where("professor", "==", professor_normalizado) \
                   .limit(1).stream()
-        vinculo_doc = next(query, None)
 
-        if not vinculo_doc:
+        docs = list(query)
+        if not docs:
+            print("⚠️ Nenhum vínculo encontrado para carregar mensagens.")
             return []
 
+        vinculo_doc = docs[0]
         data = vinculo_doc.to_dict()
         mensagens = data.get("mensagens", [])
 
@@ -438,29 +446,26 @@ async def buscar_mensagens(professor: str, aluno: str):
 
             timestamp = m.get("timestamp")
             if not timestamp:
-                # Se não tiver timestamp, gera agora
                 timestamp = datetime.utcnow()
-            elif hasattr(timestamp, "timestamp"):
-                # Firestore retorna google.cloud.firestore_v1._helpers.Timestamp
+            elif hasattr(timestamp, "to_datetime"):
                 timestamp = timestamp.to_datetime()
 
-            # Sempre serializar como ISO (compatível com JS)
-            if isinstance(timestamp, datetime):
-                msg["timestamp"] = timestamp.isoformat()
-            else:
-                msg["timestamp"] = str(timestamp)
+            msg["timestamp"] = (
+                timestamp.isoformat() if isinstance(timestamp, datetime) else str(timestamp)
+            )
 
             mensagens_formatadas.append(msg)
 
-        # Ordena mensagens pelo timestamp antes de devolver
+        # Ordena as mensagens pelo timestamp
         mensagens_formatadas.sort(key=lambda x: x["timestamp"])
 
+        print(f"💬 {len(mensagens_formatadas)} mensagens encontradas.")
         return mensagens_formatadas
 
     except Exception as e:
-        print("Erro ao buscar mensagens:", e)
+        print("❌ Erro ao buscar mensagens:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
-        
+
 
 # 🔹 Status completo com last_seen
 @app.get("/alunos-status-completo/{prof_email}")

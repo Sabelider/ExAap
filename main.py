@@ -401,10 +401,18 @@ async def enviar_mensagem(request: Request):
             "timestamp": firestore.SERVER_TIMESTAMP
         }
 
-        # Atualiza o array de mensagens
-        doc_ref.update({
-            "mensagens": firestore.ArrayUnion([nova_mensagem])
-        })
+        # Verifica se já há campo de mensagens
+        doc_data = vinculo_doc.to_dict()
+        mensagens_existentes = doc_data.get("mensagens", [])
+
+        if not isinstance(mensagens_existentes, list):
+            mensagens_existentes = []
+
+        # Adiciona a nova mensagem
+        mensagens_existentes.append(nova_mensagem)
+
+        # Atualiza o documento inteiro com o novo array
+        doc_ref.update({"mensagens": mensagens_existentes})
 
         print("✅ Mensagem enviada com sucesso:", nova_mensagem)
         return {"status": "sucesso", "mensagem": nova_mensagem}

@@ -445,6 +445,63 @@
     transform: scale(0.95);
   }
 
+/* Container centralizado na tela */
+  #notificacao-mensagem {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+    color: #fff;
+    padding: 40px 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+    display: none;
+    z-index: 9999;
+    width: 90%;
+    max-width: 400px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  #notificacao-mensagem p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #eaeaea;
+  }
+
+  /* Botão Entrar */
+  .notificar-btn {
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .notificar-btn:hover {
+    transform: scale(1.07);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    background: linear-gradient(135deg, #92fe9d, #00c9ff);
+  }
+
+  /* Efeito suave de entrada */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -60%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
 /* Modal flutuante */
 #chat-modal-aluno {
   position: fixed;
@@ -978,7 +1035,7 @@ async function carregarMensagens() {
 <script>
 
 function abrirPerfil() {
-  // Aqui você coloca a navegação para o perfil
+ 
   window.location.href = '/perfil'; 
 }
 
@@ -1010,7 +1067,7 @@ function abrirInfoEmpresa() {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // Fecha ao clicar fora
+ 
   overlay.onclick = (e) => { if(e.target === overlay) fecharInfo(); };
 }
 
@@ -1051,7 +1108,7 @@ function mostrarConteudo(secao) {
 }
 
 function abrirPagamentos() {
-  // Redireciona para a página de controle de pagamentos
+  
   window.location.href = '/pagamentos'; 
 }
 </script>
@@ -1102,10 +1159,10 @@ function abrirPagamentos() {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Dados do template (injetados pelo backend)
+ 
   const nomeAluno = "{{ aluno.nome }}";
 
-  // 🔹 Sempre salvar no localStorage ao carregar o perfil
+  
   if (nomeAluno && nomeAluno !== "{{ aluno.nome }}") {
     localStorage.setItem("alunoNome", nomeAluno.trim().toLowerCase());
     console.log("Aluno salvo no localStorage:", nomeAluno);
@@ -1120,7 +1177,7 @@ const chamadaRef = doc(db, "chamadas_ao_vivo", nomeAluno);
 const infoAulaDiv = document.getElementById("info-aula");
 const salaIdSpan = document.getElementById("sala-id");
 
-// 🔹 Criar container visual do convite de aula
+
 const conviteContainer = document.createElement("div");
 conviteContainer.style.cssText = `
   display: none;
@@ -1204,7 +1261,7 @@ conviteCard.appendChild(recusarBtn);
 conviteContainer.appendChild(conviteCard);
 document.body.appendChild(conviteContainer);
 
-// 🔹 Lógica do snapshot
+
 onSnapshot(chamadaRef, (docSnap) => {
   try {
     if (docSnap.exists()) {
@@ -1348,7 +1405,7 @@ async function verificarAulaAtiva() {
   }
 }
 
-// 👉 só chama quando clicar no botão
+
 document.getElementById("btn-aulas-ativas").addEventListener("click", verificarAulaAtiva);
 
   
@@ -1624,7 +1681,7 @@ window.verNotificacao = async function () {
         <button class="notificar-btn" onclick="desativarNotificacaoERedirecionar()">Entrar</button>
       `;
       notificacaoEl.style.display = "block"; // agora usa o container centralizado
-      contadorAulas.innerText = "(1)";
+      contadorAulas.innerText = "1";
 
       iconeSino.classList.add("notificacao-ativa");
       textoSala.classList.add("notificacao-ativa");

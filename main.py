@@ -1,46 +1,78 @@
-from starlette.status import HTTP_303_SEE_OTHER
-from fastapi.responses import JSONResponse, RedirectResponse, FileResponse, HTMLResponse
-from fastapi import FastAPI, Form, Request, UploadFile, File, Body, Query, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from typing import List, Optional
-import shutil
 import os
 import json
 import uuid
 import re
 import pytz
 import unicodedata
-import firebase_admin
-from google.cloud.firestore_v1.base_query import FieldFilter
+import shutil
+import time
+import jwt
+import unicodedata
+from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
-from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import unquote
+
+import httpx
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Form, UploadFile, File, Body, Query, HTTPException
+from fastapi.responses import JSONResponse, RedirectResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.status import HTTP_303_SEE_OTHER
+from typing import List, Optional
+
+import firebase_admin
+from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from datetime import datetime, timedelta, timezone
-from fpdf import FPDF
-from pydantic import BaseModel
-from firebase_admin import credentials, firestore
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from fpdf import FPDF
+from pydantic import BaseModel
+
+# --- Load environment ---
+load_dotenv()
+
+# ============================================
+#   CONFIGURAÇÕES 100ms - SabiLíder Videoconf
+# ============================================
+
+# 🔑 Chaves de autenticação (App Access Token)
+HMS_APP_ACCESS_KEY = "68e12ac3bd0dab5f9a013f93"
+HMS_APP_SECRET     = "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g="
+
+# 🏫 Template e Subdomínio da sala SabiLíder
+TEMPLATE_ID        = "68e132db74147bd574bb494a"  
+SUBDOMAIN          = "sabe-videoconf-1518"        
+
+# 🛠️ Management Token (Permite criar salas, etc)
+MANAGEMENT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjAyMTEwMDYsImV4cCI6MTc2MDgxNTgwNiwianRpIjoiMWIwYmU2NDMtNjRjMi00ZjNiLThiZTItZWYwMmFhZmZiOWZkIiwidHlwZSI6Im1hbmFnZW1lbnQiLCJ2ZXJzaW9uIjoyLCJuYmYiOjE3NjAyMTEwMDYsImFjY2Vzc19rZXkiOiI2OGUxMmFjM2JkMGRhYjVmOWEwMTNmOTMifQ.DlGxEkQfWOJwWSEbW_oQSxTa60EIKI3q0QzR4bi09iU"
+
+# 🌍 Endpoints oficiais da API 100ms
+HMS_API_BASE   = "https://api.100ms.live/v2"
+ROOM_CODES_BASE = f"{HMS_API_BASE}/room-codes/room"
+
+# 🪪 Headers de autenticação para criação de sala
+HEADERS_100MS = {
+    "Authorization": f"Bearer {MANAGEMENT_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# 🧠 Armazena dados temporários de sala (substituir depois por Firebase ou DB)
+ALUNO_ROOM = {}  # aluno_norm -> { room_code, professor }
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROFESSORES_JSON = os.path.join(BASE_DIR, "professores.json")
-ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
-
-
+# --- Firebase ---
 firebase_json = os.environ.get("FIREBASE_KEY")
-
 if firebase_json and not firebase_admin._apps:
     try:
         firebase_info = json.loads(firebase_json)
-        
         if "private_key" in firebase_info:
             firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
-
         cred = credentials.Certificate(firebase_info)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
@@ -49,10 +81,24 @@ if firebase_json and not firebase_admin._apps:
 else:
     db = None  
 
+# --- Paths ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROFESSORES_JSON = os.path.join(BASE_DIR, "professores.json")
+ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 
-app = FastAPI()
+# --- FastAPI app ---
+app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# --- CORS (opcional) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # alterar em produção
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def carregar_professores_local():
@@ -2325,153 +2371,6 @@ def verificar_status(aluno_nome: str):
 
     except Exception as e:
         return JSONResponse(content={"erro": str(e)}, status_code=500)
-
-@app.post("/enviar-id-aula")
-async def enviar_id_aula(request: Request):
-    dados = await request.json()
-    peer_id = dados.get("peer_id")
-    email_professor = dados.get("email")
-    nome_aluno_raw = dados.get("aluno")
-
-    if not peer_id or not email_professor or not nome_aluno_raw:
-        return JSONResponse(status_code=400, content={"erro": "Dados incompletos"})
-
-    try:
-        nome_aluno = nome_aluno_raw.strip().lower().replace(" ", "")
-        doc_ref = db.collection("alunos").document(nome_aluno)
-        doc_ref.set({
-            "id_chamada": peer_id,
-            "professor_chamada": email_professor.strip().lower()
-        }, merge=True)
-
-        return JSONResponse(content={"status": "ID enviado com sucesso"})
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"erro": str(e)})
-
-@app.get("/buscar-id-professor")
-async def buscar_id_professor(aluno: str):
-    try:
-        aluno_normalizado = aluno.strip().lower().replace(" ", "")
-        doc_ref = db.collection("alunos").document(aluno_normalizado)
-        doc = doc_ref.get()
-
-        if doc.exists:
-            data = doc.to_dict()
-            return {"peer_id": data.get("id_chamada")}
-        else:
-            return {"peer_id": None}
-    except Exception as e:
-        return {"erro": str(e)}
-
-from datetime import datetime
-from fastapi import Body, HTTPException
-
-@app.post("/registrar-aula")
-async def registrar_aula(data: dict = Body(...)):
-    try:
-        professor = data.get("professor", "").strip().lower()
-        aluno = data.get("aluno", "").strip().lower()
-
-        if not professor or not aluno:
-            raise HTTPException(status_code=400, detail="Dados incompletos")
-
-        # 🔹 Busca vínculo aluno-professor
-        query = db.collection("alunos_professor") \
-                  .where("professor", "==", professor) \
-                  .where("aluno", "==", aluno) \
-                  .limit(1).stream()
-
-        doc = next(query, None)
-        if not doc:
-            raise HTTPException(status_code=404, detail="Vínculo não encontrado")
-
-        doc_ref = db.collection("alunos_professor").document(doc.id)
-        doc_data = doc.to_dict()
-        aulas_anteriores = doc_data.get("aulas_dadas", 0)
-        lista_aulas = doc_data.get("aulas", [])
-        aulas_passadas = doc_data.get("aulas_passadas", [])  
-        valor_passado = doc_data.get("valor_passado", [])    
-
-        agora = datetime.now()
-        nova_aula = {
-            "data": agora.strftime("%Y-%m-%d"),
-            "horario": agora.strftime("%H:%M")
-        }
-
-        # Incrementa a aula
-        novo_total = aulas_anteriores + 1
-        valor_mensal = novo_total * 1250  # 💰 cálculo do valor acumulado
-
-        update_data = {
-            "aulas_dadas": novo_total,
-            "aulas": lista_aulas + [nova_aula],
-            "valor_mensal": valor_mensal
-        }
-
-        registro_passado = None
-        registro_valor = None
-
-        # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
-        if novo_total >= 12:
-            registro_passado = {
-                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
-                "mes": agora.strftime("%Y-%m"),
-                "total_aulas": 12
-            }
-
-            registro_valor = {
-                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
-                "mes": agora.strftime("%Y-%m"),
-                "valor_pago": valor_mensal,
-                "pago": "Não Pago"   # 🔹 sempre garante a criação
-            }
-
-            aulas_passadas.append(registro_passado)
-            valor_passado.append(registro_valor)
-
-            # Resetar os contadores
-            update_data["aulas_dadas"] = 0
-            update_data["valor_mensal"] = 0
-            update_data["aulas_passadas"] = aulas_passadas
-            update_data["valor_passado"] = valor_passado
-
-        # 🔹 Atualiza documento aluno-professor
-        doc_ref.update(update_data)
-
-        # 🔹 Atualiza saldo_atual do professor na coleção "professores_online"
-        prof_ref = db.collection("professores_online").where(
-            filter=FieldFilter("email", "==", professor)
-        ).limit(1).stream()
-
-        prof_doc = next(prof_ref, None)
-        if prof_doc:
-            prof_doc_ref = db.collection("professores_online").document(prof_doc.id)
-            prof_data = prof_doc.to_dict() or {}
-            salario_info = prof_data.get("salario", {})
-
-            # soma ao saldo atual existente
-            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 12 else 0)
-
-            # se completou 12 aulas, transfere todo valor e zera o acumulado no aluno-professor
-            if novo_total >= 12:
-                saldo_atual = int(salario_info.get("saldo_atual", 0)) + registro_valor["valor_pago"]
-
-            prof_doc_ref.update({
-                "salario.saldo_atual": saldo_atual
-            })
-
-        return {
-            "mensagem": f"✅ Aula registrada com sucesso (total atual: {update_data['aulas_dadas']})",
-            "nova_aula": nova_aula,
-            "transferencia_aulas": registro_passado if registro_passado else None,
-            "transferencia_valor": registro_valor if registro_valor else None
-        }
-
-    except Exception as e:
-        print("Erro ao registrar aula:", e)
-        raise HTTPException(status_code=500, detail="Erro ao registrar aula")
-
         
 @app.post("/ver-aulas")
 async def ver_aulas(request: Request):
@@ -4230,3 +4129,319 @@ async def desvincular_aluno(data: dict):
         print("Erro ao desvincular aluno:", e)
         return JSONResponse(status_code=500, content={"detail": "Erro interno", "erro": str(e)})
 
+# ============================
+# CONFIG 100ms
+# ============================
+SUBDOMAIN = "sabe-videoconf-1518"
+TEMPLATE_ID = "68e132db74147bd574bb494a"
+HMS_API_BASE = "https://api.100ms.live/v2"
+HMS_APP_ACCESS_KEY = "68e12ac3bd0dab5f9a013f93"
+HMS_APP_SECRET = "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g="
+
+# ============================
+# SCHEMA DA REQUISIÇÃO
+# ============================
+class CreateRoomRequest(BaseModel):
+    name: str
+
+# ============================
+# GERA TOKEN 100ms (com permissão de management)
+# ============================
+def generate_100ms_token():
+    payload = {
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 3600,  # válido por 1 hora
+        "access_key": HMS_APP_ACCESS_KEY,
+        "type": "management",  # 🔥 ESSENCIAL para criar salas e room codes
+        "jti": str(uuid.uuid4()),
+    }
+    return jwt.encode(payload, HMS_APP_SECRET, algorithm="HS256")
+
+
+def get_headers():
+    return {
+        "Authorization": f"Bearer {generate_100ms_token()}",
+        "Content-Type": "application/json",
+    }
+
+
+# ============================
+# Normaliza nome da sala
+# ============================
+def normalize_room_name(name: str):
+    name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
+    name = re.sub(r"[^a-zA-Z0-9._:-]", "_", name)
+    return name.strip("_").lower()
+
+# ============================
+# Cria sala 100ms
+# ============================
+@app.post("/create-room")
+async def create_room(req: CreateRoomRequest):
+    import asyncio
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        normalized_name = normalize_room_name(req.name)
+        print(f"🟦 Criando sala com nome normalizado: {normalized_name}")
+
+        body = {"name": normalized_name, "template_id": TEMPLATE_ID}
+
+        # ====== Criação da sala ======
+        r = await client.post(f"{HMS_API_BASE}/rooms", json=body, headers=get_headers())
+        print(f"📡 [100ms /rooms] STATUS: {r.status_code} | RESPOSTA: {r.text}")
+
+        if r.status_code >= 400:
+            raise HTTPException(status_code=500, detail=f"Erro ao criar sala: {r.status_code} - {r.text}")
+
+        room = r.json()
+        room_id = room.get("id")
+        if not room_id:
+            raise HTTPException(status_code=500, detail="⚠️ Sala criada, mas sem ID retornado.")
+
+        print(f"✅ Sala criada com ID: {room_id}")
+
+        await asyncio.sleep(1)
+
+        # ====== Criação dos códigos (endpoint atualizado) ======
+        body_codes = {"roles": ["host", "guest"]}
+        try:
+            r2 = await client.post(
+                f"{HMS_API_BASE}/room-codes/room/{room_id}",
+                json=body_codes,
+                headers=get_headers(),
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erro de conexão ao gerar room codes: {str(e)}")
+
+        print(f"📡 [100ms /room-codes/room/{room_id}] STATUS: {r2.status_code} | BODY ENVIADO: {body_codes} | RESPOSTA: {r2.text}")
+
+        if r2.status_code >= 400:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Erro ao gerar room codes: {r2.status_code} - {r2.text}"
+            )
+
+        # ====== Processa resposta ======
+        data_codes = r2.json()
+        codes = data_codes.get("data", [])
+        if not codes:
+            raise HTTPException(status_code=500, detail=f"⚠️ Nenhum room code retornado: {data_codes}")
+
+        role_map = {c.get("role"): c.get("code") for c in codes}
+        room_code_host = role_map.get("host")
+        room_code_guest = role_map.get("guest")
+
+        if not room_code_host or not room_code_guest:
+            raise HTTPException(status_code=500, detail=f"⚠️ Room codes ausentes: {data_codes}")
+
+        print(f"✅ Room codes criados com sucesso → Host={room_code_host}, Guest={room_code_guest}")
+
+        return {
+            "room_id": room_id,
+            "room_code_host": room_code_host,
+            "room_code_guest": room_code_guest,
+            "prebuilt_links": {
+                "host": f"https://{SUBDOMAIN}.app.100ms.live/meeting/{room_code_host}",
+                "guest": f"https://{SUBDOMAIN}.app.100ms.live/meeting/{room_code_guest}",
+            },
+        }
+
+
+# -------------------------
+# 3️⃣ PROFESSOR ENVIA room_code AO ALUNO
+# -------------------------
+# ✅ Modelo atualizado
+class EnviarIdPayload(BaseModel):
+    aluno: str
+    professor: str
+    room_id: str   # Recebe apenas o room_id (sem o link completo)
+
+
+# ==============================
+# Gerar token JWT via API 100ms
+# ==============================
+async def gerar_token(role: str, user_id: str, room_id: str):
+    url = f"{HMS_ROOM_URL}/room/{room_id}/token"
+
+    headers = {
+        "Authorization": f"Bearer {HMS_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "user_id": user_id,
+        "role": role
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=body)
+        if response.status_code != 200:
+            raise Exception(f"Erro ao gerar token: {response.text}")
+        data = response.json()
+        return data["token"]
+
+
+# ==============================
+# Enviar ID 
+# ==============================
+from pydantic import BaseModel
+
+ALUNO_ROOM = {}
+SUBDOMAIN = "sabe-videoconf-1518"  # substitui pelo teu subdomínio real
+
+class EnviarIdPayload(BaseModel):
+    aluno: str
+    professor: str
+    room_id: str
+
+
+# ===========================
+# 🔹 Enviar ID e link da aula
+# ===========================
+class EnviarIdPayload(BaseModel):
+    aluno: str
+    professor: str
+    room_id: str
+    prebuilt_link: str   # ✅ agora recebemos o link real da 100ms
+
+
+@app.post("/enviar-id-aula")
+async def enviar_id_aula(payload: EnviarIdPayload):
+    aluno_norm = payload.aluno.strip().lower().replace(" ", "")
+    professor_norm = payload.professor.strip().lower().replace(" ", "")
+
+    ALUNO_ROOM[aluno_norm] = {
+        "room_id": payload.room_id,
+        "professor": professor_norm,
+        "prebuilt_link": payload.prebuilt_link  # ✅ usa o link completo vindo do 100ms
+    }
+
+    return {"status": "ok", "message": "Link real da aula enviado ao aluno com sucesso!"}
+
+
+@app.get("/buscar-id-professor")
+async def buscar_id_professor(aluno: str):
+    aluno_norm = aluno.strip().lower().replace(" ", "")
+    data = ALUNO_ROOM.get(aluno_norm)
+
+    if not data:
+        return {"room_id": None, "prebuilt_link": None}
+
+    return {
+        "room_id": data["room_id"],
+        "prebuilt_link": data["prebuilt_link"]
+    }
+
+
+@app.post("/registrar-aula")
+async def registrar_aula(data: dict = Body(...)):
+    try:
+        professor = data.get("professor", "").strip().lower()
+        aluno = data.get("aluno", "").strip().lower()
+
+        if not professor or not aluno:
+            raise HTTPException(status_code=400, detail="Dados incompletos")
+
+        # 🔹 Quando for chamada via /buscar-id-professor,
+        # inicia o cronômetro de 60 minutos antes de registrar.
+        print(f"⏳ Cronômetro iniciado para {aluno} - Professor: {professor} (60 minutos)")
+        await asyncio.sleep(60 * 60)  # Espera 60 minutos (3600 segundos)
+
+        print(f"🕒 Tempo concluído. Registrando aula de {aluno} com {professor}...")
+
+        # 🔹 Busca vínculo aluno-professor
+        query = db.collection("alunos_professor") \
+                  .where("professor", "==", professor) \
+                  .where("aluno", "==", aluno) \
+                  .limit(1).stream()
+
+        doc = next(query, None)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Vínculo não encontrado")
+
+        doc_ref = db.collection("alunos_professor").document(doc.id)
+        doc_data = doc.to_dict()
+        aulas_anteriores = doc_data.get("aulas_dadas", 0)
+        lista_aulas = doc_data.get("aulas", [])
+        aulas_passadas = doc_data.get("aulas_passadas", [])  
+        valor_passado = doc_data.get("valor_passado", [])    
+
+        agora = datetime.now()
+        nova_aula = {
+            "data": agora.strftime("%Y-%m-%d"),
+            "horario": agora.strftime("%H:%M")
+        }
+
+        # Incrementa a aula
+        novo_total = aulas_anteriores + 1
+        valor_mensal = novo_total * 1250  # 💰 cálculo do valor acumulado
+
+        update_data = {
+            "aulas_dadas": novo_total,
+            "aulas": lista_aulas + [nova_aula],
+            "valor_mensal": valor_mensal
+        }
+
+        registro_passado = None
+        registro_valor = None
+
+        # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
+        if novo_total >= 12:
+            registro_passado = {
+                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
+                "mes": agora.strftime("%Y-%m"),
+                "total_aulas": 12
+            }
+
+            registro_valor = {
+                "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
+                "mes": agora.strftime("%Y-%m"),
+                "valor_pago": valor_mensal,
+                "pago": "Não Pago"
+            }
+
+            aulas_passadas.append(registro_passado)
+            valor_passado.append(registro_valor)
+
+            # Resetar contadores
+            update_data["aulas_dadas"] = 0
+            update_data["valor_mensal"] = 0
+            update_data["aulas_passadas"] = aulas_passadas
+            update_data["valor_passado"] = valor_passado
+
+        # 🔹 Atualiza documento aluno-professor
+        doc_ref.update(update_data)
+
+        # 🔹 Atualiza saldo_atual do professor na coleção "professores_online"
+        prof_ref = db.collection("professores_online").where(
+            filter=FieldFilter("email", "==", professor)
+        ).limit(1).stream()
+
+        prof_doc = next(prof_ref, None)
+        if prof_doc:
+            prof_doc_ref = db.collection("professores_online").document(prof_doc.id)
+            prof_data = prof_doc.to_dict() or {}
+            salario_info = prof_data.get("salario", {})
+
+            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 12 else 0)
+            if novo_total >= 12:
+                saldo_atual = int(salario_info.get("saldo_atual", 0)) + registro_valor["valor_pago"]
+
+            prof_doc_ref.update({
+                "salario.saldo_atual": saldo_atual
+            })
+
+        print(f"✅ Aula de {aluno} registrada automaticamente após 60 minutos.")
+        return {
+            "mensagem": f"Aula registrada automaticamente após 60 minutos. Total atual: {update_data['aulas_dadas']}",
+            "nova_aula": nova_aula,
+        }
+
+    except Exception as e:
+        print("Erro ao registrar aula:", e)
+        raise HTTPException(status_code=500, detail="Erro ao registrar aula")
+
+
+@app.get("/paginavendas", response_class=HTMLResponse)
+async def paginavendas(request: Request):
+    return templates.TemplateResponse("paginavendas.html", {"request": request})

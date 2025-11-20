@@ -37,35 +37,6 @@ from pydantic import BaseModel
 # --- Load environment ---
 load_dotenv()
 
-# ============================================
-#   CONFIGURAÇÕES 100ms - SabiLíder Videoconf
-# ============================================
-
-# 🔑 Chaves de autenticação (App Access Token)
-HMS_APP_ACCESS_KEY = "68e12ac3bd0dab5f9a013f93"
-HMS_APP_SECRET     = "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g="
-
-# 🏫 Template e Subdomínio da sala SabiLíder
-TEMPLATE_ID        = "68e132db74147bd574bb494a"  
-SUBDOMAIN          = "sabe-videoconf-1518"        
-
-# 🛠️ Management Token (Permite criar salas, etc)
-MANAGEMENT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjAyMTEwMDYsImV4cCI6MTc2MDgxNTgwNiwianRpIjoiMWIwYmU2NDMtNjRjMi00ZjNiLThiZTItZWYwMmFhZmZiOWZkIiwidHlwZSI6Im1hbmFnZW1lbnQiLCJ2ZXJzaW9uIjoyLCJuYmYiOjE3NjAyMTEwMDYsImFjY2Vzc19rZXkiOiI2OGUxMmFjM2JkMGRhYjVmOWEwMTNmOTMifQ.DlGxEkQfWOJwWSEbW_oQSxTa60EIKI3q0QzR4bi09iU"
-
-# 🌍 Endpoints oficiais da API 100ms
-HMS_API_BASE   = "https://api.100ms.live/v2"
-ROOM_CODES_BASE = f"{HMS_API_BASE}/room-codes/room"
-
-# 🪪 Headers de autenticação para criação de sala
-HEADERS_100MS = {
-    "Authorization": f"Bearer {MANAGEMENT_TOKEN}",
-    "Content-Type": "application/json"
-}
-
-# 🧠 Armazena dados temporários de sala (substituir depois por Firebase ou DB)
-ALUNO_ROOM = {}  # aluno_norm -> { room_code, professor }
-
-
 # --- Firebase ---
 firebase_json = os.environ.get("FIREBASE_KEY")
 if firebase_json and not firebase_admin._apps:
@@ -150,6 +121,135 @@ if not os.path.exists(PROFESSORES_JSON):
     salvar_professores_local([])
 gerar_html_professores()
 
+# ============================
+# 🔹 CONTAS 100MS
+# ============================
+CONTAS_100MS = [
+    {
+        "ACCESS_KEY": "68e12ac3bd0dab5f9a013f93",
+        "SECRET": "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g=",
+        "TEMPLATE": "68e132db74147bd574bb494a",
+        "SUBDOMAIN": "sabe-videoconf-1518"
+    },
+    {
+        "ACCESS_KEY": "68e8c88cbd0dab5f9a01409d",
+        "SECRET": "rI932W7abnwd9NC5vTY54e_DSfG8UNFxxgz5JD7_6stDWSbnOevqsaeeyaRfDitue4-IkmlgAR7c7fr_n42Wx0pKw4fhofXEGa3fj5R9Q3xcdxQJvHjMD6sM-VP9XL-HLKEFT7X1lK8hZAxh0DsCKrjaU2o5Bk2UoVN9pRQNnTc=",
+        "TEMPLATE": "691af3a4033903926e62a61a",
+        "SUBDOMAIN": "arrikson-videoconf-1105"
+    },
+    {
+        "ACCESS_KEY": "691b1920145cb4e8449b1ad5",
+        "SECRET": "y3Uk__pTuLXY2xYP_7QMw_rL7021SA3v7nAqLujr-pQ2Ree9fnYbLizd46OZ2K__53YEzH1hit8dw9ctDP0hEAP_q5Ca_kAp-bLa8gUSWgb1jeUpgETWFiUU4DzOnctm8iFueoZk8v_sb3HaN2vTSxUuj1-eI60W7RzAMObAxw0=",
+        "TEMPLATE": "691b1965033903926e62a68e",
+        "SUBDOMAIN": "mb-videoconf-1347"
+    },
+    {
+        "ACCESS_KEY": "691c423fbd0dab5f9a0147ee",
+        "SECRET": "VQpwHMexPStIBd3tB8UP7uXSdI4JzaGCUOX79M-YEUPhne3dh7tSIeGq9vobErsf0h4xMzjrTtvgimBca-89Oi7g5eBibRu6heKdqO10XzK3v4YrBaW0sENcTSMnwgmBwi4I7tGLYXrdP-G6xp2J_k0LoNZHX97A6Tzjm0SAA5I=",
+        "TEMPLATE": "691c42b774147bd574bbb7e6",
+        "SUBDOMAIN": "lcio-videoconf-1056"
+    },
+    {
+        "ACCESS_KEY": "691b1f5c145cb4e8449b1ada",
+        "SECRET": "WfQpeZTfOX2QcFRwmSg_t-vHH7Vd1x687DCp4IvLAyRhD2zWfgEt38M5gFNerlJKYBWgb_mhg5-0Y4MQCns5ANgDvTfVoejzwULFcAf3aY6m-FfFs_L5B2Naf3pRoeEvpdVeUMxeNLyEbGt1qp4n6sFtbcytzEr73lEGS0kD8t8=",
+        "TEMPLATE": "691b1f6e74147bd574bbb5ce",
+        "SUBDOMAIN": "rafael-videoconf-1413"
+    },
+    {
+        "ACCESS_KEY": "691c4cf8bd0dab5f9a0147f6",
+        "SECRET": "QFhzYgzrLpmawfPtPxlgn75UYRNfeNiCTha3YXDbmD3zeQVIsqEavBytDgk6jxnqr4ePjybhV_AR1zWphCkXf8A7UfS64vsuYr_QJymSsoE_BvdUanN3zXP16lU2XmjeCkA1uriETzhrsp1ruj498dgVpFNnV6QV9W67ybyACQA=",
+        "TEMPLATE": "691c4d09033903926e62a8a0",
+        "SUBDOMAIN": "rafael-videoconf-1140"
+    },
+    {
+        "ACCESS_KEY": "691c4f0dbd0dab5f9a0147fb",
+        "SECRET": "jMOUaFZLjtyNWLlhAUgFosGEfwTm5syNtb7NKnc33yWKipD-tDCQHD7Swjq9gOJlAoSoiU0wS9D2rUi8aQcpQhBkEag2VwbJrpDOMHRDp6m9JsLNk99BN0PvguvMvH4IVkHIkCRwgJ23fv2kksKEtzAXYOEOdcD9aNOh8Tm3usQ=",
+        "TEMPLATE": "691c4f1b74147bd574bbb7ea",
+        "SUBDOMAIN": "carlene100ms-videoconf-1148"
+    }
+]
+
+# ============================
+# 🔹 Inicializar CONTAS_100MS no Firebase (corrigido)
+# ============================
+def init_contas_100ms():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get()
+    if not doc.exists:
+        # 🔹 Converter índices para string
+        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
+        data = {
+            "conta_atual": 0,
+            "usos": usos
+        }
+        ref.set(data)
+        print("🔥 Documento 'CONTAS_100MS/contador' criado automaticamente no Firebase.")
+
+# Chamar na inicialização da aplicação
+init_contas_100ms()
+
+# ============================
+# 🔹 FUNÇÕES DE CONTROLE DE CONTA
+# ============================
+async def get_current_account():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get()
+    data = doc.to_dict() if doc.exists else None
+
+    if not data:
+        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
+        data = {"conta_atual": 0, "usos": usos}
+        ref.set(data)
+        print("🔥 Documento 'contador' criado automaticamente no Firebase.")
+
+    # 🔹 garante que todas as chaves de 'usos' sejam strings
+    usos = {str(k): v for k, v in data["usos"].items()}
+    return data["conta_atual"], usos
+
+
+async def rotate_account():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get()
+    data = doc.to_dict() if doc.exists else None
+
+    if not data:
+        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
+        data = {"conta_atual": 0, "usos": usos}
+        ref.set(data)
+        print("🔥 Documento 'contador' criado automaticamente no Firebase.")
+
+    conta = data["conta_atual"]
+    usos = {str(k): v for k, v in data["usos"].items()}  # 🔹 chaves como string
+
+    conta_str = str(conta)
+    if usos.get(conta_str, 0) >= 10:
+        conta = (conta + 1) % len(CONTAS_100MS)
+        conta_str = str(conta)
+        usos[conta_str] = 0
+
+    ref.update({"conta_atual": conta, "usos": usos})
+    return conta
+
+
+async def incrementar_uso():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get()
+    data = doc.to_dict() if doc.exists else None
+
+    if not data:
+        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
+        data = {"conta_atual": 0, "usos": usos}
+        ref.set(data)
+        print("🔥 Documento 'contador' criado automaticamente no Firebase.")
+
+    conta = data["conta_atual"]
+    usos = {str(k): v for k, v in data["usos"].items()}  # 🔹 chaves como string
+
+    conta_str = str(conta)
+    usos[conta_str] = usos.get(conta_str, 0) + 1  # 🔹 seguro, evita KeyError
+    ref.update({"usos": usos})
+
+    await rotate_account()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -4130,13 +4230,9 @@ async def desvincular_aluno(data: dict):
         return JSONResponse(status_code=500, content={"detail": "Erro interno", "erro": str(e)})
 
 # ============================
-# CONFIG 100ms
+# CONFIG 100ms - DINÂMICA DE TROCA DE CONTA
 # ============================
-SUBDOMAIN = "sabe-videoconf-1518"
-TEMPLATE_ID = "68e132db74147bd574bb494a"
 HMS_API_BASE = "https://api.100ms.live/v2"
-HMS_APP_ACCESS_KEY = "68e12ac3bd0dab5f9a013f93"
-HMS_APP_SECRET = "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g="
 
 # ============================
 # SCHEMA DA REQUISIÇÃO
@@ -4145,25 +4241,78 @@ class CreateRoomRequest(BaseModel):
     name: str
 
 # ============================
+# BUSCA CONTA ATIVA
+# ============================
+async def get_current_account():
+    doc = db.collection("CONTAS_100MS").document("contador").get()
+    data = doc.to_dict()
+
+    # garante que todas as chaves do 'usos' são strings
+    usos = {str(k): v for k, v in data["usos"].items()}
+
+    return data["conta_atual"], usos
+
+
+async def rotate_account():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get().to_dict()
+
+    conta = doc["conta_atual"]
+    usos = {str(k): v for k, v in doc["usos"].items()}  # converte chaves para string
+
+    conta_str = str(conta)
+    if usos.get(conta_str, 0) >= 10:  # limite de usos por conta
+        conta = (conta + 1) % len(CONTAS_100MS)
+        conta_str = str(conta)
+        usos[conta_str] = 0  # reset da nova conta
+
+    ref.update({
+        "conta_atual": conta,
+        "usos": usos
+    })
+    return conta
+
+
+async def incrementar_uso():
+    ref = db.collection("CONTAS_100MS").document("contador")
+    doc = ref.get().to_dict()
+
+    conta = doc["conta_atual"]
+    usos = {str(k): v for k, v in doc["usos"].items()}  # garante chaves como string
+
+    conta_str = str(conta)
+    usos[conta_str] = usos.get(conta_str, 0) + 1  # incrementa o uso da conta atual
+
+    ref.update({"usos": usos})
+    await rotate_account()
+
+
+# ============================
 # GERA TOKEN 100ms (com permissão de management)
 # ============================
-def generate_100ms_token():
+async def generate_100ms_token():
+    conta_atual, _ = await get_current_account()
+    conta = CONTAS_100MS[conta_atual]
+
     payload = {
         "iat": int(time.time()),
         "exp": int(time.time()) + 3600,  # válido por 1 hora
-        "access_key": HMS_APP_ACCESS_KEY,
+        "access_key": conta["ACCESS_KEY"],
         "type": "management",  # 🔥 ESSENCIAL para criar salas e room codes
         "jti": str(uuid.uuid4()),
     }
-    return jwt.encode(payload, HMS_APP_SECRET, algorithm="HS256")
+    return jwt.encode(payload, conta["SECRET"], algorithm="HS256")
 
 
-def get_headers():
+# ============================
+# RETORNA HEADERS COM CONTA ATIVA
+# ============================
+async def get_headers():
+    token = await generate_100ms_token()
     return {
-        "Authorization": f"Bearer {generate_100ms_token()}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-
 
 # ============================
 # Normaliza nome da sala
@@ -4174,20 +4323,26 @@ def normalize_room_name(name: str):
     return name.strip("_").lower()
 
 # ============================
-# Cria sala 100ms
+# Cria sala 100ms (corrigido)
 # ============================
 @app.post("/create-room")
 async def create_room(req: CreateRoomRequest):
     import asyncio
-
     async with httpx.AsyncClient(timeout=30.0) as client:
         normalized_name = normalize_room_name(req.name)
         print(f"🟦 Criando sala com nome normalizado: {normalized_name}")
 
-        body = {"name": normalized_name, "template_id": TEMPLATE_ID}
+        # 🔹 Busca conta ativa
+        conta_atual, _ = await get_current_account()
+        conta = CONTAS_100MS[conta_atual]
+        template_id = conta["TEMPLATE"]
+        subdomain = conta["SUBDOMAIN"]
+
+        body = {"name": normalized_name, "template_id": template_id}
 
         # ====== Criação da sala ======
-        r = await client.post(f"{HMS_API_BASE}/rooms", json=body, headers=get_headers())
+        headers = await get_headers()
+        r = await client.post(f"{HMS_API_BASE}/rooms", json=body, headers=headers)
         print(f"📡 [100ms /rooms] STATUS: {r.status_code} | RESPOSTA: {r.text}")
 
         if r.status_code >= 400:
@@ -4202,17 +4357,13 @@ async def create_room(req: CreateRoomRequest):
 
         await asyncio.sleep(1)
 
-        # ====== Criação dos códigos (endpoint atualizado) ======
+        # ====== Criação dos códigos (room-codes) ======
         body_codes = {"roles": ["host", "guest"]}
-        try:
-            r2 = await client.post(
-                f"{HMS_API_BASE}/room-codes/room/{room_id}",
-                json=body_codes,
-                headers=get_headers(),
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erro de conexão ao gerar room codes: {str(e)}")
-
+        r2 = await client.post(
+            f"{HMS_API_BASE}/room-codes/room/{room_id}",
+            json=body_codes,
+            headers=headers,
+        )
         print(f"📡 [100ms /room-codes/room/{room_id}] STATUS: {r2.status_code} | BODY ENVIADO: {body_codes} | RESPOSTA: {r2.text}")
 
         if r2.status_code >= 400:
@@ -4221,7 +4372,6 @@ async def create_room(req: CreateRoomRequest):
                 detail=f"Erro ao gerar room codes: {r2.status_code} - {r2.text}"
             )
 
-        # ====== Processa resposta ======
         data_codes = r2.json()
         codes = data_codes.get("data", [])
         if not codes:
@@ -4236,16 +4386,19 @@ async def create_room(req: CreateRoomRequest):
 
         print(f"✅ Room codes criados com sucesso → Host={room_code_host}, Guest={room_code_guest}")
 
+        # ====== Incrementa uso da conta ativa ======
+        await incrementar_uso()
+
         return {
             "room_id": room_id,
             "room_code_host": room_code_host,
             "room_code_guest": room_code_guest,
             "prebuilt_links": {
-                "host": f"https://{SUBDOMAIN}.app.100ms.live/meeting/{room_code_host}",
-                "guest": f"https://{SUBDOMAIN}.app.100ms.live/meeting/{room_code_guest}",
+                "host": f"https://{subdomain}.app.100ms.live/meeting/{room_code_host}",
+                "guest": f"https://{subdomain}.app.100ms.live/meeting/{room_code_guest}",
             },
+            "conta_usada": conta_atual  # ✅ retorna qual conta foi usada
         }
-
 
 # -------------------------
 # 3️⃣ PROFESSOR ENVIA room_code AO ALUNO
@@ -4282,41 +4435,44 @@ async def gerar_token(role: str, user_id: str, room_id: str):
 
 
 # ==============================
-# Enviar ID 
+# Enviar ID (com conta ativa)
 # ==============================
 from pydantic import BaseModel
 
 ALUNO_ROOM = {}
-SUBDOMAIN = "sabe-videoconf-1518"  # substitui pelo teu subdomínio real
 
 class EnviarIdPayload(BaseModel):
     aluno: str
     professor: str
     room_id: str
+    prebuilt_link: str   
 
 
 # ===========================
 # 🔹 Enviar ID e link da aula
 # ===========================
-class EnviarIdPayload(BaseModel):
-    aluno: str
-    professor: str
-    room_id: str
-    prebuilt_link: str   # ✅ agora recebemos o link real da 100ms
-
-
 @app.post("/enviar-id-aula")
 async def enviar_id_aula(payload: EnviarIdPayload):
     aluno_norm = payload.aluno.strip().lower().replace(" ", "")
     professor_norm = payload.professor.strip().lower().replace(" ", "")
 
+    # Buscar conta ativa para este envio
+    conta_atual, _ = await get_current_account()
+    conta = CONTAS_100MS[conta_atual]
+
     ALUNO_ROOM[aluno_norm] = {
         "room_id": payload.room_id,
         "professor": professor_norm,
-        "prebuilt_link": payload.prebuilt_link  # ✅ usa o link completo vindo do 100ms
+        "prebuilt_link": payload.prebuilt_link,  
+        "subdomain": conta["SUBDOMAIN"],        
+        "template_id": conta["TEMPLATE"]        
     }
 
-    return {"status": "ok", "message": "Link real da aula enviado ao aluno com sucesso!"}
+    return {
+        "status": "ok",
+        "message": "Link real da aula enviado ao aluno com sucesso!",
+        "conta_usada": conta_atual  # ✅ retorna qual conta foi usada
+    }
 
 
 @app.get("/buscar-id-professor")

@@ -167,6 +167,12 @@ CONTAS_100MS = [
         "TEMPLATE": "691c4f1b74147bd574bbb7ea",
         "SUBDOMAIN": "carlene100ms-videoconf-1148"
     }
+    {
+        "ACCESS_KEY": "691eaf0f145cb4e8449b1b80",
+        "SECRET": "ktRPCNeqFjSdK8hp9UyH7ujxvrWM_oHmZd7fq5AfyjlInQWGKjBs32s_ZnpD2nvKe1gki_nrTDcbe_l6Jrj9Vb8dgJJjMN8V7Holkeq0mtCTFW6uD6uWoEXtUWhOG7XKfrLXW9D_4Aq5qNF2dqjxY3j4ro0Bz5Kq7837KeJDgyk=",
+        "TEMPLATE": "691eaf26033903926e62ad5c",
+        "SUBDOMAIN": "xoco-videoconf-703"
+    },
 ]
 
 # ============================

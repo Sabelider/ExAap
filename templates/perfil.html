@@ -180,6 +180,173 @@
     font-size: 0.9rem;
   }
 
+ /* 🔹 Fundo transparente escurecido */
+.overlay-info {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.25s ease-out;
+    z-index: 9999;
+}
+
+/* 🔹 Modal estiloso */
+.modal-info {
+    background: #ffffff;
+    width: 92%;
+    max-width: 500px;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    animation: slideUp 0.35s ease;
+    font-family: 'Nunito', sans-serif;
+}
+
+.modal-info h2 {
+    margin-top: 0;
+    font-size: 24px;
+    text-align: center;
+    color: #00C9FF; /* 🔹 Cor Padrão */
+    font-weight: 800;
+}
+
+/* 🔹 Conteúdo dentro do container */
+.info-content {
+    margin: 15px 0 25px;
+    line-height: 1.6;
+    color: #333;
+    font-size: 15px;
+}
+
+/* 🔹 Botões padrões */
+.botao-padrao {
+    background: #00C9FF; /* Cor padrão */
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    margin: 5px 0;
+    width: 100%;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.botao-padrao:hover {
+    background: #009ecc;
+}
+
+/* 🔹 Botões agrupados (2 colunas no padrão) */
+.modal-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+/* 🔹 Botão Fechar */
+.fechar-btn {
+    background: #FF3B3B !important;
+}
+
+.fechar-btn:hover {
+    background: #D92D2D !important;
+}
+
+/* 📌 Animações */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ==========================================================
+   🔹 Responsividade para telas menores
+   ========================================================== */
+
+/* Telas de até 480px */
+@media (max-width: 480px) {
+    .modal-info {
+        padding: 20px;
+        border-radius: 15px;
+    }
+
+    .modal-info h2 {
+        font-size: 20px;
+    }
+
+    .info-content {
+        font-size: 14px;
+    }
+
+    .botao-padrao {
+        font-size: 14px;
+        padding: 9px 12px;
+    }
+}
+
+/* Telas de até 400px */
+@media (max-width: 400px) {
+    .modal-buttons {
+        grid-template-columns: 1fr; /* 🔹 vira 1 coluna */
+    }
+
+    .modal-info {
+        width: 95%;
+    }
+
+    .modal-info h2 {
+        font-size: 18px;
+    }
+}
+
+/* Telas muito pequenas 360px */
+@media (max-width: 360px) {
+    .modal-info {
+        padding: 16px;
+    }
+
+    .info-content {
+        font-size: 13.5px;
+    }
+
+    .botao-padrao {
+        padding: 8px 10px;
+        font-size: 13.5px;
+    }
+}
+
+/* Telas super pequenas (ex.: smartphones antigos 320px) */
+@media (max-width: 320px) {
+    .modal-info {
+        padding: 14px;
+        width: 96%;
+    }
+
+    .modal-info h2 {
+        font-size: 16px;
+    }
+
+    .info-content {
+        font-size: 13px;
+    }
+
+    .botao-padrao {
+        font-size: 13px;
+        padding: 7px 10px;
+    }
+}
   .mensagens-chat {
     flex: 1;
     padding: 15px;
@@ -671,67 +838,137 @@
   <span>Ver Professor</span>
 </div>
 
-<!-- Container Professor (flutuante) -->
-<div id="professor-vinculado" class="professor-box" style="display:none;"></div>
+<div id="professor-vinculado" style="display:none;"></div>  
 
 <script>
- function getNomeAluno() {
-    let nome = localStorage.getItem("alunoNome");
-    if (!nome || nome.trim() === "") {
-      nome = "{{ aluno.nome }}"; // fallback do backend
-      if (nome && nome !== "{{ aluno.nome }}") {
-        localStorage.setItem("alunoNome", nome.trim().toLowerCase());
-      }
+async function carregarProfessorDoAluno() {
+  try {
+    const nomeAluno = getNomeAluno(); 
+    if (!nomeAluno) {
+      console.error("Nome do aluno não definido");
+      return;
     }
-    return nome.trim().toLowerCase();
-  }
 
-  async function carregarProfessorDoAluno() {
-    try {
-      const nomeAluno = getNomeAluno(); 
-      if (!nomeAluno) {
-        console.error("Nome do aluno não definido");
-        return;
-      }
+    // Chama a rota do backend
+    const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
+    if (!res.ok) throw new Error("Erro ao buscar professor");
 
-      const res = await fetch(`/professor-do-aluno/${encodeURIComponent(nomeAluno)}`);
-      if (!res.ok) throw new Error("Erro ao buscar professor");
-
-      const data = await res.json();
-      const container = document.getElementById("professor-vinculado");
-
-      if (data.professor) {
-        container.style.display = "block";
-        container.innerHTML = `
-          <div class="professor-container">
-            <span><strong>${data.professor}</strong> (${data.disciplina || "-"})</span>
-            <button class="fechar-professor" onclick="fecharProfessor()">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        `;
-      } else {
-        container.style.display = "block";
-        container.innerHTML = `
-          <div class="professor-container">
-            <span>Nenhum professor vinculado</span>
-            <button class="fechar-professor" onclick="fecharProfessor()">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        `;
-      }
-    } catch (e) {
-      console.error("Erro ao carregar professor:", e);
-    }
-  }
-
-  function fecharProfessor() {
+    const data = await res.json();
     const container = document.getElementById("professor-vinculado");
-    container.style.display = "none";
-    container.innerHTML = "";
+
+    container.style.display = "block";
+
+    // Ajusta a URL da foto usando a pasta /static/
+    const fotoUrl = data.foto_perfil && data.foto_perfil !== "perfil.png"
+                    ? `/static/${data.foto_perfil}`
+                    : "/static/perfil.png";
+
+    // Se houver professor, mostra foto e nome
+    container.innerHTML = `
+      <div class="professor-container">
+        <img src="${fotoUrl}" alt="Foto do Professor" class="professor-foto">
+        <div class="professor-info">
+          <h3>${data.professor || "Desconhecido"}</h3>
+          <p>${data.disciplina || "-"}</p>
+        </div>
+        <button class="fechar-professor" onclick="fecharProfessor()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    `;
+  } catch (e) {
+    console.error("Erro ao carregar professor:", e);
   }
+}
+
+function fecharProfessor() {
+  const container = document.getElementById("professor-vinculado");
+  container.style.display = "none";
+  container.innerHTML = "";
+}
 </script>
+
+
+<style>
+#professor-vinculado {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  width: 90%;
+  max-width: 400px;
+}
+
+.professor-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  position: relative;
+}
+
+.professor-foto {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #00c9ff;
+}
+
+.professor-info h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #333;
+}
+
+.professor-info p {
+  margin: 5px 0 0 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.fechar-professor {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.fechar-professor:hover {
+  color: #ff4d4d;
+}
+
+/* Responsividade */
+@media (max-width: 500px) {
+  .professor-container {
+    padding: 15px;
+  }
+
+  .professor-foto {
+    width: 100px;
+    height: 100px;
+  }
+
+  .professor-info h3 {
+    font-size: 18px;
+  }
+
+  .professor-info p {
+    font-size: 14px;
+  }
+}
+</style>
+
       
 <!-- Link para ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1012,10 +1249,11 @@ function abrirInfoEmpresa() {
 
   modal.innerHTML = `
     <h2>Sobre a SabAap</h2>
+
     <div class="info-content" id="info-content">
-      <p><strong>Sabi Lider (SU) LDA</strong>, NIF: 5002232529, é uma empresa de direito privado angolano, de capital 100% nacional, com foco em educação e inovação digital.</p>
-      <p>Estamos localizados na <strong>Rua S/nº Centralidade da Marconi</strong> e atuamos no setor da <strong>educação e serviços tecnológicos</strong>.</p>
-      <p>Nosso aplicativo <strong>SabAap</strong> foi criado para ensinar a <strong>Língua Inglesa</strong> com professores qualificados, promovendo aprendizado prático, moderno e acessível.</p>
+      <p><strong>Sabi Lider (SU) LDA</strong>, NIF: 5002232529, é uma empresa de direito privado angolano, de capital 100% nacional, focada em educação e inovação digital.</p>
+      <p>Estamos localizados na <strong>Rua S/nº - Centralidade da Marconi</strong>, atuando nas áreas de <strong>educação e serviços tecnológicos</strong>.</p>
+      <p>Nosso aplicativo <strong>SabAap</strong> foi criado para ensinar <strong>Língua Inglesa</strong> com uma abordagem moderna e prática.</p>
     </div>
 
     <div class="modal-buttons">
@@ -1031,8 +1269,9 @@ function abrirInfoEmpresa() {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
- 
-  overlay.onclick = (e) => { if(e.target === overlay) fecharInfo(); };
+  overlay.onclick = (e) => { 
+      if (e.target === overlay) fecharInfo(); 
+  };
 }
 
 function fecharInfo() {
@@ -1045,31 +1284,32 @@ function mostrarConteudo(secao) {
   if (secao === "empresa") {
     conteudo.innerHTML = `
       <p><strong>Sabi Lider (SU) LDA</strong>, NIF: 5002232529, é uma empresa angolana privada, com capital 100% nacional.</p>
-      <p>Atuamos nas áreas de <strong>educação, tecnologia e inovação</strong>, oferecendo soluções modernas para melhorar a vida das pessoas.</p>
+      <p>Atuamos nos setores de <strong>educação, tecnologia e inovação digital</strong>, oferecendo soluções modernas e eficientes.</p>
     `;
   } 
   else if (secao === "app") {
     conteudo.innerHTML = `
-      <p><strong>SabAap</strong> é um aplicativo focado no ensino da <strong>Língua Inglesa</strong>, com recursos interativos, aulas personalizadas e professores altamente qualificados.</p>
-      <p>Nosso objetivo é tornar o aprendizado mais <strong>simples, rápido e acessível</strong> para todos.</p>
+      <p><strong>SabAap</strong> é um aplicativo focado no ensino da <strong>Língua Inglesa</strong>, com aulas dinâmicas e professores altamente qualificados.</p>
+      <p>Proporciona aprendizagem mais <strong>rápida, prática e acessível</strong>.</p>
     `;
   } 
   else if (secao === "objetivo") {
     conteudo.innerHTML = `
-      <p>Nosso principal objetivo é <strong>democratizar o acesso ao ensino da Língua Inglesa</strong>, preparando os alunos para um futuro globalizado.</p>
-      <p>Com a <strong>SabAap</strong>, cada aluno pode evoluir no seu ritmo, com acompanhamento personalizado.</p>
+      <p>Nosso objetivo é <strong>democratizar o acesso ao ensino da Língua Inglesa</strong>, preparando alunos para oportunidades globais.</p>
+      <p>Cada aluno aprende no seu próprio ritmo com acompanhamento personalizado.</p>
     `;
   } 
   else if (secao === "mais") {
     conteudo.innerHTML = `
-      <p>✔ Professores qualificados e experientes.</p>
-      <p>✔ Aulas online e presenciais em breve.</p>
-      <p>✔ Materiais de apoio e exercícios práticos.</p>
-      <p>✔ Plataforma interativa e de fácil utilização.</p>
-      <p>Com a <strong>SabAap</strong>, você não apenas aprende inglês, mas se conecta a novas <strong>oportunidades</strong> no mercado de trabalho e no mundo.</p>
+      <p>✔ Professores experientes e qualificados.</p>
+      <p>✔ Aulas online (e presenciais futuramente).</p>
+      <p>✔ Plataforma intuitiva e moderna.</p>
+      <p>✔ Materiais práticos e exercícios reais.</p>
+      <p>Com a <strong>SabAap</strong>, você aprende inglês e abre portas para novas oportunidades.</p>
     `;
   }
 }
+
 
 function abrirPagamentos() {
   

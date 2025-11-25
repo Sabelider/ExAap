@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Erro</title>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 420px;
+            width: 90%;
+            border-top: 6px solid rgba(255, 0, 0, 0.8);
+        }
+
+        h2 {
+            font-size: 22px;
+            color: #d9534f;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .icon {
+            font-size: 45px;
+            color: #d9534f;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 18px 20px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            .icon {
+                font-size: 38px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon">❌</div>
+        <h2>{{ mensagem }}</h2>
+    </div>
+
+</body>
+</html>

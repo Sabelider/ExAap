@@ -385,25 +385,31 @@ async def get_perfil_prof(request: Request, email: str):
 async def post_perfil_prof(
     request: Request,
     email: str = Form(...),
-    descricao: str = Form(...)
+    descricao: str = Form(...),
+    foto_perfil: str = Form("perfil.png")  # 🔹 Novo campo opcional com valor padrão
 ):
     """
-    Atualiza apenas o campo "descricao" do professor logado.
+    Atualiza o campo 'descricao' e o campo 'foto_perfil' do professor.
     """
     professores_ref = db.collection("professores_online")
     query = professores_ref.where("email", "==", email).limit(1).stream()
     prof_doc = next(query, None)
 
     if not prof_doc:
-        return templates.TemplateResponse("erro.html", {"request": request, "mensagem": "Professor não encontrado para atualização."})
+        return templates.TemplateResponse(
+            "erro.html",
+            {"request": request, "mensagem": "Professor não encontrado para atualização."}
+        )
 
-    # Atualizar o campo descrição
+    # Atualizar os campos no Firebase
     db.collection("professores_online").document(prof_doc.id).update({
-        "descricao": descricao
+        "descricao": descricao,
+        "foto_perfil": foto_perfil
     })
 
-    # Redireciona de volta ao perfil com confirmação
+    # Redireciona para o perfil com dados atualizados
     return RedirectResponse(url=f"/perfil_prof?email={email}", status_code=303)
+
     
 @app.get('/alunos-disponiveis/{prof_email}')
 async def alunos_disponiveis(prof_email: str):
@@ -1796,7 +1802,7 @@ async def verificar_aluno(
 async def get_cadastro(request: Request):
     return templates.TemplateResponse("professores_online.html", {"request": request, "success": False})
 
-@app.post("/professores_online", response_class=HTMLResponse) 
+@app.post("/professores_online", response_class=HTMLResponse)
 async def post_cadastro(
     request: Request,
     nome_completo: str = Form(...),
@@ -1810,45 +1816,78 @@ async def post_cadastro(
     ponto_referencia: str = Form(...),
     localizacao: str = Form(...),
     telefone: str = Form(...),
-    telefone_alternativo: str = Form(""),
+    telefone_alternativo: str = Form(None),
     email: str = Form(...),
     nivel_ensino: str = Form(...),
-    ano_faculdade: str = Form(""),
+    ano_faculdade: str = Form(None),
     area_formacao: str = Form(...),
     senha: str = Form(...)
 ):
-    dados = {
-        "nome_completo": nome_completo,
-        "nome_mae": nome_mae,
-        "nome_pai": nome_pai,
-        "bilhete": bilhete,
-        "provincia": provincia,
-        "municipio": municipio,
-        "bairro": bairro,
-        "residencia": residencia,
-        "ponto_referencia": ponto_referencia,
-        "localizacao": localizacao,
-        "telefone": telefone,
-        "telefone_alternativo": telefone_alternativo,
-        "email": email,
-        "nivel_ensino": nivel_ensino,
-        "ano_faculdade": ano_faculdade,
-        "area_formacao": area_formacao,
-        "senha": senha,
-        "online": True
-    }
-
-    # ✅ Coleção original (mantém como está)
-    db.collection("professores_online").add(dados)
-
-    # ✅ Nova coleção: professores_online2 com email como ID
     try:
-        db.collection("professores_online2").document(email).set(dados)
-        print(f"✅ Salvo em professores_online2 com ID {email}")
-    except Exception as e:
-        print(f"❌ Erro ao salvar em professores_online2: {e}")
+        # ============================
+        # VALIDAR EMAIL
+        # ============================
+        if not email or email.strip() == "":
+            raise Exception("Email inválido")
 
-    return RedirectResponse(url="/login_prof", status_code=303)
+        # ============================
+        # DADOS DO PROFESSOR
+        # ============================
+        dados = {
+            "nome_completo": nome_completo,
+            "nome_mae": nome_mae,
+            "nome_pai": nome_pai,
+            "bilhete": bilhete,
+            "provincia": provincia,
+            "municipio": municipio,
+            "bairro": bairro,
+            "residencia": residencia,
+            "ponto_referencia": ponto_referencia,
+            "localizacao": localizacao,
+            "telefone": telefone,
+            "telefone_alternativo": telefone_alternativo,
+            "email": email,
+            "nivel_ensino": nivel_ensino,
+            "ano_faculdade": ano_faculdade,
+            "area_formacao": area_formacao,
+            "senha": senha,
+            "online": True,
+            "foto_perfil": "perfil.png"
+        }
+
+        # ============================
+        # SALVAR NAS DUAS COLEÇÕES
+        # ============================
+        db.collection("professores_online").add(dados)
+        db.collection("professores_online2").document(email).set(dados)
+
+        # ============================
+        # FORÇAR FOTO EM PROFESSORES ANTIGOS
+        # ============================
+        try:
+            for doc in db.collection("professores_online").stream():
+                if "foto_perfil" not in doc.to_dict():
+                    db.collection("professores_online").document(doc.id).update({
+                        "foto_perfil": "perfil.png"
+                    })
+        except:
+            pass
+
+        # ============================
+        # RETORNO COM REDIRECIONAMENTO
+        # ============================
+        return templates.TemplateResponse("sucesso.html", {
+            "request": request,
+            "mensagem": "Professor cadastrado com sucesso!",
+            "redirect_url": "/login_prof"   # envia a rota para o HTML
+        })
+
+    except Exception as e:
+        print("❌ ERRO:", e)
+        return templates.TemplateResponse("erro.html", {
+            "request": request,
+            "mensagem": f"Erro ao cadastrar professor: {str(e)}"
+        })
 
 
 @app.get("/login_prof", response_class=HTMLResponse)
@@ -1999,8 +2038,10 @@ async def verificar_aluno(request: Request):
 @app.get("/professor-do-aluno/{nome_aluno}")
 async def professor_do_aluno(nome_aluno: str):
     try:
+        # Normaliza o nome do aluno
         aluno_normalizado = nome_aluno.strip().lower()
 
+        # Busca vínculo aluno-professor
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", aluno_normalizado) \
                   .limit(1).stream()
@@ -2012,6 +2053,7 @@ async def professor_do_aluno(nome_aluno: str):
                 content={
                     "professor": None,
                     "disciplina": None,
+                    "foto_perfil": "perfil.png",
                     "mensagem": f"Aluno '{aluno_normalizado}' não vinculado a nenhum professor"
                 }
             )
@@ -2020,30 +2062,44 @@ async def professor_do_aluno(nome_aluno: str):
         professor_email = vinculo_data.get("professor")
 
         if not professor_email:
-            return {"professor": "Desconhecido", "disciplina": "Desconhecida"}
+            return {
+                "professor": "Desconhecido",
+                "disciplina": "Desconhecida",
+                "foto_perfil": "perfil.png"
+            }
 
+        # Busca dados do professor na coleção professores_online
         prof_query = db.collection("professores_online") \
                        .where("email", "==", professor_email.strip().lower()) \
                        .limit(1).stream()
         prof_doc = next(prof_query, None)
 
         if not prof_doc:
-            return {"professor": "Desconhecido", "disciplina": "Desconhecida"}
+            return {
+                "professor": "Desconhecido",
+                "disciplina": "Desconhecida",
+                "foto_perfil": "perfil.png"
+            }
 
         prof_data = prof_doc.to_dict()
 
+        # Retorna dados do professor incluindo foto de perfil
         return {
             "professor": prof_data.get("nome_completo", "Desconhecido"),
             "disciplina": prof_data.get("area_formacao", "Desconhecida"),
             "email": professor_email.strip().lower(),
-            "mensagens": vinculo_data.get("mensagens", [])  # 🔹 já retorna as mensagens
+            "foto_perfil": prof_data.get("foto_perfil") or "perfil.png",
+            "mensagens": vinculo_data.get("mensagens", [])  # mensagens do vínculo
         }
 
     except Exception as e:
         print("Erro ao buscar professor do aluno:", e)
         return JSONResponse(
             status_code=500,
-            content={"detail": "Erro interno ao buscar professor do aluno", "erro": str(e)}
+            content={
+                "detail": "Erro interno ao buscar professor do aluno",
+                "erro": str(e)
+            }
         )
 
 
@@ -2547,11 +2603,13 @@ async def listar_professores_online():
         dados = prof.to_dict()
         lista.append({
             "email": dados.get("email", ""),
-            "nome": dados.get("nome_completo", ""),  # Novo campo incluído
-            "online": dados.get("online", False)
+            "nome": dados.get("nome_completo", ""),
+            "online": dados.get("online", False),
+            "foto_perfil": dados.get("foto_perfil", "perfil.png")  # 🔹 Incluído
         })
 
     return lista
+
 
 @app.get("/listar-chamadas")
 async def listar_chamadas():
@@ -4206,35 +4264,56 @@ async def info_pagamentos(request: Request):
 async def desvincular_aluno(data: dict):
     try:
         professor = data.get("professor", "").strip().lower()
-        aluno = data.get("aluno", "").strip().lower()
+        aluno_nome_input = data.get("aluno", "").strip().lower()
 
-        if not professor or not aluno:
-            return JSONResponse(status_code=400, content={"detail": "Professor ou aluno inválido"})
+        if not professor or not aluno_nome_input:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Professor ou aluno inválido"}
+            )
 
         # 1️⃣ Remover vínculo na coleção alunos_professor
         query = db.collection("alunos_professor") \
                   .where("professor", "==", professor) \
-                  .where("aluno", "==", aluno) \
+                  .where("aluno", "==", aluno_nome_input) \
                   .stream()
 
+        removed = False
         for doc in query:
             db.collection("alunos_professor").document(doc.id).delete()
+            removed = True
 
-        # 2️⃣ Atualizar campo "vinculado" = false na coleção alunos
-        aluno_query = db.collection("alunos") \
-                        .where("nome", "==", aluno) \
-                        .limit(1).stream()
+        # 2️⃣ Buscar aluno na coleção alunos pelo nome normalizado
+        alunos = db.collection("alunos").stream()
+        aluno_doc = None
+        for doc in alunos:
+            dados = doc.to_dict()
+            nome_banco = dados.get("nome", "").strip().lower()
+            if nome_banco == aluno_nome_input:
+                aluno_doc = doc
+                break
 
-        aluno_doc = next(aluno_query, None)
+        # 3️⃣ Atualizar campo "vinculado" = False
         if aluno_doc:
-            db.collection("alunos").document(aluno_doc.id).update({"vinculado": False})
+            db.collection("alunos").document(aluno_doc.id).update({
+                "vinculado": False
+            })
+        else:
+            print(f"⚠ Aluno '{aluno_nome_input}' não encontrado para atualizar vínculo.")
 
-        return {"status": "success", "message": f"Aluno {aluno} desvinculado do professor {professor}"}
+        return {
+            "status": "success",
+            "vinculo_removido": removed,
+            "message": f"Aluno '{aluno_nome_input}' desvinculado do professor '{professor}' e campo 'vinculado' atualizado para False"
+        }
 
     except Exception as e:
         print("Erro ao desvincular aluno:", e)
-        return JSONResponse(status_code=500, content={"detail": "Erro interno", "erro": str(e)})
-
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro interno", "erro": str(e)}
+        )
+        
 # ============================
 # CONFIG 100ms - DINÂMICA DE TROCA DE CONTA
 # ============================
@@ -4603,7 +4682,38 @@ async def registrar_aula(data: dict = Body(...)):
         print("Erro ao registrar aula:", e)
         raise HTTPException(status_code=500, detail="Erro ao registrar aula")
 
+@app.get("/ajustar-professores-foto")
+async def ajustar_professores_foto():
+    professores = db.collection("professores_online").stream()
+    count = 0
+
+    for prof in professores:
+        dados = prof.to_dict()
+        if "foto_perfil" not in dados:
+            db.collection("professores_online").document(prof.id).update({
+                "foto_perfil": "perfil.png"
+            })
+            count += 1
+
+    return {"status": "ok", "atualizados": count}
+
 
 @app.get("/paginavendas", response_class=HTMLResponse)
 async def paginavendas(request: Request):
     return templates.TemplateResponse("paginavendas.html", {"request": request})
+
+
+@app.get("/sucesso", response_class=HTMLResponse)
+async def pagina_sucesso(request: Request, mensagem: str = "Operação concluída com sucesso!"):
+    return templates.TemplateResponse("sucesso.html", {
+        "request": request,
+        "mensagem": mensagem
+    })
+    
+@app.get("/erro", response_class=HTMLResponse)
+async def pagina_erro(request: Request, mensagem: str = "Ocorreu um erro inesperado."):
+    return templates.TemplateResponse("erro.html", {
+        "request": request,
+        "mensagem": mensagem
+    })
+

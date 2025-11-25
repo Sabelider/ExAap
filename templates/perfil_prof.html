@@ -356,6 +356,7 @@
     color: #2c3e50;
   }
 
+<style>
   /* Botões (reaproveitando .botao-padrao já existente) */
   .botao-padrao {
     background: linear-gradient(135deg, #00c9ff, #92fe9d);
@@ -391,6 +392,16 @@
     transform: scale(1.2);
   }
 
+  /* Foto circular */
+  .foto-perfil {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%; 
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
   /* Animações */
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -402,16 +413,22 @@
     to { transform: translateY(0); opacity: 1; }
   }
 </style>
-  
-</head>
- <!-- Botão de logout no canto superior direito -->
-  <form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
-    <input type="hidden" name="email" value="{{ professor.email }}">
-    <button type="submit" class="logout-button">Sair</button>
-  </form>  
 
-  <div class="header-bai">
-    <img src="/static/perfil.png" alt="Foto Perfil">
+</head>
+
+<!-- Botão de logout no canto superior direito -->
+<form method="POST" action="/logout_prof" style="position: fixed; top: 10px; right: 15px; z-index: 1000;">
+  <input type="hidden" name="email" value="{{ professor.email }}">
+  <button type="submit" class="logout-button">Sair</button>
+</form>
+
+<!-- HEADER ATUALIZADO COM FOTO DINÂMICA -->
+<div class="header-bai">
+    <img id="foto-perfil" 
+         src="/static/perfil.png" 
+         alt="Foto Perfil" 
+         class="foto-perfil">
+
     <div class="info">
       <h2>Olá, {{ professor.nome_completo }} 👋</h2>
       <p>Nº B.I: {{ professor.bilhete }}</p>
@@ -421,7 +438,18 @@
         <span class="saldo-toggle" onclick="toggleSaldo()">👁️</span>
       </p>
     </div>
-  </div>
+</div>
+
+<script>
+  // 🖼️ Substituir a foto automaticamente com base no Firebase
+  const foto = "{{ professor.foto_perfil }}".trim();
+
+  if (foto && foto !== "perfil.png") {
+      document.getElementById("foto-perfil").src = `/static/${foto}`;
+  } else {
+      document.getElementById("foto-perfil").src = "/static/perfil.png";
+  }
+</script>
 
 <!-- Botões principais -->
 <div class="botao-menu">
@@ -1075,31 +1103,44 @@ async function verAulasDadas(nomeAluno) {
   }
 }
 
-// Função para desvincular aluno
+// 🔹 Função para Desvincular Aluno
 async function desvincularAluno(nomeAluno, professorEmail) {
-  if (!confirm(`Tens certeza que desejas desvincular o aluno ${nomeAluno}?`)) return;
+
+  // 🔄 Padroniza exatamente como o backend usa
+  const alunoNormalizado = nomeAluno.trim().toLowerCase();
+  const professorNormalizado = professorEmail.trim().toLowerCase();
+
+  if (!confirm(`Tens certeza que desejas desvincular o aluno "${nomeAluno}"?`)) return;
 
   try {
     const res = await fetch("/desvincular-aluno", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        aluno: nomeAluno,
-        professor: professorEmail
+        aluno: alunoNormalizado,
+        professor: professorNormalizado
       })
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      alert("Aluno desvinculado com sucesso.");
-      listarMeusAlunos(); // 🔄 Atualiza a lista
+      // Mensagem enviada pela API
+      alert(data.message || "Aluno desvinculado com sucesso.");
+
+      // 🔄 Atualiza a lista de alunos imediatamente
+      if (typeof listarMeusAlunos === "function") {
+        listarMeusAlunos();
+      }
+
     } else {
-      alert("Erro: " + data.detail);
+      // Exibe erro retornado pela API
+      alert("Erro ao desvincular: " + (data.detail || "Erro desconhecido."));
     }
+
   } catch (err) {
     console.error("Erro ao desvincular:", err);
-    alert("Erro ao tentar desvincular o aluno.");
+    alert("Erro inesperado ao tentar desvincular o aluno.");
   }
 }
   

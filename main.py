@@ -182,7 +182,6 @@ def init_contas_100ms():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get()
     if not doc.exists:
-        # 🔹 Converter índices para string
         usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
         data = {
             "conta_atual": 0,
@@ -208,7 +207,6 @@ async def get_current_account():
         ref.set(data)
         print("🔥 Documento 'contador' criado automaticamente no Firebase.")
 
-    # 🔹 garante que todas as chaves de 'usos' sejam strings
     usos = {str(k): v for k, v in data["usos"].items()}
     return data["conta_atual"], usos
 
@@ -225,10 +223,11 @@ async def rotate_account():
         print("🔥 Documento 'contador' criado automaticamente no Firebase.")
 
     conta = data["conta_atual"]
-    usos = {str(k): v for k, v in data["usos"].items()}  # 🔹 chaves como string
+    usos = {str(k): v for k, v in data["usos"].items()}
 
     conta_str = str(conta)
-    if usos.get(conta_str, 0) >= 10:
+    # 🔥 ALTERADO DE 10 PARA 50
+    if usos.get(conta_str, 0) >= 50:
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
         usos[conta_str] = 0
@@ -249,10 +248,11 @@ async def incrementar_uso():
         print("🔥 Documento 'contador' criado automaticamente no Firebase.")
 
     conta = data["conta_atual"]
-    usos = {str(k): v for k, v in data["usos"].items()}  # 🔹 chaves como string
+    usos = {str(k): v for k, v in data["usos"].items()}
 
     conta_str = str(conta)
-    usos[conta_str] = usos.get(conta_str, 0) + 1  # 🔹 seguro, evita KeyError
+    usos[conta_str] = usos.get(conta_str, 0) + 1
+
     ref.update({"usos": usos})
 
     await rotate_account()

@@ -4859,5 +4859,5 @@ async def buscar_professor_nome(email: str):
         }
 
     except Exception as e:
-        return {"erro": str(e)}})
+        return {"erro": str(e)}
 

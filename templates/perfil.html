@@ -1589,54 +1589,83 @@ async function abrirProfessores() {
     // CSS RESPONSIVO + FONTE MENOR
     let html = `
       <style>
-        .prof-list-container {
-          max-height: 60vh;
-          overflow-y: auto;
-          padding-right: 5px;
-        }
+  .prof-list-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 5px;
+  }
 
-        .prof-list li {
-          padding: 8px;
-          font-size: 13px; /* FONTE MENOR */
-          border-bottom: 1px solid #ddd;
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-        }
+  .prof-list li {
+    padding: 8px;
+    font-size: 13px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-        .prof-foto {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 2px solid #ececec;
-          flex-shrink: 0;
-        }
+  .prof-foto {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ececec;
+    flex-shrink: 0;
+  }
 
-        .dados-btn {
-          margin-top: 6px;
-          padding: 3px 7px;
-          font-size: 12px;
-          background: #007bff;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-        }
+  /* 🔹 BOTÃO PADRÃO SABAPP */
+  .dados-btn {
+    margin-top: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: 0 3px 8px rgba(0, 201, 255, 0.25);
+    transition: all 0.25s ease;
+  }
 
-        .horarios {
-          max-height: 100px;
-          overflow-y: auto;
-          margin-top: 4px;
-          padding-right: 4px;
-        }
+  .dados-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 201, 255, 0.35);
+    opacity: 0.95;
+  }
 
-        @media (max-width: 480px) {
-          .prof-foto { width: 34px; height: 34px; }
-          .prof-list li { font-size: 12px; padding: 6px; }
-          h3 { font-size: 16px !important; }
-        }
-      </style>
+  .dados-btn:active {
+    transform: scale(0.97);
+  }
+
+  .horarios {
+    max-height: 100px;
+    overflow-y: auto;
+    margin-top: 4px;
+    padding-right: 4px;
+  }
+
+  @media (max-width: 480px) {
+    .prof-foto {
+      width: 34px;
+      height: 34px;
+    }
+
+    .prof-list li {
+      font-size: 12px;
+      padding: 6px;
+    }
+
+    h3 {
+      font-size: 16px !important;
+    }
+
+    .dados-btn {
+      font-size: 11px;
+      padding: 4px 8px;
+    }
+  }
+</style>
 
       <h3 style="margin-bottom:10px;">Professores com horários disponíveis</h3>
 

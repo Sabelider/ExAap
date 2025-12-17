@@ -827,9 +827,9 @@
     <span>Ver Horário</span>
   </div>
 
-  <div class="acao" id="btn-aulas-ativas">
-    <i id="icone-aulas" class="fa-solid fa-chalkboard-teacher"></i>
-    <span id="texto-aulas">Aulas Ativas</span>
+  <div class="acao" id="btn-professores">
+    <i id="icone-professores" class="fa-solid fa-user-tie"></i>
+    <span id="texto-professores">Professores</span>
   </div>
 
 <!-- Botão Ver Professor -->
@@ -1569,50 +1569,220 @@ onSnapshot(chamadaRef, (docSnap) => {
       mostrarModalAulas(`<i class="fa-solid fa-circle-xmark"></i> Erro ao buscar dados.`);
     }
   };
+  
+let professoresCache = null;
 
-async function verificarAulaAtiva() {
+async function abrirProfessores() {
   try {
-    const res = await fetch(`/buscar-id-professor?aluno=${aluno}`);
-    const data = await res.json();
-
-    const icone = document.getElementById("icone-aulas");
-    const texto = document.getElementById("texto-aulas");
-    const btn = document.getElementById("btn-aulas-ativas");
-
-    if (data.peer_id) {
-      icone.classList.add("fa-beat-fade", "text-success");
-      texto.textContent = "Aula Ativa";
-      btn.classList.add("active");
-
-      const hora = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-
-      const html = `
-        <div style="margin-bottom:10px;">
-          <b><i class="fa-solid fa-video"></i> Aula a decorrer</b> — ${hora}
-        </div>
-        <div>
-          <i class="fa-solid fa-chalkboard-user"></i> Professor: ${data.professor || "Desconhecido"}
-        </div>
-      `;
-
-      mostrarModalAulas(html);
-    } else {
-      icone.classList.remove("fa-beat-fade", "text-success");
-      texto.textContent = "Aulas Ativas";
-      btn.classList.remove("active");
+    if (!professoresCache) {
+      const res = await fetch("/professores-disponiveis");
+      professoresCache = await res.json();
     }
+
+    const lista = professoresCache;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+      mostrarModalAulas("<b>Nenhum professor com horário disponível.</b>");
+      return;
+    }
+
+    // CSS RESPONSIVO + FONTE MENOR
+    let html = `
+      <style>
+        .prof-list-container {
+          max-height: 60vh;
+          overflow-y: auto;
+          padding-right: 5px;
+        }
+
+        .prof-list li {
+          padding: 8px;
+          font-size: 13px; /* FONTE MENOR */
+          border-bottom: 1px solid #ddd;
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .prof-foto {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid #ececec;
+          flex-shrink: 0;
+        }
+
+        .dados-btn {
+          margin-top: 6px;
+          padding: 3px 7px;
+          font-size: 12px;
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+
+        .horarios {
+          max-height: 100px;
+          overflow-y: auto;
+          margin-top: 4px;
+          padding-right: 4px;
+        }
+
+        @media (max-width: 480px) {
+          .prof-foto { width: 34px; height: 34px; }
+          .prof-list li { font-size: 12px; padding: 6px; }
+          h3 { font-size: 16px !important; }
+        }
+      </style>
+
+      <h3 style="margin-bottom:10px;">Professores com horários disponíveis</h3>
+
+      <div class="prof-list-container">
+        <ul class="prof-list" style="padding-left:0; list-style:none;">`;
+
+    for (const prof of lista) {
+      const email = prof.professor;
+
+      // busca dados básicos (nome, foto) para listar
+      const resNome = await fetch(`/buscar-professor-nome?email=${encodeURIComponent(email)}`);
+      const dadosNome = await resNome.json();
+
+      // botão tem data-email (sem onclick inline)
+      html += `
+        <li>
+            <div style="text-align:center;">
+                <img src="/static/${dadosNome.foto_perfil}" class="prof-foto" alt="foto">
+                <button class="dados-btn" data-email="${email}">Dados</button>
+            </div>
+
+            <div class="prof-info">
+              <div style="color:#007bff; font-weight:600;">
+                <i class="fa-solid fa-user"></i> ${dadosNome.nome}
+              </div>
+
+              <ul class="horarios">`;
+
+      for (const dia in prof.dias_disponiveis) {
+        html += `<li><b>${dia}:</b> ${prof.dias_disponiveis[dia].join(", ")}</li>`;
+      }
+
+      html += `
+              </ul>
+            </div>
+        </li>`;
+    }
+
+    html += `
+        </ul>
+      </div>`;
+
+    // mostra o modal com a lista
+    mostrarModalAulas(html);
+
+    // --- ligar listeners aos botões Dados após o modal ser renderizado ---
+    // usamos um pequeno timeout para dar tempo do modal inserir o HTML no DOM
+    setTimeout(() => {
+      try {
+        const botoes = document.querySelectorAll(".dados-btn");
+        botoes.forEach(btn => {
+          // evitar duplicar listeners
+          btn.removeEventListener("click", dadosBtnHandler);
+          btn.addEventListener("click", dadosBtnHandler);
+        });
+      } catch (e) {
+        console.error("Erro ao ligar listeners dos botões Dados:", e);
+      }
+    }, 60); // 60ms é suficiente na maioria dos casos
+
   } catch (err) {
-    console.error("Erro ao verificar aula ativa:", err);
+    console.error("Erro ao carregar professores:", err);
   }
 }
 
+// handler separado para facilitar add/remove
+function dadosBtnHandler(evt) {
+  const email = evt.currentTarget && evt.currentTarget.dataset && evt.currentTarget.dataset.email;
+  if (email) verDadosProfessor(email);
+  else console.warn("Email do professor não encontrado no botão Dados.");
+}
 
-document.getElementById("btn-aulas-ativas").addEventListener("click", verificarAulaAtiva);
+async function verDadosProfessor(email) {
+  try {
+    // normaliza email na query
+    const dados = await fetch(`/buscar-professor-nome?email=${encodeURIComponent(email)}`).then(r => r.json());
+    const foto = dados.foto_perfil || "perfil.png";
 
-  
+    // usamos JSON.stringify para inserir o telefone de forma segura (evita quebra por aspas)
+    const telefoneForCopy = JSON.stringify(dados.telefone || "");
+
+    let html = `
+      <style>
+        .foto-detalhe {
+          width: 85px;
+          height: 85px;
+          border-radius: 50%;
+          margin-bottom: 8px;
+          object-fit: cover;
+          border: 3px solid #ddd;
+        }
+
+        .info-box {
+          margin-top: 10px;
+          font-size: 14px; /* FONTE MENOR */
+          line-height: 1.5;
+          text-align: left;
+        }
+
+        .copy-btn {
+          padding: 4px 8px;
+          background:#007bff;
+          color:#fff;
+          border:none;
+          border-radius:5px;
+          cursor:pointer;
+          font-size: 12px;
+          display: inline-block;
+          margin-left: 8px;
+        }
+
+        .campo-label {
+          display: inline-block;
+          min-width: 110px;
+          font-weight: 600;
+        }
+      </style>
+
+      <div style="text-align:center;">
+        <img src="/static/${foto}" class="foto-detalhe" alt="foto">
+        <h3>${dados.nome}</h3>
+      </div>
+
+      <div class="info-box">
+        <div><span class="campo-label">Telefone:</span> ${dados.telefone || "Não informado"} <button class="copy-btn" onclick="navigator.clipboard.writeText(${telefoneForCopy})">Copiar</button></div>
+        <div><span class="campo-label">Bairro:</span> ${dados.bairro || "Não informado"}</div>
+        <div><span class="campo-label">Residência:</span> ${dados.residencia || "Não informada"}</div>
+        <div><span class="campo-label">Nível de ensino:</span> ${dados.nivel_ensino || "Não informado"}</div>
+        <div><span class="campo-label">Morada completa:</span> ${dados.morada_completa || "Não informada"}</div>
+      </div>
+    `;
+
+    mostrarModalAulas(html);
+
+  } catch (err) {
+    console.error("Erro ao carregar dados:", err);
+    mostrarModalAulas("<b>Erro ao carregar dados do professor.</b>");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btn-professores");
+  if (btn) btn.addEventListener("click", abrirProfessores);
+});
+
+ 
   function toggleDesafio() {
   const desafio = document.getElementById("container-desafio");
   desafio.style.display =
@@ -1624,89 +1794,203 @@ document.getElementById("btn-aulas-ativas").addEventListener("click", verificarA
 function fecharDesafio() {
   document.getElementById("container-desafio").style.display = "none";
 }
+
 window.verHorario = async function () {
+
   
   const oldModal = document.querySelector(".custom-modal-overlay");
   if (oldModal) oldModal.remove();
 
-
+  // overlay
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay";
 
- 
+  // adiciona estilo local 
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .custom-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+
+    .custom-modal {
+      background: #fff;
+      border-radius: 10px;
+      width: 520px;
+      max-width: 100%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      padding: 14px 16px 12px 16px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+      overflow: hidden;
+    }
+
+    .custom-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .custom-modal h3 {
+      margin: 4px 0 8px 0;
+      font-size: 16px;
+      text-align: left;
+      color: #0b5ed7;
+    }
+
+    .horario-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow-y: auto;
+      padding-right: 8px;
+      
+      max-height: calc(85vh - 150px);
+    }
+
+    .dia-item {
+      margin-top: 8px;
+      font-size: 13px; 
+      color: #333;
+      line-height: 1.35;
+    }
+
+    .hora-item {
+      margin-left: 16px;
+      margin-top: 4px;
+      font-size: 12px; 
+      color: #444;
+      line-height: 1.3;
+    }
+
+    .loading-item, .error-item, .empty-item {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .modal-action-row {
+      display:flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      flex-shrink: 0;
+    }
+
+    .custom-action-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    
+    @media (max-width: 420px) {
+      .custom-modal {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+      }
+      .custom-modal h3 { font-size: 15px; }
+      .dia-item { font-size: 12px; }
+      .hora-item { font-size: 11px; margin-left: 12px; }
+      .custom-action-btn { font-size: 12px; padding: 7px 10px; }
+      .custom-close-btn { font-size: 16px; top: 8px; right: 8px; }
+      .horario-list { max-height: calc(85vh - 130px); }
+    }
+  `;
+  overlay.appendChild(style);
+
+  
   const modal = document.createElement("div");
   modal.className = "custom-modal";
 
- 
+  
   const closeBtn = document.createElement("button");
   closeBtn.className = "custom-close-btn";
-  closeBtn.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+  closeBtn.innerHTML = `<i class="fa-solid fa-xmark" aria-hidden="true"></i>`;
   closeBtn.onclick = () => overlay.remove();
 
-  
+ 
   const titulo = document.createElement("h3");
   titulo.innerHTML = `<i class="fa-solid fa-calendar-days"></i> Horário do Aluno`;
 
   
   const listaHorario = document.createElement("ul");
-  listaHorario.style.listStyle = "none";
-  listaHorario.style.padding = "0";
-  listaHorario.style.marginTop = "15px";
+  listaHorario.className = "horario-list";
   listaHorario.innerHTML = `
-    <li style="color:#666;">
-      <i class="fa-solid fa-spinner fa-spin"></i> Carregando...
-    </li>`;
+    <li class="loading-item"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</li>
+  `;
 
   
+  const actionRow = document.createElement("div");
+  actionRow.className = "modal-action-row";
   const actionBtn = document.createElement("button");
   actionBtn.className = "custom-action-btn";
   actionBtn.textContent = "Fechar";
   actionBtn.onclick = () => overlay.remove();
+  actionRow.appendChild(actionBtn);
 
   
   modal.appendChild(closeBtn);
   modal.appendChild(titulo);
   modal.appendChild(listaHorario);
-  modal.appendChild(actionBtn);
+  modal.appendChild(actionRow);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
   try {
+    
     const res = await fetch(`/ver-horario-aluno/${encodeURIComponent(nomeAluno)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+
     listaHorario.innerHTML = "";
 
     if (data.erro || !data.horario || Object.keys(data.horario).length === 0) {
       listaHorario.innerHTML = `
-        <li style="color:#b00;">
-          <i class="fa-solid fa-triangle-exclamation"></i> Nenhum horário encontrado.
-        </li>`;
+        <li class="empty-item"><i class="fa-solid fa-triangle-exclamation"></i> Nenhum horário encontrado.</li>
+      `;
     } else {
+      
       for (const [dia, horarios] of Object.entries(data.horario)) {
         const diaItem = document.createElement("li");
-        diaItem.innerHTML = `
-          <strong><i class="fa-solid fa-calendar-day"></i> ${traduzirDia(dia)}:</strong>`;
-        diaItem.style.marginTop = "10px";
+        diaItem.className = "dia-item";
+        diaItem.innerHTML = `<strong><i class="fa-solid fa-calendar-day"></i> ${traduzirDia(dia)}:</strong>`;
         listaHorario.appendChild(diaItem);
 
         (horarios || []).forEach((h) => {
           const horaItem = document.createElement("li");
+          horaItem.className = "hora-item";
           horaItem.innerHTML = `<i class="fa-regular fa-clock"></i> ${h}`;
-          horaItem.style.marginLeft = "20px";
-          horaItem.style.color = "#333";
           listaHorario.appendChild(horaItem);
         });
       }
     }
+
   } catch (e) {
     console.error("Erro verHorario:", e);
     listaHorario.innerHTML = `
-      <li style="color:#b00;">
-        <i class="fa-solid fa-circle-xmark"></i> Erro ao buscar horário.
-      </li>`;
+      <li class="error-item"><i class="fa-solid fa-circle-xmark"></i> Erro ao buscar horário.</li>
+    `;
   }
 };
+
 
 function traduzirDia(diaAbreviado) {
   const dias = {
@@ -1721,11 +2005,12 @@ function traduzirDia(diaAbreviado) {
   return dias[diaAbreviado] || diaAbreviado;
 }
 
-  window.toggle = function (id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
-  };
+
+window.toggle = function (id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+};
 
   window.fazerLogout = function () {
     const nomeAlunoForm = document.getElementById("aluno-id")?.value || nomeAluno;

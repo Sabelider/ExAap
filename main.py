@@ -258,6 +258,7 @@ async def incrementar_uso():
     await rotate_account()
 
 
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -2957,53 +2958,103 @@ async def enviar_horario(request: Request):
         dados = await request.json()
         aluno_nome = dados.get("aluno_nome", "").strip().lower()
         professor_email = dados.get("professor_email", "").strip().lower()
-        horario = dados.get("horario")  # dict esperado
+        horario = dados.get("horario")  # dict recebido
 
         if not aluno_nome or not professor_email or not horario:
             return JSONResponse(status_code=400, content={"detail": "Dados incompletos."})
 
-        doc_id = f"{aluno_nome}_{professor_email}"
+        print(f"🟢 Horário recebido → {horario}")
 
-        print(f"🟢 Vai gravar EM alunos → nome_normalizado: {aluno_nome} | Dados: {horario}")
-
-        # ✅ Atualiza o campo 'horario' na coleção 'alunos' usando 'nome_normalizado'
+        # ============================================================
+        # 1️⃣ ATUALIZAR HORÁRIO NA COLEÇÃO ALUNOS
+        # ============================================================
         alunos_query = db.collection("alunos") \
             .where("nome_normalizado", "==", aluno_nome) \
-            .limit(1) \
-            .stream()
+            .limit(1).stream()
 
         aluno_found = False
         for aluno_doc in alunos_query:
             aluno_doc.reference.update({"horario": horario})
             aluno_found = True
-            print(f"✅ Horário atualizado na coleção alunos → ID: {aluno_doc.id}")
+            print(f"✅ Horário atualizado em ALUNOS → {aluno_doc.id}")
             break
 
         if not aluno_found:
-            print("⚠️ Aluno não encontrado na coleção alunos para atualizar horário.")
+            print("⚠️ Aluno não encontrado para atualizar horário.")
 
-        # Atualizar também o campo horario na coleção alunos_professor
+        # ============================================================
+        # 2️⃣ ATUALIZAR HORÁRIO NA COLEÇÃO ALUNOS_PROFESSOR
+        # ============================================================
         query = db.collection("alunos_professor") \
             .where("professor", "==", professor_email) \
             .where("aluno", "==", aluno_nome) \
-            .limit(1) \
-            .stream()
+            .limit(1).stream()
 
         doc_found = False
         for doc in query:
             doc.reference.update({"horario": horario})
             doc_found = True
-            print(f"✅ Horário também atualizado em alunos_professor → ID: {doc.id}")
+            print(f"✅ Horário atualizado em ALUNOS_PROFESSOR → {doc.id}")
             break
 
         if not doc_found:
-            print("⚠️ Vínculo não encontrado na coleção alunos_professor para atualizar horário.")
+            print("⚠️ Não encontrado em alunos_professor")
 
-        return {"mensagem": "Horário enviado e atualizado com sucesso."}
+        # ============================================================
+        # 3️⃣ ATUALIZAR NA COLEÇÃO PROFESSORES_ONLINE
+        # ============================================================
+
+        dias_necessarios = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+
+        # 🔥 LÓGICA CORRETA:
+        # True SOMENTE SE O ARRAY TIVER EXATAMENTE 7 HORÁRIOS
+        horario_estado = {}
+        for dia in dias_necessarios:
+            horarios_do_dia = horario.get(dia, [])
+            horario_estado[dia] = isinstance(horarios_do_dia, list) and len(horarios_do_dia) == 7
+
+        # True somente se TODOS OS DIAS estiverem completos com 7 horários
+        horario_completo = all(horario_estado.values())
+
+        # Buscar professor
+        prof_query = db.collection("professores_online") \
+            .where("email", "==", professor_email) \
+            .limit(1).stream()
+
+        prof_doc = next(prof_query, None)
+
+        if prof_doc:
+            prof_doc.reference.update({
+                "horario": horario,
+                "horario_estado": horario_estado,
+                "horario_completo": horario_completo
+            })
+            print(f"🟦 Horário atualizado em PROFESSORES_ONLINE → {prof_doc.id}")
+        else:
+            print("⚠️ Professor não encontrado em professores_online")
+
+        # ============================================================
+        # 4️⃣ ATUALIZAR PROFESSORES_ONLINE2
+        # ============================================================
+        try:
+            db.collection("professores_online2").document(professor_email).update({
+                "horario": horario,
+                "horario_estado": horario_estado,
+                "horario_completo": horario_completo
+            })
+            print("🟦 Horário atualizado em PROFESSORES_ONLINE2")
+        except:
+            print("⚠️ Professor não encontrado em professores_online2")
+
+        # ============================================================
+        # RETORNO FINAL
+        # ============================================================
+        return {"mensagem": "Horário enviado, atualizado e sincronizado com sucesso."}
 
     except Exception as e:
         print("🔴 Erro ao enviar horário:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
+
 
 @app.get("/ver-horario-aluno/{nome}")
 async def ver_horario_aluno(nome: str):
@@ -4698,6 +4749,8 @@ async def ajustar_professores_foto():
     return {"status": "ok", "atualizados": count}
 
 
+
+
 @app.get("/paginavendas", response_class=HTMLResponse)
 async def paginavendas(request: Request):
     return templates.TemplateResponse("paginavendas.html", {"request": request})
@@ -4716,4 +4769,95 @@ async def pagina_erro(request: Request, mensagem: str = "Ocorreu um erro inesper
         "request": request,
         "mensagem": mensagem
     })
+
+@app.get("/professores-disponiveis")
+async def professores_disponiveis():
+    try:
+        # Horários padrão para comparar
+        horarios_padrao = [
+            "7:30 - 8:30",
+            "9:30 - 10:30",
+            "11:30 - 12:30",
+            "13:30 - 14:30",
+            "15:30 - 16:30",
+            "17:30 - 18:30",
+            "19:30 - 20:30"
+        ]
+
+        dias_semana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+
+        resposta = []
+
+        # Buscar professores com horário incompleto
+        profs_query = db.collection("professores_online") \
+            .where("horario_completo", "==", False) \
+            .stream()
+
+        for prof_doc in profs_query:
+            prof_data = prof_doc.to_dict()
+            email = prof_data.get("email", "")
+            horario = prof_data.get("horario", {})
+            estado = prof_data.get("horario_estado", {})
+
+            dias_disponiveis = {}
+
+            # Verificar dias que estão marcados como "False"
+            for dia in dias_semana:
+                if estado.get(dia) is False:
+
+                    # Horários já preenchidos
+                    preenchidos = horario.get(dia, [])
+
+                    # Filtrar os horários que ainda não existem
+                    faltando = [h for h in horarios_padrao if h not in preenchidos]
+
+                    dias_disponiveis[dia] = faltando
+
+            resposta.append({
+                "professor": email,
+                "dias_disponiveis": dias_disponiveis
+            })
+
+        return resposta
+
+    except Exception as e:
+        print("🔴 Erro ao consultar professores disponíveis:", e)
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+@app.get("/buscar-professor-nome")
+async def buscar_professor_nome(email: str):
+    try:
+        email_normalizado = email.strip().lower()
+
+        # Busca professor pela coleção professores_online
+        query = db.collection("professores_online") \
+                  .where("email", "==", email_normalizado) \
+                  .limit(1).stream()
+
+        for doc in query:
+            data = doc.to_dict()
+
+            return {
+                "nome": data.get("nome_completo", "Sem Nome"),
+                "foto_perfil": data.get("foto_perfil") or "perfil.png",
+                "nivel_ensino": data.get("nivel_ensino", "Não informado"),
+                "telefone": data.get("telefone", "Não informado"),
+                "residencia": data.get("residencia", "Não informada"),
+                "bairro": data.get("bairro", "Não informado"),
+                "morada_completa": f"{data.get('bairro', '')}, {data.get('residencia', '')}".strip(", ")
+            }
+
+        # Se não encontrou o professor:
+        return {
+            "nome": "Desconhecido",
+            "foto_perfil": "perfil.png",
+            "nivel_ensino": "Não informado",
+            "telefone": "Não informado",
+            "residencia": "Não informada",
+            "bairro": "Não informado",
+            "morada_completa": "Não informada"
+        }
+
+    except Exception as e:
+        return {"erro": str(e)}})
 

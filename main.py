@@ -126,12 +126,6 @@ gerar_html_professores()
 # ============================
 CONTAS_100MS = [
     {
-        "ACCESS_KEY": "68e12ac3bd0dab5f9a013f93",
-        "SECRET": "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g=",
-        "TEMPLATE": "68e132db74147bd574bb494a",
-        "SUBDOMAIN": "sabe-videoconf-1518"
-    },
-    {
         "ACCESS_KEY": "68e8c88cbd0dab5f9a01409d",
         "SECRET": "rI932W7abnwd9NC5vTY54e_DSfG8UNFxxgz5JD7_6stDWSbnOevqsaeeyaRfDitue4-IkmlgAR7c7fr_n42Wx0pKw4fhofXEGa3fj5R9Q3xcdxQJvHjMD6sM-VP9XL-HLKEFT7X1lK8hZAxh0DsCKrjaU2o5Bk2UoVN9pRQNnTc=",
         "TEMPLATE": "691af3a4033903926e62a61a",

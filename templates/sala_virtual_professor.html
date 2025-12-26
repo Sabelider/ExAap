@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sala Virtual 100ms - Professor</title>
-  <!-- Ícones profissionais (Font Awesome) -->
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -18,14 +18,17 @@
       align-items: center;
       height: 100vh;
     }
+
     #container {
       text-align: center;
       width: 90%;
       max-width: 400px;
     }
-    input, label {
-      display: none; 
+
+    input {
+      display: none;
     }
+
     button {
       width: 100%;
       padding: 15px;
@@ -36,53 +39,55 @@
       background-color: #28a745;
       color: white;
       cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
+      transition: 0.3s;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
     }
-    button:hover {
+
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
       background-color: #22c55e;
       transform: scale(1.05);
     }
-    #result {
-      display: none; 
-    }
 
-    @media (max-width: 600px) {
-      h2 {
-        font-size: 20px;
-      }
-      button {
-        font-size: 16px;
-        padding: 12px;
-      }
+    #status {
+      margin: 20px 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <div id="container">
-    <h2>Sala Virtual</h2>
-    <input id="nomeSala" placeholder="Nome da sala" />
-    <input id="alunoNome" placeholder="Nome do aluno" />
-    <div id="result"></div>
 
-    <!-- ✅ Botão principal -->
-    <button id="chamarAlunoBtn">
-      <i class="fa-solid fa-video"></i> Chamar aluno
-    </button>
-  </div>
+<div id="container">
+  <h2>Sala Virtual</h2>
+
+  <input id="nomeSala" />
+  <input id="alunoNome" />
+
+  <div id="status">⏳ Criando sala...</div>
+
+  <button id="chamarAlunoBtn" disabled>
+    <i class="fa-solid fa-video"></i> Chamar aluno
+  </button>
+</div>
 
 <script>
 const chamarAlunoBtn = document.getElementById('chamarAlunoBtn');
-const result = document.getElementById('result');
+const statusEl = document.getElementById('status');
 const alunoNome = document.getElementById('alunoNome');
 const nomeSalaInput = document.getElementById('nomeSala');
 
-let lastRoomData = {}; 
+let lastRoomData = {};
+let tempo = 15;
+let salaCriada = false;
 
-
+// Captura aluno via URL
 const params = new URLSearchParams(window.location.search);
 const alunoParam = params.get('aluno');
 if (alunoParam) {
@@ -91,8 +96,31 @@ if (alunoParam) {
   nomeSalaInput.value = `Inglês - ${alunoFormatado}`;
 }
 
+// ⏱️ Contador interno
+function iniciarContador() {
+  statusEl.textContent = `⏳ Criando sala... ${tempo}s`;
 
+  const intervalo = setInterval(() => {
+    tempo--;
+    statusEl.textContent = `⏳ Criando sala... ${tempo}s`;
+
+    if (tempo <= 0) {
+      clearInterval(intervalo);
+
+      if (salaCriada) {
+        statusEl.textContent = '✅ Sala criada. Pode chamar o aluno.';
+        chamarAlunoBtn.disabled = false;
+      } else {
+        statusEl.textContent = '⚠️ Sala ainda não pronta. Aguarde...';
+      }
+    }
+  }, 1000);
+}
+
+// 🔁 Criação automática da sala
 window.addEventListener('load', async () => {
+  iniciarContador();
+
   try {
     const name = nomeSalaInput.value || 'aula-' + Date.now();
     const resp = await fetch('/create-room', {
@@ -108,15 +136,22 @@ window.addEventListener('load', async () => {
     if (!resp.ok) throw new Error(json.detail || 'Erro desconhecido.');
 
     lastRoomData = json;
+    salaCriada = true;
+
+    if (tempo <= 0) {
+      statusEl.textContent = '✅ Sala criada. Pode chamar o aluno.';
+      chamarAlunoBtn.disabled = false;
+    }
+
     console.log("✅ Sala criada automaticamente:", json);
 
   } catch (err) {
     console.error("❌ Erro ao criar sala:", err);
-    alert("Erro ao criar sala automaticamente.");
+    statusEl.textContent = '❌ Erro ao criar sala.';
   }
 });
 
-
+// ▶️ Chamar aluno
 chamarAlunoBtn.onclick = async () => {
   const aluno = alunoNome.value.trim();
   if (!aluno || !lastRoomData.prebuilt_links?.guest || !lastRoomData.prebuilt_links?.host)
@@ -135,18 +170,18 @@ chamarAlunoBtn.onclick = async () => {
     });
 
     if (resp.ok) {
-      console.log("✅ Link enviado ao aluno com sucesso!");
-      
+      console.log("✅ Link enviado ao aluno!");
       window.location.href = lastRoomData.prebuilt_links.host;
     } else {
       const errText = await resp.text();
-      alert('❌ Falha ao enviar o link ao aluno: ' + errText);
+      alert('❌ Falha ao enviar link: ' + errText);
     }
   } catch (err) {
     console.error(err);
-    alert('Erro ao chamar aluno: ' + err.message);
+    alert('Erro ao chamar aluno.');
   }
 };
 </script>
+
 </body>
 </html>

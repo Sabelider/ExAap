@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aluno - Entrar na Aula</title>
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
     body {
       margin: 0;
@@ -83,68 +85,73 @@
     <i class="fa-solid fa-video"></i> Entrar na Aula
   </button>
 
-  <script>
-    const buscarBtn = document.getElementById('buscarBtn');
-    const statusEl = document.getElementById('status');
-    const nomeInput = document.getElementById('nomeAluno');
-    const entrarBtn = document.getElementById('entrarBtn');
+<script>
+const buscarBtn = document.getElementById('buscarBtn');
+const statusEl = document.getElementById('status');
+const nomeInput = document.getElementById('nomeAluno');
+const entrarBtn = document.getElementById('entrarBtn');
 
-    let linkSala = "";
-    let tempo = 15;
-    let contadorAtivo = false;
+let linkSala = "";
+let tempo = 15;
+let contadorAtivo = false;
+let intervalo = null;
 
-    function iniciarContador() {
-      if (contadorAtivo) return;
-      contadorAtivo = true;
+// ⏱️ Contador interno
+function iniciarContador() {
+  if (contadorAtivo) return;
+  contadorAtivo = true;
 
-      buscarBtn.disabled = true;
-      statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
+  buscarBtn.disabled = true;
+  statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
 
-      const intervalo = setInterval(() => {
-        tempo--;
-        statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
+  intervalo = setInterval(() => {
+    tempo--;
+    statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
 
-        if (tempo <= 0) {
-          clearInterval(intervalo);
-          statusEl.textContent = '📢 A sala já foi criada. Atualize para entrar.';
-        }
-      }, 1000);
+    if (tempo <= 0) {
+      clearInterval(intervalo);
+      statusEl.textContent = '📢 A sala já foi criada. Atualize para entrar.';
     }
+  }, 1000);
+}
 
-    buscarBtn.onclick = async () => {
-      const aluno = nomeInput.value.trim();
-      if (!aluno) return alert('Digite o nome do aluno');
+// 🔎 Buscar chamada
+buscarBtn.onclick = async () => {
+  const aluno = nomeInput.value.trim();
+  if (!aluno) return alert('Digite o nome do aluno');
 
-      iniciarContador();
+  iniciarContador();
 
-      try {
-        const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
+    const data = await res.json();
 
-        if (!data.room_id || !data.prebuilt_link) {
-          return;
-        }
+    if (!data.room_id || !data.prebuilt_link) return;
 
-        // Sala encontrada antes do tempo
-        linkSala = data.prebuilt_link;
-        statusEl.textContent = "✅ Aula encontrada!";
+    // ✅ Sala encontrada antes do tempo
+    clearInterval(intervalo);
 
-        nomeInput.style.display = "none";
-        buscarBtn.style.display = "none";
-        entrarBtn.style.display = "inline-block";
+    linkSala = data.prebuilt_link;
+    statusEl.textContent = "✅ Aula encontrada!";
 
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = '⚠️ Erro ao buscar a chamada.';
-      }
-    };
+    nomeInput.style.display = "none";
+    buscarBtn.style.display = "none";
+    entrarBtn.style.display = "inline-block";
 
-    entrarBtn.onclick = () => {
-      if (linkSala) {
-        window.open(linkSala, "_blank");
-      }
-    };
-  </script>
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = '⚠️ Erro ao buscar a chamada.';
+  }
+};
+
+// ▶️ Entrar na sala
+entrarBtn.onclick = () => {
+  if (linkSala) {
+    window.open(linkSala, "_blank");
+  }
+};
+</script>
 
 </body>
 </html>
+

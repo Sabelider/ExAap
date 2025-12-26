@@ -22,26 +22,32 @@
     }
 
     .card {
-      background: rgba(20,20,20,0.9);
-      border-radius: 20px;
-      padding: 35px 30px;
+      background: rgba(20,20,20,0.92);
+      border-radius: 22px;
+      padding: 38px 30px;
       width: 100%;
-      max-width: 380px;
+      max-width: 390px;
       text-align: center;
-      box-shadow: 0 0 25px rgba(0,255,150,0.15);
+      box-shadow: 0 0 30px rgba(0,255,150,0.18);
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     h2 {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       font-size: 22px;
     }
 
     input {
       width: 100%;
-      padding: 12px 16px;
-      margin-bottom: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
       font-size: 16px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: none;
       outline: none;
     }
@@ -51,7 +57,7 @@
       padding: 14px;
       font-size: 17px;
       font-weight: bold;
-      border-radius: 12px;
+      border-radius: 14px;
       border: none;
       cursor: pointer;
       transition: 0.3s;
@@ -66,6 +72,10 @@
       color: #000;
     }
 
+    #buscarBtn:hover {
+      transform: scale(1.03);
+    }
+
     #buscarBtn:disabled {
       background: #333;
       color: #888;
@@ -73,28 +83,30 @@
     }
 
     #contador {
-      margin: 25px 0 10px;
-      font-size: 64px;
+      margin: 22px 0 8px;
+      font-size: 68px;
       font-weight: bold;
       color: #00ff7f;
-      text-shadow: 0 0 15px rgba(0,255,150,0.7);
+      text-shadow: 0 0 20px rgba(0,255,150,0.75);
+      transition: 0.3s;
     }
 
     #status {
       font-size: 15px;
       opacity: 0.9;
+      min-height: 22px;
     }
 
     #entrarBtn {
       display: none;
-      margin-top: 25px;
+      margin-top: 26px;
       background: linear-gradient(135deg, #00d26a, #00ff7f);
       color: #003d1f;
-      box-shadow: 0 0 20px rgba(0,255,150,0.6);
+      box-shadow: 0 0 22px rgba(0,255,150,0.6);
     }
 
     #entrarBtn:hover {
-      transform: scale(1.05);
+      transform: scale(1.06);
     }
   </style>
 </head>
@@ -110,8 +122,10 @@
       Buscar Chamada
     </button>
 
-    <div id="contador"></div>
-    <div id="status"></div>
+    <div id="contador">20</div>
+    <div id="status">
+      <i class="fa-solid fa-clock"></i> Aguardando criação da sala...
+    </div>
 
     <button id="entrarBtn">
       <i class="fa-solid fa-video"></i>
@@ -129,43 +143,48 @@ const entrarBtn = document.getElementById('entrarBtn');
 let linkSala = "";
 let tempo = 20;
 let intervalo = null;
-let contadorAtivo = false;
 
-// ⏱️ Cronómetro regressivo visível
-function iniciarContador() {
-  if (contadorAtivo) return;
-  contadorAtivo = true;
-
-  buscarBtn.disabled = true;
+// ⏱️ CRONÓMETRO INICIA AUTOMATICAMENTE AO CARREGAR
+function iniciarCronometroAutomatico() {
   contadorEl.textContent = tempo;
-  statusEl.innerHTML = '<i class="fa-solid fa-clock"></i> Criando sala, aguarde...';
 
   intervalo = setInterval(() => {
     tempo--;
     contadorEl.textContent = tempo;
 
+    if (tempo <= 5) {
+      contadorEl.style.color = "#ff4d4d";
+      contadorEl.style.textShadow = "0 0 20px rgba(255,80,80,0.9)";
+    }
+
     if (tempo <= 0) {
       clearInterval(intervalo);
-      contadorEl.textContent = '';
+      contadorEl.textContent = "0";
       statusEl.innerHTML = '📢 <b>A sala já foi criada.</b><br>Atualize a página para entrar.';
     }
   }, 1000);
 }
 
-// 🔎 Buscar chamada
+// ▶️ Inicia assim que o template abre
+window.addEventListener("load", iniciarCronometroAutomatico);
+
+// 🔎 Buscar chamada manualmente
 buscarBtn.onclick = async () => {
   const aluno = nomeInput.value.trim();
   if (!aluno) return alert('Digite o nome do aluno');
 
-  iniciarContador();
+  buscarBtn.disabled = true;
 
   try {
     const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
     const data = await res.json();
 
-    if (!data.room_id || !data.prebuilt_link) return;
+    if (!data.room_id || !data.prebuilt_link) {
+      buscarBtn.disabled = false;
+      return;
+    }
 
-    // ✅ Sala encontrada antes do fim do contador
+    // ✅ Sala encontrada antes do fim
     clearInterval(intervalo);
 
     linkSala = data.prebuilt_link;
@@ -179,6 +198,7 @@ buscarBtn.onclick = async () => {
   } catch (err) {
     console.error(err);
     statusEl.innerHTML = '⚠️ Erro ao buscar a chamada.';
+    buscarBtn.disabled = false;
   }
 };
 
@@ -192,3 +212,4 @@ entrarBtn.onclick = () => {
 
 </body>
 </html>
+

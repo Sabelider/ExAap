@@ -5,72 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sala Virtual 100ms - Professor</title>
 
+  <!-- Ícones profissionais -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
     body {
       margin: 0;
-      background: #000;
+      background: radial-gradient(circle at top, #0a0a0a, #000);
       font-family: "Roboto", sans-serif;
       color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      padding: 20px;
     }
 
-    #container {
+    .card {
+      background: rgba(20,20,20,0.92);
+      border-radius: 22px;
+      padding: 38px 30px;
+      width: 100%;
+      max-width: 390px;
       text-align: center;
-      width: 90%;
-      max-width: 400px;
+      box-shadow: 0 0 30px rgba(0,255,150,0.18);
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    h2 {
+      margin-bottom: 18px;
+      font-size: 22px;
     }
 
     input {
       display: none;
     }
 
+    #contador {
+      margin: 20px 0 10px;
+      font-size: 68px;
+      font-weight: bold;
+      color: #00ff7f;
+      text-shadow: 0 0 20px rgba(0,255,150,0.75);
+      transition: 0.3s;
+    }
+
+    #status {
+      font-size: 15px;
+      opacity: 0.9;
+      min-height: 22px;
+    }
+
     button {
       width: 100%;
-      padding: 15px;
-      font-size: 18px;
+      padding: 14px;
+      font-size: 17px;
       font-weight: bold;
+      border-radius: 14px;
       border: none;
-      border-radius: 10px;
-      background-color: #28a745;
-      color: white;
       cursor: pointer;
       transition: 0.3s;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       gap: 10px;
+      margin-top: 26px;
+      background: linear-gradient(135deg, #00d26a, #00ff7f);
+      color: #003d1f;
+      box-shadow: 0 0 22px rgba(0,255,150,0.6);
     }
 
     button:disabled {
-      background: #444;
+      background: #333;
+      color: #777;
+      box-shadow: none;
       cursor: not-allowed;
     }
 
     button:hover:not(:disabled) {
-      background-color: #22c55e;
-      transform: scale(1.05);
-    }
-
-    #status {
-      margin: 20px 0;
-      font-size: 16px;
+      transform: scale(1.06);
     }
   </style>
 </head>
 <body>
 
-<div id="container">
-  <h2>Sala Virtual</h2>
+<div class="card">
+  <h2><i class="fa-solid fa-chalkboard-user"></i> Sala Virtual</h2>
 
   <input id="nomeSala" />
   <input id="alunoNome" />
 
-  <div id="status">⏳ Criando sala...</div>
+  <div id="contador">15</div>
+
+  <div id="status">
+    <i class="fa-solid fa-clock"></i> Criando sala...
+  </div>
 
   <button id="chamarAlunoBtn" disabled>
     <i class="fa-solid fa-video"></i> Chamar aluno
@@ -80,6 +114,7 @@
 <script>
 const chamarAlunoBtn = document.getElementById('chamarAlunoBtn');
 const statusEl = document.getElementById('status');
+const contadorEl = document.getElementById('contador');
 const alunoNome = document.getElementById('alunoNome');
 const nomeSalaInput = document.getElementById('nomeSala');
 
@@ -96,22 +131,27 @@ if (alunoParam) {
   nomeSalaInput.value = `Inglês - ${alunoFormatado}`;
 }
 
-// ⏱️ Contador interno
-function iniciarContador() {
-  statusEl.textContent = `⏳ Criando sala... ${tempo}s`;
+// ⏱️ Cronómetro automático
+function iniciarCronometro() {
+  contadorEl.textContent = tempo;
 
   const intervalo = setInterval(() => {
     tempo--;
-    statusEl.textContent = `⏳ Criando sala... ${tempo}s`;
+    contadorEl.textContent = tempo;
+
+    if (tempo <= 5) {
+      contadorEl.style.color = "#ff4d4d";
+      contadorEl.style.textShadow = "0 0 20px rgba(255,80,80,0.9)";
+    }
 
     if (tempo <= 0) {
       clearInterval(intervalo);
 
       if (salaCriada) {
-        statusEl.textContent = '✅ Sala criada. Pode chamar o aluno.';
+        statusEl.innerHTML = '✅ <b>Sala criada.</b> Pode chamar o aluno.';
         chamarAlunoBtn.disabled = false;
       } else {
-        statusEl.textContent = '⚠️ Sala ainda não pronta. Aguarde...';
+        statusEl.innerHTML = '⚠️ Aguardando finalização da sala...';
       }
     }
   }, 1000);
@@ -119,7 +159,7 @@ function iniciarContador() {
 
 // 🔁 Criação automática da sala
 window.addEventListener('load', async () => {
-  iniciarContador();
+  iniciarCronometro();
 
   try {
     const name = nomeSalaInput.value || 'aula-' + Date.now();
@@ -139,7 +179,7 @@ window.addEventListener('load', async () => {
     salaCriada = true;
 
     if (tempo <= 0) {
-      statusEl.textContent = '✅ Sala criada. Pode chamar o aluno.';
+      statusEl.innerHTML = '✅ <b>Sala criada.</b> Pode chamar o aluno.';
       chamarAlunoBtn.disabled = false;
     }
 
@@ -147,7 +187,7 @@ window.addEventListener('load', async () => {
 
   } catch (err) {
     console.error("❌ Erro ao criar sala:", err);
-    statusEl.textContent = '❌ Erro ao criar sala.';
+    statusEl.innerHTML = '❌ Erro ao criar sala.';
   }
 });
 
@@ -170,14 +210,11 @@ chamarAlunoBtn.onclick = async () => {
     });
 
     if (resp.ok) {
-      console.log("✅ Link enviado ao aluno!");
       window.location.href = lastRoomData.prebuilt_links.host;
     } else {
-      const errText = await resp.text();
-      alert('❌ Falha ao enviar link: ' + errText);
+      alert('❌ Falha ao enviar link.');
     }
   } catch (err) {
-    console.error(err);
     alert('Erro ao chamar aluno.');
   }
 };
@@ -185,3 +222,4 @@ chamarAlunoBtn.onclick = async () => {
 
 </body>
 </html>
+

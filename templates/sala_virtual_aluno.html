@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aluno - Entrar na Aula</title>
 
+  <!-- Ícones profissionais -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -48,37 +49,48 @@
       cursor: not-allowed;
     }
 
+    #contador {
+      margin-top: 15px;
+      font-size: 42px;
+      font-weight: bold;
+      color: #00ff7f;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
     #entrarBtn {
       display: none;
       background: #00d26a;
       color: #fff;
-      padding: 14px 24px;
-      border-radius: 10px;
+      padding: 14px 26px;
+      border-radius: 12px;
       font-size: 18px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 20px;
+      margin-top: 25px;
       transition: 0.3s;
-      box-shadow: 0 0 10px rgba(0,255,150,0.5);
+      box-shadow: 0 0 12px rgba(0,255,150,0.6);
     }
 
     #entrarBtn:hover {
       background: #00ff7f;
       transform: scale(1.05);
     }
-
-    #status {
-      margin-top: 20px;
-      font-size: 16px;
-    }
   </style>
 </head>
 <body>
 
-  <h2>Aluno - Entrar na Aula</h2>
+  <h2><i class="fa-solid fa-user-graduate"></i> Aluno - Entrar na Aula</h2>
 
   <input id="nomeAluno" placeholder="Digite seu nome" />
-  <button id="buscarBtn">Buscar Chamada</button>
+  <button id="buscarBtn">
+    <i class="fa-solid fa-magnifying-glass"></i> Buscar Chamada
+  </button>
+
+  <div id="contador"></div>
   <div id="status"></div>
 
   <button id="entrarBtn">
@@ -88,29 +100,32 @@
 <script>
 const buscarBtn = document.getElementById('buscarBtn');
 const statusEl = document.getElementById('status');
+const contadorEl = document.getElementById('contador');
 const nomeInput = document.getElementById('nomeAluno');
 const entrarBtn = document.getElementById('entrarBtn');
 
 let linkSala = "";
-let tempo = 15;
-let contadorAtivo = false;
+let tempo = 20;
 let intervalo = null;
+let contadorAtivo = false;
 
-// ⏱️ Contador interno
+// ⏱️ Contador real e visível
 function iniciarContador() {
   if (contadorAtivo) return;
   contadorAtivo = true;
 
   buscarBtn.disabled = true;
-  statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
+  contadorEl.textContent = tempo;
+  statusEl.innerHTML = '<i class="fa-solid fa-clock"></i> Criando sala, aguarde...';
 
   intervalo = setInterval(() => {
     tempo--;
-    statusEl.textContent = `⏳ Aguarde ${tempo}s... a sala está sendo criada`;
+    contadorEl.textContent = tempo;
 
     if (tempo <= 0) {
       clearInterval(intervalo);
-      statusEl.textContent = '📢 A sala já foi criada. Atualize para entrar.';
+      contadorEl.textContent = '';
+      statusEl.innerHTML = '📢 <b>A sala já foi criada.</b> Atualize para entrar.';
     }
   }, 1000);
 }
@@ -128,11 +143,12 @@ buscarBtn.onclick = async () => {
 
     if (!data.room_id || !data.prebuilt_link) return;
 
-    // ✅ Sala encontrada antes do tempo
+    // ✅ Sala encontrada antes do tempo acabar
     clearInterval(intervalo);
 
     linkSala = data.prebuilt_link;
-    statusEl.textContent = "✅ Aula encontrada!";
+    contadorEl.textContent = '';
+    statusEl.innerHTML = '✅ <b>Sala criada com sucesso!</b>';
 
     nomeInput.style.display = "none";
     buscarBtn.style.display = "none";
@@ -140,7 +156,7 @@ buscarBtn.onclick = async () => {
 
   } catch (err) {
     console.error(err);
-    statusEl.textContent = '⚠️ Erro ao buscar a chamada.';
+    statusEl.innerHTML = '⚠️ Erro ao buscar a chamada.';
   }
 };
 
@@ -154,4 +170,5 @@ entrarBtn.onclick = () => {
 
 </body>
 </html>
+
 

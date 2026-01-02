@@ -1053,10 +1053,11 @@ function fecharDesafio() {
     Pagamentos
   </div>
 
-  <div class="item" onclick="abrirNotificacoes()">
-    <i class="fa-solid fa-bell"></i>
-    Notificações
-  </div>
+ <div class="item notification-item" onclick="abrirNotificacoes()">
+  <i class="fa-solid fa-bell"></i>
+  <span id="badge-notificacoes" class="badge" style="display:none;">0</span>
+  Notificações
+</div>
 
   <div class="item" onclick="abrirInfoEmpresa()">
     <i class="fa-solid fa-circle-info"></i>
@@ -1067,6 +1068,17 @@ function fecharDesafio() {
   <div class="item" onclick="abrirChatAluno()">
     <i class="fa-solid fa-comments"></i>
     Chat
+  </div>
+</div>
+  <!-- Modal de Notificações -->
+<div id="modal-notificacoes" class="modal-notificacoes" style="display:none;">
+  <div class="modal-header">
+    <h3>Notificações</h3>
+    <button onclick="fecharNotificacoes()">✖</button>
+  </div>
+
+  <div id="lista-notificacoes">
+    <!-- Notificações serão inseridas aqui via JS -->
   </div>
 </div>
 

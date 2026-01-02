@@ -1372,10 +1372,14 @@ function abrirPagamentos() {
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getFirestore, doc, onSnapshot, updateDoc
+    getFirestore,
+    doc,
+    collection,
+    onSnapshot,
+    updateDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  console.log("Módulo carregado — inicializando app e exportando funções para window...");
+  console.log("Módulo carregado — inicializando Firebase...");
 
   const firebaseConfig = {
     apiKey: "AIzaSyChMkODt7BhNLD-fK5NrY6-LmjJL6DtBIE",
@@ -1389,142 +1393,143 @@ function abrirPagamentos() {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
- 
+  // ===============================
+  // IDENTIDADE DO ALUNO
+  // ===============================
   const nomeAluno = "{{ aluno.nome }}";
 
-  
   if (nomeAluno && nomeAluno !== "{{ aluno.nome }}") {
     localStorage.setItem("alunoNome", nomeAluno.trim().toLowerCase());
-    console.log("Aluno salvo no localStorage:", nomeAluno);
   }
 
-  // ---------------------------
-  // FUNÇÕES / LÓGICA EXPOSAS
-  // ---------------------------
+  const aluno = localStorage.getItem("alunoNome");
 
- // ---- Chamadas ao vivo (Firestore) ----
-const chamadaRef = doc(db, "chamadas_ao_vivo", nomeAluno);
-const infoAulaDiv = document.getElementById("info-aula");
-const salaIdSpan = document.getElementById("sala-id");
+  // ===============================
+  // 🔔 NOTIFICAÇÕES (NOVO)
+  // ===============================
+  const badge = document.getElementById("badge-notificacoes");
+  const lista = document.getElementById("lista-notificacoes");
 
+  if (aluno && badge && lista) {
+    onSnapshot(
+      collection(db, "notificacoes", aluno, "itens"),
+      (snapshot) => {
+        let naoLidas = 0;
+        lista.innerHTML = "";
 
-const conviteContainer = document.createElement("div");
-conviteContainer.style.cssText = `
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  z-index: 9999;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  text-align: center;
-  padding: 20px;
-  transition: opacity 0.3s ease;
-`;
+        snapshot.forEach(docSnap => {
+          const n = docSnap.data();
+          if (!n.lida) naoLidas++;
 
-const conviteCard = document.createElement("div");
-conviteCard.style.cssText = `
-  background: linear-gradient(135deg, #00c9ff, #92fe9d);
-  color: #000;
-  padding: 25px 35px;
-  border-radius: 20px;
-  box-shadow: 0 0 25px rgba(0,0,0,0.4);
-  max-width: 350px;
-  width: 90%;
-`;
+          lista.innerHTML += `
+            <div class="notificacao"
+                 onclick="entrarNaAula('${n.prebuilt_link}', '${docSnap.id}')">
+              <strong>${n.titulo}</strong>
+              <p>${n.mensagem}</p>
+              <small>Entrar agora</small>
+            </div>
+          `;
+        });
 
-const conviteTitulo = document.createElement("h2");
-conviteTitulo.style.cssText = `
-  font-size: 1.4em;
-  font-weight: 700;
-  margin-bottom: 10px;
-`;
-conviteTitulo.textContent = "📡 Convite de Aula";
+        if (naoLidas > 0) {
+          badge.style.display = "inline-block";
+          badge.innerText = naoLidas;
+        } else {
+          badge.style.display = "none";
+        }
+      }
+    );
+  }
 
-const conviteTexto = document.createElement("p");
-conviteTexto.style.cssText = `
-  font-size: 1.1em;
-  margin-bottom: 20px;
-`;
-conviteTexto.textContent = "O professor está te chamando para uma aula ao vivo.";
+  window.abrirNotificacoes = () => {
+    document.getElementById("modal-notificacoes").style.display = "flex";
+  };
 
-const entrarBtn = document.createElement("button");
-entrarBtn.textContent = "Entrar na Aula";
-entrarBtn.style.cssText = `
-  background: #000;
-  color: #00c9ff;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 1.1em;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-`;
-entrarBtn.onmouseover = () => (entrarBtn.style.background = "#111");
-entrarBtn.onmouseout = () => (entrarBtn.style.background = "#000");
+  window.fecharNotificacoes = () => {
+    document.getElementById("modal-notificacoes").style.display = "none";
+  };
 
-const recusarBtn = document.createElement("button");
-recusarBtn.textContent = "Recusar";
-recusarBtn.style.cssText = `
-  background: transparent;
-  color: #000;
-  border: 2px solid #000;
-  border-radius: 12px;
-  padding: 10px 18px;
-  font-size: 1em;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.3s ease;
-`;
-recusarBtn.onmouseover = () => (recusarBtn.style.background = "rgba(0,0,0,0.15)");
-recusarBtn.onmouseout = () => (recusarBtn.style.background = "transparent");
+  window.entrarNaAula = async (link, notifId) => {
+    await updateDoc(
+      doc(db, "notificacoes", aluno, "itens", notifId),
+      { lida: true }
+    );
+    window.open(link, "_blank");
+  };
 
-conviteCard.appendChild(conviteTitulo);
-conviteCard.appendChild(conviteTexto);
-conviteCard.appendChild(entrarBtn);
-conviteCard.appendChild(recusarBtn);
-conviteContainer.appendChild(conviteCard);
-document.body.appendChild(conviteContainer);
+  // ===============================
+  // 📡 CHAMADAS AO VIVO (ORIGINAL)
+  // ===============================
+  const chamadaRef = doc(db, "chamadas_ao_vivo", nomeAluno);
+  const infoAulaDiv = document.getElementById("info-aula");
+  const salaIdSpan = document.getElementById("sala-id");
 
+  const conviteContainer = document.createElement("div");
+  conviteContainer.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  `;
 
-onSnapshot(chamadaRef, (docSnap) => {
-  try {
+  const conviteCard = document.createElement("div");
+  conviteCard.style.cssText = `
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    color: #000;
+    padding: 25px 35px;
+    border-radius: 20px;
+    max-width: 350px;
+    width: 90%;
+  `;
+
+  const conviteTitulo = document.createElement("h2");
+  conviteTitulo.textContent = "📡 Convite de Aula";
+
+  const conviteTexto = document.createElement("p");
+  conviteTexto.textContent = "O professor está te chamando para uma aula ao vivo.";
+
+  const entrarBtn = document.createElement("button");
+  entrarBtn.textContent = "Entrar na Aula";
+
+  const recusarBtn = document.createElement("button");
+  recusarBtn.textContent = "Recusar";
+
+  conviteCard.appendChild(conviteTitulo);
+  conviteCard.appendChild(conviteTexto);
+  conviteCard.appendChild(entrarBtn);
+  conviteCard.appendChild(recusarBtn);
+  conviteContainer.appendChild(conviteCard);
+  document.body.appendChild(conviteContainer);
+
+  onSnapshot(chamadaRef, async (docSnap) => {
     if (docSnap.exists()) {
       const dados = docSnap.data();
       if (dados.status === "pendente") {
-        salaIdSpan.textContent = dados.sala;
-        infoAulaDiv.style.display = "block";
-
-        // Mostrar container na tela
         conviteContainer.style.display = "flex";
         conviteTexto.textContent = `O professor ${dados.professor} está te chamando para uma aula.`;
 
         entrarBtn.onclick = async () => {
           await updateDoc(chamadaRef, { status: "aceito" });
-          conviteContainer.style.opacity = "0";
-          setTimeout(() => {
-            conviteContainer.style.display = "none";
-            window.location.href = `/sala_virtual_aluno/${dados.sala}`;
-          }, 300);
+          conviteContainer.style.display = "none";
+          window.location.href = `/sala_virtual_aluno/${dados.sala}`;
         };
 
         recusarBtn.onclick = async () => {
           await updateDoc(chamadaRef, { status: "rejeitado" });
-          conviteContainer.style.opacity = "0";
-          setTimeout(() => (conviteContainer.style.display = "none"), 300);
+          conviteContainer.style.display = "none";
         };
       }
     }
-  } catch (e) {
-    console.error("Erro no onSnapshot:", e);
-  }
-});
-
+  });
+  
 // Função auxiliar para exibir modal
   function mostrarModalAulas(htmlContent) {
     // Remove qualquer modal anterior

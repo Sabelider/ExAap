@@ -1047,23 +1047,33 @@ function fecharDesafio() {
     <i class="fa-solid fa-user"></i>
     O Meu Perfil
   </div>
+
   <div class="item" onclick="abrirPagamentos()">
     <i class="fa-solid fa-credit-card"></i>
     Pagamentos
   </div>
+
+  <div class="item" onclick="abrirNotificacoes()">
+    <i class="fa-solid fa-bell"></i>
+    Notificações
+  </div>
+
   <div class="item" onclick="abrirInfoEmpresa()">
     <i class="fa-solid fa-circle-info"></i>
     Informações
   </div>
-<!-- Botão que abre o chat -->
-<div class="item" onclick="abrirChatAluno()">
-  <i class="fa-solid fa-comments"></i>
-  Chat
+
+  <!-- Botão que abre o chat -->
+  <div class="item" onclick="abrirChatAluno()">
+    <i class="fa-solid fa-comments"></i>
+    Chat
+  </div>
 </div>
 
 <!-- Modal do chat (inicialmente oculto) -->
 <div id="chat-modal-aluno" style="display: none;">
   <div id="chat-container">
+
     <!-- Barra superior com nome e disciplina do professor -->
     <div class="top-bar" id="top-bar-professor">
       <i class="fa-solid fa-chalkboard-user" style="font-size: 1.5rem; color: white;"></i>
@@ -1078,12 +1088,16 @@ function fecharDesafio() {
     <!-- Input de mensagem -->
     <div class="input-chat">
       <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
-      <button id="enviar-msg"><i class="fa-solid fa-paper-plane"></i></button>
+      <button id="enviar-msg">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
     </div>
+
   </div>
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 <script>
 let professorSelecionado = null;

@@ -4586,24 +4586,42 @@ async def enviar_id_aula(payload: EnviarIdPayload):
     aluno_norm = payload.aluno.strip().lower().replace(" ", "")
     professor_norm = payload.professor.strip().lower().replace(" ", "")
 
-    # Buscar conta ativa para este envio
+    # 🔁 Buscar conta ativa do 100ms
     conta_atual, _ = await get_current_account()
     conta = CONTAS_100MS[conta_atual]
 
+    # 📌 Guardar dados da sala para o aluno
     ALUNO_ROOM[aluno_norm] = {
         "room_id": payload.room_id,
         "professor": professor_norm,
-        "prebuilt_link": payload.prebuilt_link,  
-        "subdomain": conta["SUBDOMAIN"],        
-        "template_id": conta["TEMPLATE"]        
+        "prebuilt_link": payload.prebuilt_link,
+        "subdomain": conta["SUBDOMAIN"],
+        "template_id": conta["TEMPLATE"]
     }
+
+    # 🔔 CRIAR NOTIFICAÇÃO NO FIREBASE
+    notif_ref = (
+        db.collection("notificacoes")
+        .document(aluno_norm)
+        .collection("itens")
+        .document()
+    )
+
+    notif_ref.set({
+        "titulo": "📚 Aula a decorrer",
+        "mensagem": "O professor iniciou uma aula agora",
+        "room_id": payload.room_id,
+        "prebuilt_link": payload.prebuilt_link,
+        "professor": professor_norm,
+        "lida": False,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
 
     return {
         "status": "ok",
-        "message": "Link real da aula enviado ao aluno com sucesso!",
-        "conta_usada": conta_atual  # ✅ retorna qual conta foi usada
+        "message": "Link da aula enviado e notificação criada com sucesso!",
+        "conta_usada": conta_atual
     }
-
 
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):

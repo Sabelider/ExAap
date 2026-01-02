@@ -2269,11 +2269,13 @@ class NotificacaoRequest(BaseModel):
     aluno: str
 
 @app.post("/ativar-notificacao")
-async def ativar_notificacao(data: NotificacaoRequest):
+async def ativar_notificacao(
+    data: NotificacaoRequest,
+    background_tasks: BackgroundTasks
+):
     try:
         aluno_nome = data.aluno.strip().lower()
 
-        # Buscar o documento do aluno na coleção alunos_professor
         docs = db.collection("alunos_professor") \
                  .where("aluno", "==", aluno_nome) \
                  .limit(1).stream()
@@ -2285,7 +2287,18 @@ async def ativar_notificacao(data: NotificacaoRequest):
                 status_code=404
             )
 
-        db.collection("alunos_professor").document(doc.id).update({"notificacao": True})
+        # 🔔 Ativa notificações
+        db.collection("alunos_professor").document(doc.id).update({
+            "notificacao": True,
+            "notificacao_todos": True
+        })
+
+        # ⏱️ Agenda desativação automática
+        background_tasks.add_task(
+            desativar_notificacao_todos_apos_tempo,
+            doc.id
+        )
+
         return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
 
     except Exception as e:
@@ -2294,9 +2307,9 @@ async def ativar_notificacao(data: NotificacaoRequest):
             status_code=500
         )
 
-
 class AlunoInfo(BaseModel):
     aluno: str
+
 
 @app.post("/desativar-notificacao")
 async def desativar_notificacao(info: AlunoInfo):
@@ -2306,7 +2319,6 @@ async def desativar_notificacao(info: AlunoInfo):
         docs = db.collection("alunos_professor") \
                  .where("aluno", "==", aluno) \
                  .limit(1).stream()
-
         doc = next(docs, None)
 
         if not doc:
@@ -2316,11 +2328,15 @@ async def desativar_notificacao(info: AlunoInfo):
             )
 
         doc.reference.update({"notificacao": False})
+
         return {"status": "ok", "mensagem": "Notificação desativada"}
 
     except Exception as e:
         return JSONResponse(
-            content={"status": "erro", "mensagem": f"Erro ao desativar notificação: {str(e)}"},
+            content={
+                "status": "erro",
+                "mensagem": f"Erro ao desativar notificação: {str(e)}"
+            },
             status_code=500
         )
 
@@ -2332,7 +2348,10 @@ async def verificar_notificacao(request: Request):
         nome_aluno = str(dados.get("aluno", "")).strip().lower()
 
         if not nome_aluno:
-            return JSONResponse(content={"erro": "Nome do aluno não fornecido"}, status_code=400)
+            return JSONResponse(
+                content={"erro": "Nome do aluno não fornecido"},
+                status_code=400
+            )
 
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", nome_aluno) \
@@ -2347,16 +2366,18 @@ async def verificar_notificacao(request: Request):
             )
 
         dados_aluno = doc.to_dict()
-        notificacao = dados_aluno.get("notificacao", False)
-        professor_email = dados_aluno.get("professor", "")
 
         return JSONResponse(content={
-            "notificacao": notificacao,
-            "professor_email": professor_email
+            "notificacao": dados_aluno.get("notificacao", False),
+            "notificacao_todos": dados_aluno.get("notificacao_todos", False),
+            "professor_email": dados_aluno.get("professor", "")
         })
 
     except Exception as e:
-        return JSONResponse(content={"erro": str(e)}, status_code=500)
+        return JSONResponse(
+            content={"erro": str(e)},
+            status_code=500
+        )
 
 
 from fastapi import Request

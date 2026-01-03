@@ -11,6 +11,7 @@ import unicodedata
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import unquote
+from fastapi import BackgroundTasks
 
 import httpx
 from dotenv import load_dotenv

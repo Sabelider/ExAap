@@ -1133,7 +1133,7 @@ function fecharDesafio() {
 
     .notificacao-item {
       background: #f5f7fa;
-      padding: 12px;
+      padding: 14px;
       border-radius: 10px;
       font-size: 0.95rem;
       margin-bottom: 10px;
@@ -1144,6 +1144,31 @@ function fecharDesafio() {
       background: #e3f2fd;
     }
 
+    .acoes-notificacao {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .acoes-notificacao button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-entrar {
+      background: #1e88e5;
+      color: white;
+    }
+
+    .btn-nao-entrar {
+      background: #e0e0e0;
+      color: #333;
+    }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -1152,16 +1177,6 @@ function fecharDesafio() {
       to {
         opacity: 1;
         transform: scale(1);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .modal-header h3 {
-        font-size: 1rem;
-      }
-
-      .notificacao-item {
-        font-size: 0.9rem;
       }
     }
   `;
@@ -1180,42 +1195,64 @@ function fecharNotificacoes() {
 }
 
 // ===============================
+// 🔹 ENTRAR NA AULA
+// ===============================
+async function entrarNaAula() {
+  try {
+    await fetch("/desativar-notificacao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aluno: nomeAluno })
+    });
+
+    if (window.professorEmailAtual) {
+      const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
+      window.location.href = `/sala_virtual_aluno/${sala}`;
+    }
+  } catch (e) {
+    console.error("Erro ao entrar na aula:", e);
+  }
+}
+
+// ===============================
 // 🔹 VERIFICAR NOTIFICAÇÕES
 // ===============================
 async function verificarNotificacaoTodos(aluno) {
   try {
     const response = await fetch("/verificar-notificacao", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aluno })
     });
 
     const data = await response.json();
-
     const lista = document.getElementById("lista-notificacoes");
     lista.innerHTML = "";
 
     if (data.notificacao_todos === true) {
+      // guarda email do professor para redirecionar
+      window.professorEmailAtual = data.professor_email;
+
       const item = document.createElement("div");
       item.className = "notificacao-item ativa";
       item.innerHTML = `
-        <strong>📢 Aula disponível</strong>
-        <p>O professor iniciou uma aula agora.</p>
+        <strong>📢 Aula iniciada</strong>
+        <p>A sua aula já começou, querer entrar?</p>
+
+        <div class="acoes-notificacao">
+          <button class="btn-entrar" onclick="entrarNaAula()">Entrar na aula</button>
+          <button class="btn-nao-entrar" onclick="fecharNotificacoes()">Não entrar na aula</button>
+        </div>
       `;
       lista.appendChild(item);
     } else {
       const item = document.createElement("div");
       item.className = "notificacao-item";
-      item.innerHTML = `
-        <p>Nenhuma notificação no momento.</p>
-      `;
+      item.innerHTML = `<p>Nenhuma notificação no momento.</p>`;
       lista.appendChild(item);
     }
 
     abrirNotificacoes();
-
   } catch (error) {
     console.error("Erro ao verificar notificações:", error);
   }

@@ -1072,6 +1072,156 @@ function fecharDesafio() {
   </div>
 </div>
 
+  <script>
+// ===============================
+// 🔹 INJETAR STYLES AUTOMATICAMENTE
+// ===============================
+(function inserirStylesNotificacoes() {
+  if (document.getElementById("styles-notificacoes")) return;
+
+  const style = document.createElement("style");
+  style.id = "styles-notificacoes";
+  style.innerHTML = `
+    .modal-notificacoes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal-notificacoes > div {
+      background: #ffffff;
+      width: 90%;
+      max-width: 420px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1e88e5, #26c6da);
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .modal-header button {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    #lista-notificacoes {
+      padding: 16px;
+    }
+
+    .notificacao-item {
+      background: #f5f7fa;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+
+    .notificacao-item.ativa {
+      border-left: 5px solid #1e88e5;
+      background: #e3f2fd;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .modal-header h3 {
+        font-size: 1rem;
+      }
+
+      .notificacao-item {
+        font-size: 0.9rem;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ===============================
+// 🔹 ABRIR / FECHAR MODAL
+// ===============================
+function abrirNotificacoes() {
+  document.getElementById("modal-notificacoes").style.display = "flex";
+}
+
+function fecharNotificacoes() {
+  document.getElementById("modal-notificacoes").style.display = "none";
+}
+
+// ===============================
+// 🔹 VERIFICAR NOTIFICAÇÕES
+// ===============================
+async function verificarNotificacaoTodos(aluno) {
+  try {
+    const response = await fetch("/verificar-notificacao", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ aluno })
+    });
+
+    const data = await response.json();
+
+    const lista = document.getElementById("lista-notificacoes");
+    lista.innerHTML = "";
+
+    if (data.notificacao_todos === true) {
+      const item = document.createElement("div");
+      item.className = "notificacao-item ativa";
+      item.innerHTML = `
+        <strong>📢 Aula disponível</strong>
+        <p>O professor iniciou uma aula agora.</p>
+      `;
+      lista.appendChild(item);
+    } else {
+      const item = document.createElement("div");
+      item.className = "notificacao-item";
+      item.innerHTML = `
+        <p>Nenhuma notificação no momento.</p>
+      `;
+      lista.appendChild(item);
+    }
+
+    abrirNotificacoes();
+
+  } catch (error) {
+    console.error("Erro ao verificar notificações:", error);
+  }
+}
+</script>
+
 <!-- Modal do chat (inicialmente oculto) -->
 <div id="chat-modal-aluno" style="display: none;">
   <div id="chat-container">

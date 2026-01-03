@@ -2266,8 +2266,12 @@ async def verificar_aluno_vinculo(data: VerificarAlunoInput):
             content={"detail": "Erro interno ao verificar vínculo do aluno."}
         )
 
+
+from fastapi import BackgroundTasks
+
 class NotificacaoRequest(BaseModel):
     aluno: str
+
 
 @app.post("/ativar-notificacao")
 async def ativar_notificacao(
@@ -2288,25 +2292,31 @@ async def ativar_notificacao(
                 status_code=404
             )
 
-        # 🔔 Ativa notificações
-        db.collection("alunos_professor").document(doc.id).update({
-            "notificacao": True,
-            "notificacao_todos": True
-        })
+        # 🔔 1️⃣ Ativa notificação individual
+        doc.reference.update({"notificacao": True})
 
-        # ⏱️ Agenda desativação automática
-        background_tasks.add_task(
-            desativar_notificacao_todos_apos_tempo,
-            doc.id
-        )
+        # 🔔 2️⃣ Ativa notificacao_todos PARA TODA A COLEÇÃO
+        todos_docs = db.collection("alunos_professor").stream()
+        batch = db.batch()
 
-        return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
+        for d in todos_docs:
+            batch.update(d.reference, {"notificacao_todos": True})
+
+        batch.commit()
+
+        # ⏱️ 3️⃣ Agenda desativação global após 15 minutos
+        background_tasks.add_task(desativar_notificacao_todos_apos_tempo)
+
+        return {
+            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos."
+        }
 
     except Exception as e:
         return JSONResponse(
             content={"msg": f"Erro ao ativar notificação: {str(e)}"},
             status_code=500
         )
+
 
 class AlunoInfo(BaseModel):
     aluno: str

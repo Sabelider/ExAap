@@ -1072,10 +1072,55 @@ function fecharDesafio() {
   </div>
 </div>
 
-  <script>
-// ===============================
+ <!-- 🔔 BOTÃO DE NOTIFICAÇÕES -->
+<button
+  id="botao-notificacoes"
+  onclick="abrirNotificacoesAluno()"
+  style="
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+  "
+  title="Ver notificações"
+>
+  🔔
+</button>
+
+<!-- ===============================
+     🔔 MODAL DE NOTIFICAÇÕES
+================================ -->
+<div id="modal-notificacoes" class="modal-notificacoes" style="display:none;">
+  <div>
+    <div class="modal-header">
+      <h3>Notificações</h3>
+      <button onclick="fecharNotificacoes()">✖</button>
+    </div>
+
+    <div id="lista-notificacoes">
+      <!-- Conteúdo via JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// 🔹 BUSCAR NOME DO ALUNO (JÁ EXISTENTE NO TEU SISTEMA)
+// =====================================================
+function getNomeAluno() {
+  let nome = localStorage.getItem("alunoNome");
+  if (!nome || nome.trim() === "") {
+    nome = "{{ aluno.nome }}";
+    if (nome && nome !== "{{ aluno.nome }}") {
+      localStorage.setItem("alunoNome", nome.trim().toLowerCase());
+    }
+  }
+  return nome.trim().toLowerCase();
+}
+
+// =====================================================
 // 🔹 INJETAR STYLES AUTOMATICAMENTE
-// ===============================
+// =====================================================
 (function inserirStylesNotificacoes() {
   if (document.getElementById("styles-notificacoes")) return;
 
@@ -1084,11 +1129,8 @@ function fecharDesafio() {
   style.innerHTML = `
     .modal-notificacoes {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.45);
+      inset: 0;
+      background: rgba(0,0,0,0.45);
       display: none;
       align-items: center;
       justify-content: center;
@@ -1096,33 +1138,28 @@ function fecharDesafio() {
     }
 
     .modal-notificacoes > div {
-      background: #ffffff;
+      background: #fff;
       width: 90%;
       max-width: 420px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       overflow: hidden;
-      animation: fadeIn 0.25s ease-in-out;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      animation: fadeIn .25s ease-in-out;
     }
 
     .modal-header {
-      background: linear-gradient(135deg, #1e88e5, #26c6da);
-      color: white;
+      background: linear-gradient(135deg,#1e88e5,#26c6da);
+      color: #fff;
       padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .modal-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
-
     .modal-header button {
-      background: transparent;
+      background: none;
       border: none;
-      color: white;
+      color: #fff;
       font-size: 1.2rem;
       cursor: pointer;
     }
@@ -1135,14 +1172,12 @@ function fecharDesafio() {
       background: #f5f7fa;
       padding: 14px;
       border-radius: 10px;
-      font-size: 0.95rem;
-      margin-bottom: 10px;
       text-align: center;
     }
 
     .notificacao-item.ativa {
-      border-left: 5px solid #1e88e5;
       background: #e3f2fd;
+      border-left: 5px solid #1e88e5;
       text-align: left;
     }
 
@@ -1157,13 +1192,13 @@ function fecharDesafio() {
       padding: 10px;
       border-radius: 8px;
       border: none;
-      cursor: pointer;
       font-weight: 600;
+      cursor: pointer;
     }
 
     .btn-entrar {
       background: #1e88e5;
-      color: white;
+      color: #fff;
     }
 
     .btn-nao-entrar {
@@ -1172,22 +1207,16 @@ function fecharDesafio() {
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      from { opacity:0; transform:scale(.95); }
+      to { opacity:1; transform:scale(1); }
     }
   `;
   document.head.appendChild(style);
 })();
 
-// ===============================
+// =====================================================
 // 🔹 ABRIR / FECHAR MODAL
-// ===============================
+// =====================================================
 function abrirNotificacoes() {
   document.getElementById("modal-notificacoes").style.display = "flex";
 }
@@ -1196,10 +1225,20 @@ function fecharNotificacoes() {
   document.getElementById("modal-notificacoes").style.display = "none";
 }
 
-// ===============================
+// =====================================================
+// 🔹 BOTÃO 🔔 → CHAMA A FUNÇÃO CORRETA
+// =====================================================
+function abrirNotificacoesAluno() {
+  const nomeAluno = getNomeAluno();
+  verificarNotificacaoTodos(nomeAluno);
+}
+
+// =====================================================
 // 🔹 ENTRAR NA AULA
-// ===============================
+// =====================================================
 async function entrarNaAula() {
+  const nomeAluno = getNomeAluno();
+
   try {
     await fetch("/desativar-notificacao", {
       method: "POST",
@@ -1208,7 +1247,9 @@ async function entrarNaAula() {
     });
 
     if (window.professorEmailAtual) {
-      const sala = encodeURIComponent(`${window.professorEmailAtual}-${nomeAluno}`);
+      const sala = encodeURIComponent(
+        `${window.professorEmailAtual}-${nomeAluno}`
+      );
       window.location.href = `/sala_virtual_aluno/${sala}`;
     }
   } catch (e) {
@@ -1216,9 +1257,9 @@ async function entrarNaAula() {
   }
 }
 
-// ===============================
-// 🔹 VERIFICAR NOTIFICAÇÕES
-// ===============================
+// =====================================================
+// 🔹 VERIFICAR NOTIFICAÇÕES (ROTA FASTAPI)
+// =====================================================
 async function verificarNotificacaoTodos(aluno) {
   try {
     const response = await fetch("/verificar-notificacao", {
@@ -1234,23 +1275,27 @@ async function verificarNotificacaoTodos(aluno) {
     if (data.notificacao_todos === true) {
       window.professorEmailAtual = data.professor_email;
 
-      const item = document.createElement("div");
-      item.className = "notificacao-item ativa";
-      item.innerHTML = `
-        <strong>📢 Aula iniciada</strong>
-        <p>A sua aula já começou, querer entrar?</p>
+      lista.innerHTML = `
+        <div class="notificacao-item ativa">
+          <strong>📢 Aula iniciada</strong>
+          <p>A sua aula já começou, quer entrar?</p>
 
-        <div class="acoes-notificacao">
-          <button class="btn-entrar" onclick="entrarNaAula()">Entrar na aula</button>
-          <button class="btn-nao-entrar" onclick="fecharNotificacoes()">Não entrar na aula</button>
+          <div class="acoes-notificacao">
+            <button class="btn-entrar" onclick="entrarNaAula()">
+              Entrar na aula
+            </button>
+            <button class="btn-nao-entrar" onclick="fecharNotificacoes()">
+              Não entrar
+            </button>
+          </div>
         </div>
       `;
-      lista.appendChild(item);
     } else {
-      const item = document.createElement("div");
-      item.className = "notificacao-item";
-      item.innerHTML = `<p>📭 <strong>Sem aulas no momento</strong></p>`;
-      lista.appendChild(item);
+      lista.innerHTML = `
+        <div class="notificacao-item">
+          <p>📭 <strong>Sem aulas no momento</strong></p>
+        </div>
+      `;
     }
 
     abrirNotificacoes();

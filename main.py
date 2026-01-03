@@ -2267,6 +2267,20 @@ async def verificar_aluno_vinculo(data: VerificarAlunoInput):
         )
 
 
+async def desativar_notificacao_todos_apos_tempo():
+    await asyncio.sleep(900)
+
+    docs = db.collection("alunos_professor").stream()
+    batch = db.batch()
+
+    for doc in docs:
+        batch.update(doc.reference, {
+            "notificacao_todos": False
+        })
+
+    batch.commit()
+
+
 from fastapi import BackgroundTasks
 
 class NotificacaoRequest(BaseModel):

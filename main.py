@@ -2338,9 +2338,24 @@ async def desativar_notificacao(info: AlunoInfo):
                 status_code=404
             )
 
+        # 🔕 Desativa notificação individual
         doc.reference.update({"notificacao": False})
 
-        return {"status": "ok", "mensagem": "Notificação desativada"}
+        # 🔕 Desativa notificacao_todos para TODOS imediatamente
+        docs_todos = db.collection("alunos_professor").stream()
+        batch = db.batch()
+
+        for d in docs_todos:
+            batch.update(d.reference, {
+                "notificacao_todos": False
+            })
+
+        batch.commit()
+
+        return {
+            "status": "ok",
+            "mensagem": "Notificação individual e global desativadas"
+        }
 
     except Exception as e:
         return JSONResponse(

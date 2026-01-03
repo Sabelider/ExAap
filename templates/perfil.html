@@ -1031,7 +1031,9 @@ function fecharDesafio() {
 <p id="mensagem-feedback" style="margin-top: 10px; font-weight: bold;"></p>
 </div>
 
-<!-- Rodapé do aluno -->
+<!-- ===============================
+     🔻 RODAPÉ DO ALUNO
+================================ -->
 <div class="footer">
   <div class="item active" onclick="abrirPerfil()">
     <i class="fa-solid fa-user"></i>
@@ -1043,54 +1045,28 @@ function fecharDesafio() {
     Pagamentos
   </div>
 
- <div class="item notification-item" onclick="abrirNotificacoes()">
-  <i class="fa-solid fa-bell"></i>
-  <span id="badge-notificacoes" class="badge" style="display:none;">0</span>
-  Notificações
-</div>
+  <!-- 🔔 BOTÃO ÚNICO DE NOTIFICAÇÕES -->
+  <div class="item notification-item" onclick="abrirNotificacoesAluno()">
+    <i class="fa-solid fa-bell"></i>
+    <span id="badge-notificacoes" class="badge" style="display:none;">0</span>
+    Notificações
+  </div>
 
   <div class="item" onclick="abrirInfoEmpresa()">
     <i class="fa-solid fa-circle-info"></i>
     Informações
   </div>
 
-  <!-- Botão que abre o chat -->
   <div class="item" onclick="abrirChatAluno()">
     <i class="fa-solid fa-comments"></i>
     Chat
   </div>
 </div>
-  <!-- Modal de Notificações -->
-<div id="modal-notificacoes" class="modal-notificacoes" style="display:none;">
-  <div class="modal-header">
-    <h3>Notificações</h3>
-    <button onclick="fecharNotificacoes()">✖</button>
-  </div>
-
-  <div id="lista-notificacoes">
-    <!-- Notificações serão inseridas aqui via JS -->
-  </div>
-</div>
-
- <!-- 🔔 BOTÃO DE NOTIFICAÇÕES -->
-<button
-  id="botao-notificacoes"
-  onclick="abrirNotificacoesAluno()"
-  style="
-    background: transparent;
-    border: none;
-    font-size: 22px;
-    cursor: pointer;
-  "
-  title="Ver notificações"
->
-  🔔
-</button>
 
 <!-- ===============================
      🔔 MODAL DE NOTIFICAÇÕES
 ================================ -->
-<div id="modal-notificacoes" class="modal-notificacoes" style="display:none;">
+<div id="modal-notificacoes" class="modal-notificacoes">
   <div>
     <div class="modal-header">
       <h3>Notificações</h3>
@@ -1105,7 +1081,7 @@ function fecharDesafio() {
 
 <script>
 // =====================================================
-// 🔹 BUSCAR NOME DO ALUNO (JÁ EXISTENTE NO TEU SISTEMA)
+// 🔹 NOME DO ALUNO
 // =====================================================
 function getNomeAluno() {
   let nome = localStorage.getItem("alunoNome");
@@ -1119,7 +1095,7 @@ function getNomeAluno() {
 }
 
 // =====================================================
-// 🔹 INJETAR STYLES AUTOMATICAMENTE
+// 🔹 STYLES DO MODAL
 // =====================================================
 (function inserirStylesNotificacoes() {
   if (document.getElementById("styles-notificacoes")) return;
@@ -1226,7 +1202,7 @@ function fecharNotificacoes() {
 }
 
 // =====================================================
-// 🔹 BOTÃO 🔔 → CHAMA A FUNÇÃO CORRETA
+// 🔹 BOTÃO DO FOOTER → NOTIFICAÇÕES
 // =====================================================
 function abrirNotificacoesAluno() {
   const nomeAluno = getNomeAluno();
@@ -1258,7 +1234,7 @@ async function entrarNaAula() {
 }
 
 // =====================================================
-// 🔹 VERIFICAR NOTIFICAÇÕES (ROTA FASTAPI)
+// 🔹 VERIFICAR NOTIFICAÇÕES
 // =====================================================
 async function verificarNotificacaoTodos(aluno) {
   try {
@@ -1278,22 +1254,18 @@ async function verificarNotificacaoTodos(aluno) {
       lista.innerHTML = `
         <div class="notificacao-item ativa">
           <strong>📢 Aula iniciada</strong>
-          <p>A sua aula já começou, quer entrar?</p>
+          <p>A sua aula já começou, deseja entrar?</p>
 
           <div class="acoes-notificacao">
-            <button class="btn-entrar" onclick="entrarNaAula()">
-              Entrar na aula
-            </button>
-            <button class="btn-nao-entrar" onclick="fecharNotificacoes()">
-              Não entrar
-            </button>
+            <button class="btn-entrar" onclick="entrarNaAula()">Entrar</button>
+            <button class="btn-nao-entrar" onclick="fecharNotificacoes()">Agora não</button>
           </div>
         </div>
       `;
     } else {
       lista.innerHTML = `
         <div class="notificacao-item">
-          <p>📭 <strong>Sem aulas no momento</strong></p>
+          <p>📭 <strong>Sem notificações no momento</strong></p>
         </div>
       `;
     }

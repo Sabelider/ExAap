@@ -1137,11 +1137,13 @@ function fecharDesafio() {
       border-radius: 10px;
       font-size: 0.95rem;
       margin-bottom: 10px;
+      text-align: center;
     }
 
     .notificacao-item.ativa {
       border-left: 5px solid #1e88e5;
       background: #e3f2fd;
+      text-align: left;
     }
 
     .acoes-notificacao {
@@ -1230,7 +1232,6 @@ async function verificarNotificacaoTodos(aluno) {
     lista.innerHTML = "";
 
     if (data.notificacao_todos === true) {
-      // guarda email do professor para redirecionar
       window.professorEmailAtual = data.professor_email;
 
       const item = document.createElement("div");
@@ -1248,7 +1249,7 @@ async function verificarNotificacaoTodos(aluno) {
     } else {
       const item = document.createElement("div");
       item.className = "notificacao-item";
-      item.innerHTML = `<p>Nenhuma notificação no momento.</p>`;
+      item.innerHTML = `<p>📭 <strong>Sem aulas no momento</strong></p>`;
       lista.appendChild(item);
     }
 

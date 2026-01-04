@@ -4657,7 +4657,8 @@ async def enviar_id_aula(payload: EnviarIdPayload):
         "professor": professor_norm,
         "prebuilt_link": payload.prebuilt_link,
         "subdomain": conta["SUBDOMAIN"],
-        "template_id": conta["TEMPLATE"]
+        "template_id": conta["TEMPLATE"],
+        "nome_aluno": payload.aluno  # ✅ NOVA ATUALIZAÇÃO
     }
 
     # 🔔 CRIAR NOTIFICAÇÃO NO FIREBASE
@@ -4690,11 +4691,16 @@ async def buscar_id_professor(aluno: str):
     data = ALUNO_ROOM.get(aluno_norm)
 
     if not data:
-        return {"room_id": None, "prebuilt_link": None}
+        return {
+            "room_id": None,
+            "prebuilt_link": None,
+            "nome_aluno": None
+        }
 
     return {
         "room_id": data["room_id"],
-        "prebuilt_link": data["prebuilt_link"]
+        "prebuilt_link": data["prebuilt_link"],
+        "nome_aluno": data.get("nome_aluno")  # ✅ NOVO RETORNO
     }
 
 

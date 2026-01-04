@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aluno - Entrar na Aula</title>
 
+  <!-- Ícones profissionais -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -64,12 +65,21 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-top: 10px;
     }
 
     #buscarBtn {
       background: linear-gradient(135deg, #00c9ff, #92fe9d);
       color: #000;
+    }
+
+    #buscarBtn:hover {
+      transform: scale(1.03);
+    }
+
+    #buscarBtn:disabled {
+      background: #333;
+      color: #888;
+      cursor: not-allowed;
     }
 
     #contador {
@@ -78,57 +88,50 @@
       font-weight: bold;
       color: #00ff7f;
       text-shadow: 0 0 20px rgba(0,255,150,0.75);
+      transition: 0.3s;
     }
 
     #status {
       font-size: 15px;
+      opacity: 0.9;
       min-height: 22px;
     }
 
     #entrarBtn {
       display: none;
+      margin-top: 26px;
       background: linear-gradient(135deg, #00d26a, #00ff7f);
       color: #003d1f;
       box-shadow: 0 0 22px rgba(0,255,150,0.6);
     }
 
-    #entrarAutoBtn {
-      display: none;
-      background: linear-gradient(135deg, #ffb347, #ffcc33);
-      color: #3d2a00;
-      box-shadow: 0 0 22px rgba(255,200,80,0.6);
+    #entrarBtn:hover {
+      transform: scale(1.06);
     }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2><i class="fa-solid fa-user-graduate"></i> Entrar na Aula</h2>
+  <div class="card">
+    <h2><i class="fa-solid fa-user-graduate"></i> Entrar na Aula</h2>
 
-  <input id="nomeAluno" placeholder="Digite seu nome" />
+    <input id="nomeAluno" placeholder="Digite seu nome" />
 
-  <button id="buscarBtn">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    Buscar Chamada
-  </button>
+    <button id="buscarBtn">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      Buscar Chamada
+    </button>
 
-  <div id="contador">20</div>
-  <div id="status">
-    <i class="fa-solid fa-clock"></i> Aguardando criação da sala...
+    <div id="contador">20</div>
+    <div id="status">
+      <i class="fa-solid fa-clock"></i> Aguardando criação da sala...
+    </div>
+
+    <button id="entrarBtn">
+      <i class="fa-solid fa-video"></i>
+      Entrar na Aula
+    </button>
   </div>
-
-  <!-- BOTÃO EXISTENTE -->
-  <button id="entrarBtn">
-    <i class="fa-solid fa-video"></i>
-    Entrar na Aula
-  </button>
-
-  <!-- NOVO BOTÃO -->
-  <button id="entrarAutoBtn">
-    <i class="fa-solid fa-door-open"></i>
-    Entrar na aula a decorrer
-  </button>
-</div>
 
 <script>
 const buscarBtn = document.getElementById('buscarBtn');
@@ -136,63 +139,74 @@ const statusEl = document.getElementById('status');
 const contadorEl = document.getElementById('contador');
 const nomeInput = document.getElementById('nomeAluno');
 const entrarBtn = document.getElementById('entrarBtn');
-const entrarAutoBtn = document.getElementById('entrarAutoBtn');
 
 let linkSala = "";
 let tempo = 20;
 let intervalo = null;
 
-// ⏱️ CRONÓMETRO
-intervalo = setInterval(async () => {
-  tempo--;
+// ⏱️ CRONÓMETRO INICIA AUTOMATICAMENTE AO CARREGAR
+function iniciarCronometroAutomatico() {
   contadorEl.textContent = tempo;
 
-  if (tempo === 15) {
-    entrarAutoBtn.style.display = "flex";
-    await buscarSalaAutomaticamente();
-  }
+  intervalo = setInterval(() => {
+    tempo--;
+    contadorEl.textContent = tempo;
 
-  if (tempo <= 0) clearInterval(intervalo);
-}, 1000);
+    if (tempo <= 5) {
+      contadorEl.style.color = "#ff4d4d";
+      contadorEl.style.textShadow = "0 0 20px rgba(255,80,80,0.9)";
+    }
 
-// 🔄 Busca automática
-async function buscarSalaAutomaticamente() {
+    if (tempo <= 0) {
+      clearInterval(intervalo);
+      contadorEl.textContent = "0";
+      statusEl.innerHTML = '📢 <b>A sala já foi criada.</b><br>Atualize a página para entrar.';
+    }
+  }, 1000);
+}
+
+// ▶️ Inicia assim que o template abre
+window.addEventListener("load", iniciarCronometroAutomatico);
+
+// 🔎 Buscar chamada manualmente
+buscarBtn.onclick = async () => {
   const aluno = nomeInput.value.trim();
-  if (!aluno) return;
+  if (!aluno) return alert('Digite o nome do aluno');
+
+  buscarBtn.disabled = true;
 
   try {
     const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
     const data = await res.json();
 
-    if (data.prebuilt_link) {
-      linkSala = data.prebuilt_link;
-      statusEl.innerHTML = `🎥 Aula a decorrer para <b>${data.nome_aluno}</b>`;
+    if (!data.room_id || !data.prebuilt_link) {
+      buscarBtn.disabled = false;
+      return;
     }
-  } catch (e) {
-    console.error(e);
+
+    // ✅ Sala encontrada antes do fim
+    clearInterval(intervalo);
+
+    linkSala = data.prebuilt_link;
+    contadorEl.textContent = '';
+    statusEl.innerHTML = '✅ <b>Sala criada com sucesso!</b>';
+
+    nomeInput.style.display = "none";
+    buscarBtn.style.display = "none";
+    entrarBtn.style.display = "flex";
+
+  } catch (err) {
+    console.error(err);
+    statusEl.innerHTML = '⚠️ Erro ao buscar a chamada.';
+    buscarBtn.disabled = false;
   }
-}
-
-// 🔎 Busca manual (mantida)
-buscarBtn.onclick = async () => {
-  const aluno = nomeInput.value.trim();
-  if (!aluno) return alert('Digite o nome do aluno');
-
-  const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
-  const data = await res.json();
-
-  if (!data.prebuilt_link) return;
-
-  linkSala = data.prebuilt_link;
-
-  nomeInput.style.display = "none";
-  buscarBtn.style.display = "none";
-  entrarBtn.style.display = "flex";
 };
 
-// ▶️ Entrar (ambos botões)
-entrarBtn.onclick = entrarAutoBtn.onclick = () => {
-  if (linkSala) window.location.href = linkSala;
+// ▶️ Entrar na sala
+entrarBtn.onclick = () => {
+  if (linkSala) {
+    window.open(linkSala, "_blank");
+  }
 };
 </script>
 

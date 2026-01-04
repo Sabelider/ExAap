@@ -128,18 +128,21 @@ const entrarBtn = document.getElementById('entrarBtn');
 let tempo = 20;
 let intervalo = null;
 
+// 🔐 Dados internos retornados pelo backend
+let linkSala = null;
+let nomeAlunoInterno = null;
+
 // ⏱️ Cronómetro automático
 function iniciarCronometroAutomatico() {
   contadorEl.textContent = tempo;
 
-  intervalo = setInterval(() => {
+  intervalo = setInterval(async () => {
     tempo--;
     contadorEl.textContent = tempo;
 
-    // 🔔 Após 15 segundos → mostrar botão
+    // 🔔 Após 15 segundos → busca automática
     if (tempo === 5) {
-      entrarBtn.style.display = "flex";
-      statusEl.innerHTML = "📢 <b>Já existe uma aula a decorrer</b>";
+      await buscarSalaAutomaticamente();
     }
 
     if (tempo <= 0) {
@@ -151,12 +154,36 @@ function iniciarCronometroAutomatico() {
 
 window.addEventListener("load", iniciarCronometroAutomatico);
 
-// 🔎 Busca manual (mantida)
+// 🔎 BUSCA AUTOMÁTICA (SEM INPUT)
+// Backend decide qual aluno tem aula criada
+async function buscarSalaAutomaticamente() {
+  statusEl.innerHTML = "🔍 A verificar aula a decorrer...";
+
+  try {
+    const res = await fetch("/buscar-id-professor?aluno=*");
+    const data = await res.json();
+
+    if (data.prebuilt_link && data.nome_aluno) {
+      linkSala = data.prebuilt_link;
+      nomeAlunoInterno = data.nome_aluno;
+
+      entrarBtn.style.display = "flex";
+      statusEl.innerHTML = `📢 Aula a decorrer para <b>${nomeAlunoInterno}</b>`;
+    } else {
+      statusEl.innerHTML = "⏳ Aula ainda não disponível.";
+    }
+  } catch (e) {
+    statusEl.innerHTML = "⚠️ Erro ao verificar aula.";
+  }
+}
+
+// 🔎 BUSCA MANUAL (mantida, intacta)
 buscarBtn.onclick = async () => {
   const aluno = nomeInput.value.trim();
   if (!aluno) return alert("Digite o nome do aluno");
 
   buscarBtn.disabled = true;
+  statusEl.innerHTML = "🔍 A procurar aula...";
 
   const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
   const data = await res.json();
@@ -169,21 +196,13 @@ buscarBtn.onclick = async () => {
   }
 };
 
-// ▶️ NOVO: Entrar automaticamente após 15s
-entrarBtn.onclick = async () => {
-  const aluno = nomeInput.value.trim();
-  if (!aluno) return alert("Digite o nome do aluno");
-
-  statusEl.innerHTML = "🔄 A entrar na aula...";
-
-  const res = await fetch(`/buscar-id-professor?aluno=${encodeURIComponent(aluno)}`);
-  const data = await res.json();
-
-  if (data.prebuilt_link) {
-    window.location.href = data.prebuilt_link;
-  } else {
-    statusEl.innerHTML = "⚠️ Aula ainda não disponível.";
+// ▶️ ENTRAR NA AULA (usa dados vindos da rota automática)
+entrarBtn.onclick = () => {
+  if (!linkSala || !nomeAlunoInterno) {
+    return alert("Aula ainda não confirmada.");
   }
+
+  window.location.href = linkSala;
 };
 </script>
 

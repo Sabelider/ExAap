@@ -22,6 +22,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_303_SEE_OTHER
 from typing import List, Optional
+from fastapi import BackgroundTasks
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -2272,10 +2273,11 @@ from fastapi import BackgroundTasks
 class NotificacaoRequest(BaseModel):
     aluno: str
 
-async def desativar_notificacao_todos_apos_tempo():
+
+def desativar_notificacao_todos_apos_tempo():
     try:
         # Aguarda 2 minutos (120 segundos)
-        await asyncio.sleep(120)
+        time.sleep(120)
 
         docs = db.collection("alunos_professor").stream()
         batch = db.batch()
@@ -2291,6 +2293,10 @@ async def desativar_notificacao_todos_apos_tempo():
 
     except Exception as e:
         print(f"Erro ao desativar notificacao_todos: {e}")
+
+
+class NotificacaoRequest(BaseModel):
+    aluno: str
 
 
 @app.post("/ativar-notificacao")

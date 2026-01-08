@@ -2267,24 +2267,30 @@ async def verificar_aluno_vinculo(data: VerificarAlunoInput):
         )
 
 
-async def desativar_notificacao_todos_apos_tempo():
-    await asyncio.sleep(900)
-
-    docs = db.collection("alunos_professor").stream()
-    batch = db.batch()
-
-    for doc in docs:
-        batch.update(doc.reference, {
-            "notificacao_todos": False
-        })
-
-    batch.commit()
-
-
 from fastapi import BackgroundTasks
 
 class NotificacaoRequest(BaseModel):
     aluno: str
+
+async def desativar_notificacao_todos_apos_tempo():
+    try:
+        # Aguarda 2 minutos (120 segundos)
+        await asyncio.sleep(120)
+
+        docs = db.collection("alunos_professor").stream()
+        batch = db.batch()
+
+        for d in docs:
+            batch.update(d.reference, {
+                "notificacao_todos": False
+            })
+
+        batch.commit()
+
+        print("🔕 notificacao_todos desativado automaticamente após 2 minutos")
+
+    except Exception as e:
+        print(f"Erro ao desativar notificacao_todos: {e}")
 
 
 @app.post("/ativar-notificacao")
@@ -2295,9 +2301,12 @@ async def ativar_notificacao(
     try:
         aluno_nome = data.aluno.strip().lower()
 
-        docs = db.collection("alunos_professor") \
-                 .where("aluno", "==", aluno_nome) \
-                 .limit(1).stream()
+        docs = (
+            db.collection("alunos_professor")
+            .where("aluno", "==", aluno_nome)
+            .limit(1)
+            .stream()
+        )
         doc = next(docs, None)
 
         if not doc:
@@ -2307,22 +2316,26 @@ async def ativar_notificacao(
             )
 
         # 🔔 1️⃣ Ativa notificação individual
-        doc.reference.update({"notificacao": True})
+        doc.reference.update({
+            "notificacao": True
+        })
 
         # 🔔 2️⃣ Ativa notificacao_todos PARA TODA A COLEÇÃO
         todos_docs = db.collection("alunos_professor").stream()
         batch = db.batch()
 
         for d in todos_docs:
-            batch.update(d.reference, {"notificacao_todos": True})
+            batch.update(d.reference, {
+                "notificacao_todos": True
+            })
 
         batch.commit()
 
-        # ⏱️ 3️⃣ Agenda desativação global após 15 minutos
+        # ⏱️ 3️⃣ Agenda desativação global após 2 minutos
         background_tasks.add_task(desativar_notificacao_todos_apos_tempo)
 
         return {
-            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos."
+            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos por 2 minutos."
         }
 
     except Exception as e:
@@ -2341,9 +2354,12 @@ async def desativar_notificacao(info: AlunoInfo):
     try:
         aluno = info.aluno.strip().lower()
 
-        docs = db.collection("alunos_professor") \
-                 .where("aluno", "==", aluno) \
-                 .limit(1).stream()
+        docs = (
+            db.collection("alunos_professor")
+            .where("aluno", "==", aluno)
+            .limit(1)
+            .stream()
+        )
         doc = next(docs, None)
 
         if not doc:
@@ -2352,23 +2368,14 @@ async def desativar_notificacao(info: AlunoInfo):
                 status_code=404
             )
 
-        # 🔕 Desativa notificação individual
-        doc.reference.update({"notificacao": False})
-
-        # 🔕 Desativa notificacao_todos para TODOS imediatamente
-        docs_todos = db.collection("alunos_professor").stream()
-        batch = db.batch()
-
-        for d in docs_todos:
-            batch.update(d.reference, {
-                "notificacao_todos": False
-            })
-
-        batch.commit()
+        # 🔕 Desativa APENAS a notificação individual
+        doc.reference.update({
+            "notificacao": False
+        })
 
         return {
             "status": "ok",
-            "mensagem": "Notificação individual e global desativadas"
+            "mensagem": "Notificação individual desativada com sucesso"
         }
 
     except Exception as e:

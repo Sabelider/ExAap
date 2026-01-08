@@ -664,13 +664,22 @@ body {
 }
 
 .top-bar .fechar-btn {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  color: white;
+  all: unset;          
   cursor: pointer;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.top-bar .fechar-btn i {
+  color: #ffffff;
+  font-size: 18px;
+}
+  
 /* Área de mensagens */
 .chat-messages {
   flex: 1;

@@ -2268,16 +2268,14 @@ async def verificar_aluno_vinculo(data: VerificarAlunoInput):
         )
 
 
-from fastapi import BackgroundTasks
-
 class NotificacaoRequest(BaseModel):
     aluno: str
 
 
 def desativar_notificacao_todos_apos_tempo():
     try:
-        # Aguarda 2 minutos (120 segundos)
-        time.sleep(120)
+        # Aguarda 15 minutos (900 segundos)
+        time.sleep(600)
 
         docs = db.collection("alunos_professor").stream()
         batch = db.batch()
@@ -2289,7 +2287,7 @@ def desativar_notificacao_todos_apos_tempo():
 
         batch.commit()
 
-        print("🔕 notificacao_todos desativado automaticamente após 2 minutos")
+        print("🔕 A notificação irá desaparecer automaticamente após 15 minutos")
 
     except Exception as e:
         print(f"Erro ao desativar notificacao_todos: {e}")

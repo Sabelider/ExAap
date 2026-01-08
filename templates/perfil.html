@@ -181,6 +181,22 @@ body {
     font-size: 0.9rem;
   }
 
+.badge-notificacao {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  
  /* 🔹 Fundo transparente escurecido */
 .overlay-info {
     position: fixed;
@@ -1046,11 +1062,11 @@ function fecharDesafio() {
   </div>
 
   <!-- 🔔 BOTÃO ÚNICO DE NOTIFICAÇÕES -->
-  <div class="item notification-item" onclick="abrirNotificacoesAluno()">
-    <i class="fa-solid fa-bell"></i>
-    <span id="badge-notificacoes" class="badge" style="display:none;">0</span>
-    Notificações
-  </div>
+<div class="item notification-item" onclick="abrirNotificacoesAluno()" style="position: relative;">
+  <i class="fa-solid fa-bell"></i>
+  <span id="badge-notificacoes" class="badge-notificacao" style="display:none;">1</span>
+  Notificações
+</div>
 
   <div class="item" onclick="abrirInfoEmpresa()">
     <i class="fa-solid fa-circle-info"></i>
@@ -1271,11 +1287,26 @@ async function entrarNaAula() {
     console.error("Erro ao entrar na aula:", e);
   }
 }
+  
+// =====================================================
+// 🔹 CONTROLO DE VERIFICAÇÃO AUTOMÁTICA
+// =====================================================
+let intervaloNotificacao = null;
+
+// 🔁 Verifica automaticamente a cada 1 segundo
+function iniciarVerificacaoAutomatica(aluno) {
+  if (intervaloNotificacao) return;
+
+  intervaloNotificacao = setInterval(() => {
+    verificarNotificacaoTodos(aluno, false);
+  }, 1000);
+}
+
 
 // =====================================================
 // 🔹 VERIFICAR NOTIFICAÇÕES
 // =====================================================
-async function verificarNotificacaoTodos(aluno) {
+async function verificarNotificacaoTodos(aluno, abrirModal = true) {
   try {
     const response = await fetch("/verificar-notificacao", {
       method: "POST",
@@ -1285,9 +1316,15 @@ async function verificarNotificacaoTodos(aluno) {
 
     const data = await response.json();
     const lista = document.getElementById("lista-notificacoes");
+    const badge = document.getElementById("badge-notificacoes");
+
     lista.innerHTML = "";
 
     if (data.notificacao_todos === true) {
+      // 🔔 Mostra badge "1"
+      badge.style.display = "flex";
+      badge.textContent = "1";
+
       window.professorEmailAtual = data.professor_email;
 
       lista.innerHTML = `
@@ -1301,7 +1338,13 @@ async function verificarNotificacaoTodos(aluno) {
           </div>
         </div>
       `;
+
+      if (abrirModal) abrirNotificacoes();
+
     } else {
+      // ❌ Remove badge
+      badge.style.display = "none";
+
       lista.innerHTML = `
         <div class="notificacao-item">
           <p>📭 <strong>Sem notificações no momento</strong></p>
@@ -1309,11 +1352,12 @@ async function verificarNotificacaoTodos(aluno) {
       `;
     }
 
-    abrirNotificacoes();
   } catch (error) {
     console.error("Erro ao verificar notificações:", error);
   }
 }
+
+  
 </script>
 
 <!-- Modal do chat (inicialmente oculto) -->

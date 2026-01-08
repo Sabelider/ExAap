@@ -2335,11 +2335,11 @@ async def ativar_notificacao(
 
         batch.commit()
 
-        # ⏱️ 3️⃣ Agenda desativação global após 2 minutos
+        
         background_tasks.add_task(desativar_notificacao_todos_apos_tempo)
 
         return {
-            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos por 2 minutos."
+            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos por 15 minutos."
         }
 
     except Exception as e:

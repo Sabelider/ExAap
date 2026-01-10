@@ -984,8 +984,8 @@ async def cadastrar_aluno(
     provincia: str = Form(...),
     municipio: str = Form(...),
     bairro: str = Form(...),
-    latitude: str = Form(...),
-    longitude: str = Form(...),
+    latitude: str = Form(None),
+    longitude: str = Form(None),
     telefone: str = Form(...),
     disciplina: str = Form(...),
     bilhete: str = Form(...),
@@ -995,26 +995,55 @@ async def cadastrar_aluno(
     alunos_ref = db.collection("alunos")
     nome_normalizado = nome.strip().lower()
 
+    # 📍 TENTA CAPTURAR LOCALIZAÇÃO (SEM BLOQUEAR)
+    lat = None
+    lng = None
+    aviso_localizacao = None
+
+    try:
+        if latitude and longitude:
+            lat = float(latitude)
+            lng = float(longitude)
+
+            if lat == 0 or lng == 0:
+                lat = None
+                lng = None
+                aviso_localizacao = (
+                    "⚠️ Não foi possível capturar a sua localização. "
+                    "Ative a localização do dispositivo para melhorar a ligação com professores próximos."
+                )
+    except:
+        lat = None
+        lng = None
+        aviso_localizacao = (
+            "⚠️ Não foi possível capturar a sua localização. "
+            "Ative a localização do dispositivo para melhorar a ligação com professores próximos."
+        )
+
     # 🔎 Verifica se já existe aluno com esse nome normalizado
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
     if existente:
-        return templates.TemplateResponse("cadastro-aluno.html", {
-            "request": request,
-            "erro": "Este nome já está cadastrado. Tente outro."
-        })
+        return templates.TemplateResponse(
+            "cadastro-aluno.html",
+            {
+                "request": request,
+                "erro": "Este nome já está cadastrado. Tente outro."
+            }
+        )
 
-    # 🔄 Busca histórico de pagamentos na coleção alunos_professor (com base no NOME, não no normalizado)
+    # 🔄 Busca histórico de pagamentos
     paga_passado = []
     vinculo_query = db.collection("alunos_professor") \
         .where("aluno", "==", nome.strip().lower()) \
         .limit(1).stream()
+
     vinculo_doc = next(vinculo_query, None)
     if vinculo_doc:
-        vinculo_data = vinculo_doc.to_dict()
-        paga_passado = vinculo_data.get("paga_passado", [])
+        paga_passado = vinculo_doc.to_dict().get("paga_passado", [])
 
-    # ✅ Gera ID único para o aluno
+    # 🆔 ID único
     aluno_id = str(uuid.uuid4())
+
     dados = {
         "nome": nome,
         "nome_normalizado": nome_normalizado,
@@ -1025,9 +1054,9 @@ async def cadastrar_aluno(
         "municipio": municipio,
         "bairro": bairro,
         "localizacao": {
-            "latitude": latitude,
-            "longitude": longitude
-        },
+            "latitude": lat,
+            "longitude": lng
+        } if lat and lng else None,
         "telefone": telefone,
         "disciplina": disciplina,
         "outra_disciplina": outra_disciplina,
@@ -1038,28 +1067,34 @@ async def cadastrar_aluno(
         "notificacao": False,
         "vinculado": False,
         "horario": {},
-        "paga_passado": paga_passado  # ✅ agora usa dados de alunos_professor se existir
+        "paga_passado": paga_passado,
+        "aviso_localizacao": aviso_localizacao  # 👈 opcional
     }
 
-    # Salva novo aluno
-    db.collection("alunos").document(aluno_id).set(dados)
+    # 💾 Salva aluno
+    alunos_ref.document(aluno_id).set(dados)
 
-    # 🔄 Atualiza alunos antigos sem campo "paga_passado"
-    alunos_antigos = alunos_ref.stream()
-    for aluno in alunos_antigos:
+    # 🔄 Atualiza alunos antigos sem "paga_passado"
+    for aluno in alunos_ref.stream():
         dados_aluno = aluno.to_dict()
         if "paga_passado" not in dados_aluno:
             paga_passado_antigo = []
-            # busca também pelo NOME do aluno em alunos_professor
             vinculo_query = db.collection("alunos_professor") \
                 .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
                 .limit(1).stream()
+
             vinculo_doc = next(vinculo_query, None)
             if vinculo_doc:
                 paga_passado_antigo = vinculo_doc.to_dict().get("paga_passado", [])
-            alunos_ref.document(aluno.id).update({"paga_passado": paga_passado_antigo})
 
-    return RedirectResponse(url="/login?sucesso=1", status_code=HTTP_303_SEE_OTHER)
+            alunos_ref.document(aluno.id).update({
+                "paga_passado": paga_passado_antigo
+            })
+
+    return RedirectResponse(
+        url="/login?sucesso=1",
+        status_code=HTTP_303_SEE_OTHER
+    )
 
 
 @app.get("/login", response_class=HTMLResponse)

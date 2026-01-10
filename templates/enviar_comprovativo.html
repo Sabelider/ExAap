@@ -192,102 +192,102 @@
     <button type="submit" class="botao-padrao">Enviar Comprovativo</button>
   </form>
 
-  <script>
-    const fileInput = document.getElementById('comprovativo');
-    const bancoSelect = document.getElementById('banco');
-    const form = document.getElementById('comprovativo-form');
-    const mesesInput = document.getElementById('meses');
-    const valorTotalEl = document.getElementById('valorTotal');
+ <script>
+  const fileInput = document.getElementById('comprovativo');
+  const bancoSelect = document.getElementById('banco');
+  const form = document.getElementById('comprovativo-form');
+  const mesesInput = document.getElementById('meses');
+  const valorTotalEl = document.getElementById('valorTotal');
 
-    const limitesKB = {
-      BAI: 32,
-      BPC: 31,
-      BNI: 32,
-      "Multicaixa Express": 33
-    };
+  const limitesKB = {
+    BAI: 32,
+    BPC: 31,
+    BNI: 32,
+    "Multicaixa Express": 33
+  };
 
-    const valorMensal = 15000;
-    const descontoPorMes = 100;
+  const valorMensal = 15000;
+  const descontoPorMes = 100;
 
-    function atualizarValorTotal() {
-      const meses = parseInt(mesesInput.value);
-      const desconto = meses * descontoPorMes;
-      const total = (meses * valorMensal) - desconto;
-      valorTotalEl.textContent = "Valor total: " + total.toLocaleString("pt-PT") + ",00 Kz";
-    }
+  function atualizarValorTotal() {
+    const meses = parseInt(mesesInput.value);
+    const desconto = meses * descontoPorMes;
+    const total = (meses * valorMensal) - desconto;
+    valorTotalEl.textContent =
+      "Valor total: " + total.toLocaleString("pt-PT") + ",00 Kz";
+  }
 
-    function alterarMeses(delta) {
-      let meses = parseInt(mesesInput.value);
-      meses += delta;
-      if (meses < 1) meses = 1;
-      if (meses > 12) meses = 12;
-      mesesInput.value = meses;
-      atualizarValorTotal();
-    }
-
+  function alterarMeses(delta) {
+    let meses = parseInt(mesesInput.value);
+    meses += delta;
+    if (meses < 1) meses = 1;
+    if (meses > 12) meses = 12;
+    mesesInput.value = meses;
     atualizarValorTotal();
+  }
 
-    function copiarIBAN() {
-      const iban = '000600005380456430191';
-      navigator.clipboard.writeText(iban).then(() => {
-        alert("IBAN copiado com sucesso!");
-      }, () => {
-        alert("Erro ao copiar IBAN.");
-      });
+  atualizarValorTotal();
+
+  function copiarIBAN() {
+    const iban = '000600005380456430191';
+    navigator.clipboard.writeText(iban)
+      .then(() => alert("IBAN copiado com sucesso!"))
+      .catch(() => alert("Erro ao copiar IBAN."));
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const alunoNome = document.getElementById("aluno").value;
+    const banco = bancoSelect.value;
+    const file = fileInput.files[0];
+    const meses = parseInt(mesesInput.value);
+
+    if (!file || !banco || !alunoNome) {
+      alert("Por favor, preencha todos os campos.");
+      return;
     }
 
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
+    const tamanhoKB = file.size / 1024;
+    const limite = limitesKB[banco];
 
-      const alunoNome = document.getElementById("aluno").value;
-      const banco = bancoSelect.value;
-      const file = fileInput.files[0];
-      const meses = parseInt(mesesInput.value);
+    // ✅ VALIDAÇÃO CORRIGIDA (SEM LIMITE MÍNIMO)
+    if (tamanhoKB > limite) {
+      alert(
+        `Comprovativo inválido.\n` +
+        `Banco: ${banco}\n` +
+        `Tamanho máximo permitido: ${limite} KB\n` +
+        `Tamanho atual: ${tamanhoKB.toFixed(2)} KB`
+      );
+      return;
+    }
 
-      if (!file || !banco || !alunoNome) {
-        alert("Por favor, preencha todos os campos.");
-        return;
+    const formData = new FormData();
+    formData.append("aluno_nome", alunoNome);
+    formData.append("banco", banco);
+    formData.append("meses", meses);
+    formData.append("comprovativo", file);
+
+    try {
+      const response = await fetch("/upload_comprovativo", {
+        method: "POST",
+        body: formData
+      });
+
+      const html = await response.text();
+
+      if (response.ok) {
+        document.open();
+        document.write(html);
+        document.close();
+      } else {
+        alert("❌ Erro ao enviar comprovativo:\n" + html);
       }
 
-      const tamanhoKB = file.size / 1024;
-      const limite = limitesKB[banco];
-
-      if (banco === "Multicaixa Express" && (tamanhoKB < 24 || tamanhoKB > 33)) {
-        alert(`Comprovativo inválido. O tamanho permitido para ${banco} deve estar entre 24 KB e 33 KB.\nTamanho atual: ${tamanhoKB.toFixed(2)} KB`);
-        return;
-      }
-
-      if (banco !== "Multicaixa Express" && tamanhoKB > limite) {
-        alert(`Comprovativo inválido. O tamanho máximo permitido para ${banco} é ${limite} KB.\nTamanho atual: ${tamanhoKB.toFixed(2)} KB`);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("aluno_nome", alunoNome);
-      formData.append("banco", banco);
-      formData.append("meses", meses);
-      formData.append("comprovativo", file);
-
-      try {
-        const response = await fetch("/upload_comprovativo", {
-          method: "POST",
-          body: formData
-        });
-
-        const html = await response.text();
-
-        if (response.ok) {
-          document.open();
-          document.write(html);
-          document.close();
-        } else {
-          alert("❌ Erro ao enviar comprovativo:\n" + html);
-        }
-
-      } catch (error) {
-        alert("❌ Erro na requisição: " + error.message);
-      }
-    });
-  </script>
+    } catch (error) {
+      alert("❌ Erro na requisição: " + error.message);
+    }
+  });
+</script>
 </body>
 </html>

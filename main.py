@@ -1524,7 +1524,7 @@ async def upload_comprovativo(
         cabecalho = Table(
             [[
                 Paragraph(
-                    "<b>SABI LIDER</b><br/>Centro de Explicações<br/>NIF: 5002232529",
+                    "<b>SabApp </b><br/>Centro de formação online<br/>NIF: 5002232529",
                     styles["Normal"]
                 ),
                 Paragraph(
@@ -1609,7 +1609,7 @@ async def upload_comprovativo(
         # ---------- RODAPÉ ----------
         elementos.append(
             Paragraph(
-                "Documento gerado automaticamente pelo sistema Sabi Lider. Não necessita de assinatura.",
+                "Documento gerado automaticamente pelo sistema electronico SabApp. Não necessita de assinatura.",
                 styles["Italic"]
             )
         )

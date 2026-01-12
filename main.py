@@ -1426,11 +1426,6 @@ def registrar_pagamento_mensal(aluno_nome: str):
         })
 
 
-import logging
-
-MAX_TENTATIVAS = 3
-
-
 @app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
     request: Request,
@@ -1464,10 +1459,7 @@ async def upload_comprovativo(
 
         if banco_norm == "multicaixa express":
             if not (24 <= tamanho_kb <= 33):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Comprovativo inválido para Multicaixa Express."
-                )
+                raise HTTPException(status_code=400, detail="Comprovativo inválido para Multicaixa Express.")
         elif tamanho_kb > limites[banco_norm]:
             raise HTTPException(
                 status_code=400,
@@ -1493,10 +1485,7 @@ async def upload_comprovativo(
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
                 atualizar_status_conta(aluno_normalizado, "Desativada")
-                return HTMLResponse(
-                    "<h3>Comprovativo duplicado. Conta desativada.</h3>",
-                    status_code=403
-                )
+                return HTMLResponse("<h3>Comprovativo duplicado. Conta desativada.</h3>", status_code=403)
 
             return HTMLResponse(
                 f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>",
@@ -1516,36 +1505,133 @@ async def upload_comprovativo(
             }
         })
 
-        # ================= GERAR PDF =================
+        # ================= GERAR PDF (FACTURA PROFISSIONAL) =================
         pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
-        doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+
+        doc = SimpleDocTemplate(
+            pdf_path,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40
+        )
+
         styles = getSampleStyleSheet()
         elementos = []
 
-        elementos.append(Paragraph("<b>Sabi Lider</b> - NIF nº 5002232529", styles["Title"]))
-        elementos.append(Spacer(1, 12))
-        elementos.append(Paragraph("<b>Recibo de Pagamento</b>", styles["Heading2"]))
-        elementos.append(Spacer(1, 20))
+        # ---------- CABEÇALHO ----------
+        cabecalho = Table(
+            [
+                [
+                    Paragraph(
+                        "<b>SABI LIDER</b><br/>Centro de Explicações<br/>NIF: 5002232529",
+                        styles["Normal"]
+                    ),
+                    Paragraph(
+                        f"<b>FACTURA / RECIBO</b><br/>"
+                        f"Data: {datetime.now().strftime('%d/%m/%Y')}<br/>"
+                        f"Nº: {aluno_normalizado.upper()}",
+                        styles["Normal"]
+                    )
+                ]
+            ],
+            colWidths=[270, 200]
+        )
 
-        dados = [
-            ["Aluno", aluno_nome],
-            ["Banco", banco.upper()],
-            ["Meses", str(meses)],
-            ["Mensalidade", f"{valor_mensal:,.0f} Kz"],
-            ["Desconto", f"{desconto_total:,.0f} Kz"],
-            ["Valor Total", f"{valor_total:,.0f} Kz"],
-            ["Comprovativo", nome_comprovativo],
-        ]
-
-        tabela = Table(dados, hAlign="LEFT")
-        tabela.setStyle(TableStyle([
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-            ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+        cabecalho.setStyle(TableStyle([
+            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ]))
 
-        elementos.append(tabela)
+        elementos.append(cabecalho)
+        elementos.append(Spacer(1, 15))
+
+        # ---------- LINHA ----------
+        elementos.append(Table(
+            [[""]],
+            colWidths=[470],
+            style=[("LINEBELOW", (0, 0), (-1, -1), 1, colors.black)]
+        ))
+        elementos.append(Spacer(1, 20))
+
+        # ---------- DADOS DO ALUNO ----------
+        elementos.append(Paragraph("<b>DADOS DO ALUNO</b>", styles["Heading3"]))
+        elementos.append(Spacer(1, 8))
+
+        dados_cliente = Table(
+            [
+                ["Nome do Aluno:", aluno_nome],
+                ["Banco:", banco.upper()],
+                ["Meses Pagos:", str(meses)]
+            ],
+            colWidths=[150, 320]
+        )
+
+        dados_cliente.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+            ("FONT", (0, 0), (0, -1), "Helvetica-Bold"),
+        ]))
+
+        elementos.append(dados_cliente)
+        elementos.append(Spacer(1, 25))
+
+        # ---------- TABELA FINANCEIRA ----------
+        elementos.append(Paragraph("<b>DETALHE DO PAGAMENTO</b>", styles["Heading3"]))
+        elementos.append(Spacer(1, 8))
+
+        tabela_pagamento = Table(
+            [
+                ["Descrição", "Valor (Kz)"],
+                ["Mensalidade", f"{valor_mensal:,.0f}"],
+                ["Desconto Total", f"- {desconto_total:,.0f}"],
+                ["TOTAL A PAGAR", f"{valor_total:,.0f}"]
+            ],
+            colWidths=[300, 170]
+        )
+
+        tabela_pagamento.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+            ("FONT", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("BACKGROUND", (0, -1), (-1, -1), colors.whitesmoke),
+        ]))
+
+        elementos.append(tabela_pagamento)
+        elementos.append(Spacer(1, 30))
+
+        # ---------- COMPROVATIVO ----------
+        elementos.append(
+            Paragraph(f"<b>Comprovativo:</b> {nome_comprovativo}", styles["Normal"])
+        )
+        elementos.append(Spacer(1, 40))
+
+        # ---------- ASSINATURA ----------
+        assinatura = Table(
+            [
+                ["______________________________", "______________________________"],
+                ["Tesouraria", "Direcção"]
+            ],
+            colWidths=[235, 235]
+        )
+
+        assinatura.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ]))
+
+        elementos.append(assinatura)
+        elementos.append(Spacer(1, 20))
+
+        # ---------- RODAPÉ ----------
+        elementos.append(
+            Paragraph(
+                "Documento gerado automaticamente pelo sistema Sabi Lider.",
+                styles["Italic"]
+            )
+        )
+
         doc.build(elementos)
 
         # ================= HTML DE RESPOSTA =================
@@ -1554,11 +1640,11 @@ async def upload_comprovativo(
         <html lang="pt">
         <head>
             <meta charset="UTF-8">
-            <title>Recibo de Pagamento</title>
+            <title>Factura Gerada</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 body {{
-                    font-family: "Segoe UI", Arial, sans-serif;
+                    font-family: Arial, sans-serif;
                     background: #f2f4f8;
                     display: flex;
                     justify-content: center;
@@ -1566,65 +1652,40 @@ async def upload_comprovativo(
                     min-height: 100vh;
                     margin: 0;
                 }}
-                .container {{
+                .box {{
                     background: #fff;
                     max-width: 420px;
                     width: 100%;
                     padding: 25px;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+                    border-radius: 10px;
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
                     text-align: center;
                 }}
-                .icon {{
-                    font-size: 48px;
-                }}
-                h2 {{
-                    margin: 10px 0;
-                    color: #333;
-                }}
-                p {{
-                    font-size: 14px;
-                    color: #666;
-                }}
-                .buttons {{
-                    display: flex;
-                    gap: 12px;
-                    margin-top: 20px;
-                    flex-wrap: wrap;
-                }}
                 .btn {{
-                    flex: 1;
+                    display: block;
+                    margin-top: 15px;
                     padding: 14px;
                     border-radius: 8px;
-                    font-weight: 600;
                     text-decoration: none;
-                    color: #fff;
+                    font-weight: bold;
+                    color: white;
                 }}
                 .download {{ background: #28a745; }}
                 .perfil {{ background: #0d6efd; }}
-                footer {{
-                    margin-top: 20px;
-                    font-size: 12px;
-                    color: #999;
-                }}
             </style>
         </head>
         <body>
-            <div class="container">
-                <div class="icon">✅</div>
-                <h2>Recibo Gerado com Sucesso</h2>
-                <p>O pagamento foi confirmado. Pode baixar o recibo ou voltar ao perfil.</p>
+            <div class="box">
+                <h2>✅ Factura Gerada com Sucesso</h2>
+                <p>Pode baixar a factura em PDF ou voltar ao perfil.</p>
 
-                <div class="buttons">
-                    <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>
-                        📄 Baixar Recibo
-                    </a>
-                    <a href="/perfil/{aluno_normalizado}" class="btn perfil">
-                        🔙 Voltar ao Perfil
-                    </a>
-                </div>
+                <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>
+                    📄 Baixar Factura
+                </a>
 
-                <footer>Sistema de Pagamentos • {datetime.now().year}</footer>
+                <a href="/perfil/{aluno_normalizado}" class="btn perfil">
+                    🔙 Voltar ao Perfil
+                </a>
             </div>
         </body>
         </html>
@@ -1634,11 +1695,7 @@ async def upload_comprovativo(
 
     except Exception as e:
         logging.error(f"Erro inesperado: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao processar comprovativo: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)
 async def enviar_comprovativo(request: Request, aluno_nome: str):

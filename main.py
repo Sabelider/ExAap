@@ -1522,20 +1522,18 @@ async def upload_comprovativo(
 
         # ---------- CABEÇALHO ----------
         cabecalho = Table(
-            [
-                [
-                    Paragraph(
-                        "<b>SABI LIDER</b><br/>Centro de Explicações<br/>NIF: 5002232529",
-                        styles["Normal"]
-                    ),
-                    Paragraph(
-                        f"<b>FACTURA / RECIBO</b><br/>"
-                        f"Data: {datetime.now().strftime('%d/%m/%Y')}<br/>"
-                        f"Nº: {aluno_normalizado.upper()}",
-                        styles["Normal"]
-                    )
-                ]
-            ],
+            [[
+                Paragraph(
+                    "<b>SABI LIDER</b><br/>Centro de Explicações<br/>NIF: 5002232529",
+                    styles["Normal"]
+                ),
+                Paragraph(
+                    f"<b>FACTURA / RECIBO</b><br/>"
+                    f"Data: {datetime.now().strftime('%d/%m/%Y')}<br/>"
+                    f"Nº: {aluno_normalizado.upper()}",
+                    styles["Normal"]
+                )
+            ]],
             colWidths=[270, 200]
         )
 
@@ -1547,7 +1545,7 @@ async def upload_comprovativo(
         elementos.append(cabecalho)
         elementos.append(Spacer(1, 15))
 
-        # ---------- LINHA ----------
+        # ---------- LINHA SEPARADORA ----------
         elementos.append(Table(
             [[""]],
             colWidths=[470],
@@ -1576,7 +1574,7 @@ async def upload_comprovativo(
         elementos.append(dados_cliente)
         elementos.append(Spacer(1, 25))
 
-        # ---------- TABELA FINANCEIRA ----------
+        # ---------- DETALHE FINANCEIRO ----------
         elementos.append(Paragraph("<b>DETALHE DO PAGAMENTO</b>", styles["Heading3"]))
         elementos.append(Spacer(1, 8))
 
@@ -1600,34 +1598,18 @@ async def upload_comprovativo(
         ]))
 
         elementos.append(tabela_pagamento)
-        elementos.append(Spacer(1, 30))
+        elementos.append(Spacer(1, 25))
 
         # ---------- COMPROVATIVO ----------
         elementos.append(
             Paragraph(f"<b>Comprovativo:</b> {nome_comprovativo}", styles["Normal"])
         )
-        elementos.append(Spacer(1, 40))
-
-        # ---------- ASSINATURA ----------
-        assinatura = Table(
-            [
-                ["______________________________", "______________________________"],
-                ["Tesouraria", "Direcção"]
-            ],
-            colWidths=[235, 235]
-        )
-
-        assinatura.setStyle(TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ]))
-
-        elementos.append(assinatura)
-        elementos.append(Spacer(1, 20))
+        elementos.append(Spacer(1, 25))
 
         # ---------- RODAPÉ ----------
         elementos.append(
             Paragraph(
-                "Documento gerado automaticamente pelo sistema Sabi Lider.",
+                "Documento gerado automaticamente pelo sistema Sabi Lider. Não necessita de assinatura.",
                 styles["Italic"]
             )
         )
@@ -1695,7 +1677,11 @@ async def upload_comprovativo(
 
     except Exception as e:
         logging.error(f"Erro inesperado: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar comprovativo: {str(e)}"
+        )
+
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)
 async def enviar_comprovativo(request: Request, aluno_nome: str):

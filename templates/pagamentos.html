@@ -1,146 +1,213 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Pagamentos</title>
+<title>Histórico de Pagamentos</title>
+
 <style>
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #f5f7fa;
-    color: #2c3e50;
-    max-width: 480px;
-    margin: auto;
-    padding-bottom: 20px;
-  }
+:root {
+  --verde: #1abc9c;
+  --vermelho: #e74c3c;
+  --cinza: #7f8c8d;
+  --azul: #0d6efd;
+  --fundo: #f4f6f9;
+  --card: #ffffff;
+}
 
-  .top-bar {
-    background: linear-gradient(135deg, #00c9ff, #92fe9d);
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 0 0 20px 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    color: white;
-  }
+* {
+  box-sizing: border-box;
+}
 
-  .top-bar h2 {
-    margin: 0;
-    font-size: 1.2rem;
-  }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--fundo);
+  color: #2c3e50;
+  max-width: 480px;
+  margin: auto;
+}
 
-  .btn-pagar {
-    background: white;
-    color: #00aaff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-  }
+/* 🔝 TOPO */
+.top-bar {
+  background: linear-gradient(135deg, #0d6efd, #3f8efc);
+  padding: 18px;
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  color: #fff;
+}
 
-  .btn-pagar:hover {
-    background: #f0f0f0;
-  }
+.top-bar h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
 
-  .pagamento-card {
-    background: white;
-    margin: 10px;
-    padding: 12px 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-  }
+.top-bar p {
+  margin: 4px 0 0;
+  font-size: .9rem;
+  opacity: .9;
+}
 
-  .mes-ano {
-    font-weight: bold;
-  }
+.btn-pagar {
+  margin-top: 12px;
+  background: #fff;
+  color: var(--azul);
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: .3s;
+}
 
-  .status {
-    padding: 5px 10px;
-    border-radius: 6px;
-    color: white;
-    font-size: 0.85rem;
-    font-weight: bold;
-  }
+.btn-pagar:hover {
+  background: #f1f1f1;
+}
 
-  .status.pago {
-    background: #2ecc71;
-  }
+/* 📦 LISTA */
+.lista {
+  padding: 15px;
+}
 
-  .status.nao-pago {
-    background: #e74c3c;
-  }
+/* 🧾 CARD */
+.pagamento-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fade .3s ease-in;
+}
 
-  @media (max-width: 400px) {
-    .top-bar {
-      flex-direction: column;
-      gap: 10px;
-      align-items: flex-start;
-    }
-    .btn-pagar {
-      align-self: flex-start;
-    }
-    .pagamento-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-    }
-  }
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mes {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.valor {
+  font-size: .9rem;
+  color: var(--cinza);
+}
+
+.data {
+  font-size: .75rem;
+  color: #aaa;
+}
+
+/* STATUS */
+.status {
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: bold;
+  text-align: center;
+  min-width: 90px;
+}
+
+.status.pago {
+  background: rgba(26,188,156,.15);
+  color: var(--verde);
+}
+
+.status.nao-pago {
+  background: rgba(231,76,60,.15);
+  color: var(--vermelho);
+}
+
+/* 📭 VAZIO */
+.vazio {
+  text-align: center;
+  color: var(--cinza);
+  margin-top: 40px;
+}
 </style>
 </head>
+
 <body>
 
 <div class="top-bar">
-  <h2>💳 Controle de Pagamentos</h2>
+  <h2>💳 Histórico de Pagamentos</h2>
+  <p>Acompanhe suas mensalidades</p>
   <button class="btn-pagar" onclick="abrirPagamento()">Pagar Mensalidade</button>
 </div>
 
-<div id="lista-pagamentos"></div>
+<div class="lista" id="lista-pagamentos"></div>
 
 <script>
-const alunoNome = "joao silva"; // aqui será dinâmico no seu sistema
+const alunoNome = "joao silva"; // dinâmico no sistema
 
 function abrirPagamento() {
   window.location.href = `/enviar_comprovativo?aluno_nome=${encodeURIComponent(alunoNome)}`;
 }
 
 async function carregarPagamentos() {
+  const lista = document.getElementById("lista-pagamentos");
+  lista.innerHTML = "";
+
   try {
     const res = await fetch(`/api/historico-pagamentos/${encodeURIComponent(alunoNome)}`);
     const pagamentos = await res.json();
 
-    const lista = document.getElementById("lista-pagamentos");
-    lista.innerHTML = "";
+    if (!pagamentos.length) {
+      lista.innerHTML = `<div class="vazio">Nenhum pagamento encontrado</div>`;
+      return;
+    }
 
-    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
     pagamentos.forEach(p => {
       const card = document.createElement("div");
       card.className = "pagamento-card";
 
-      const mesAno = document.createElement("div");
-      mesAno.className = "mes-ano";
-      mesAno.textContent = `${meses[p.mes - 1]} / ${p.ano} - Kz ${p.valor.toLocaleString()}`;
+      const info = document.createElement("div");
+      info.className = "info";
+
+      const mes = document.createElement("div");
+      mes.className = "mes";
+      mes.textContent = `${meses[p.mes - 1]} / ${p.ano}`;
+
+      const valor = document.createElement("div");
+      valor.className = "valor";
+      valor.textContent = `Valor: Kz ${p.valor.toLocaleString()}`;
+
+      info.appendChild(mes);
+      info.appendChild(valor);
+
+      if (p.data_registro) {
+        const data = document.createElement("div");
+        data.className = "data";
+        data.textContent = "Pago em " + new Date(p.data_registro).toLocaleDateString();
+        info.appendChild(data);
+      }
 
       const status = document.createElement("div");
       status.className = "status " + (p.pago ? "pago" : "nao-pago");
       status.textContent = p.pago ? "PAGO" : "NÃO PAGO";
 
-      card.appendChild(mesAno);
+      card.appendChild(info);
       card.appendChild(status);
+
       lista.appendChild(card);
     });
-  } catch (err) {
-    console.error("Erro ao carregar pagamentos", err);
+
+  } catch (e) {
+    lista.innerHTML = `<div class="vazio">Erro ao carregar pagamentos</div>`;
+    console.error(e);
   }
 }
 

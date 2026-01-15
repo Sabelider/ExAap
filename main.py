@@ -181,50 +181,42 @@ MAX_USOS = 50
 
 
 # ============================
-# 🔹 Inicializar CONTAS_100MS no Firebase
+# 🔹 Inicializar CONTAS_100MS
 # ============================
 def init_contas_100ms():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get()
 
     if not doc.exists:
-        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
-        data = {
+        ref.set({
             "conta_atual": 0,
-            "usos": usos
-        }
-        ref.set(data)
-        print("🔥 Documento 'CONTAS_100MS/contador' criado automaticamente no Firebase.")
+            "usos": {str(i): 0 for i in range(len(CONTAS_100MS))}
+        })
+        print("🔥 CONTAS_100MS inicializado corretamente.")
 
-# Chamar na inicialização da aplicação
 init_contas_100ms()
 
 
 # ============================
-# 🔹 FUNÇÃO ÚNICA DE CONTROLE (CORRETA)
+# 🔹 FUNÇÃO CORRETA (USO ATÉ 50)
 # ============================
 async def get_account_and_increment():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get()
 
-    if not doc.exists:
-        usos = {str(i): 0 for i in range(len(CONTAS_100MS))}
-        data = {"conta_atual": 0, "usos": usos}
-        ref.set(data)
-    else:
-        data = doc.to_dict()
+    data = doc.to_dict()
 
     conta = data["conta_atual"]
-    usos = {str(k): v for k, v in data["usos"].items()}
+    usos = data["usos"]
     conta_str = str(conta)
 
-    # 🔁 Verifica se atingiu o limite
-    if usos.get(conta_str, 0) >= MAX_USOS:
+    
+    if usos[conta_str] >= MAX_USOS:
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
-        usos.setdefault(conta_str, 0)
+        usos[conta_str] = 0
 
-    # ➕ Incrementa uso da conta atual
+    
     usos[conta_str] += 1
 
     ref.update({

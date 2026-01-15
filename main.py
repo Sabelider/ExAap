@@ -3780,62 +3780,64 @@ async def pagina_pagamentos(aluno_nome: str, request: Request):
     # passa o nome para o template (será injetado de forma segura)
     return templates.TemplateResponse("pagamentos.html", {"request": request, "aluno_nome": aluno_nome})
 
-
 @app.get("/api/historico-pagamentos/{aluno_nome}")
 async def historico_pagamentos_api(aluno_nome: str):
-    aluno_normalizado = aluno_nome.strip().lower()
+    aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
 
-    # busca vinculo (aluno_professor)
-    vinculos = db.collection("alunos_professor") \
-                 .where("aluno", "==", aluno_normalizado) \
-                 .limit(1).stream()
-    vinculo_doc = next(vinculos, None)
-    if not vinculo_doc:
-        raise HTTPException(status_code=404, detail="Aluno/vínculo não encontrado")
-
-    vinculo_data = vinculo_doc.to_dict()
-    total_aulas = int(vinculo_data.get("total_aulas", 0))
-    valor_mensal = total_aulas * 1250  # 1.250 Kz por aula
-
-    # busca pagamentos já registados
-    pagamentos_query = db.collection("pagamentos") \
-                         .where("aluno", "==", aluno_normalizado) \
-                         .stream()
+    # 🔍 Busca comprovativos reais
+    doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
+    doc = doc_ref.get()
 
     pagamentos = []
-    seen = set()
-    for doc in pagamentos_query:
-        d = doc.to_dict()
-        mes = int(d.get("mes", 0))
-        ano = int(d.get("ano", 0))
-        key = (ano, mes)
-        if key in seen:
-            continue
-        seen.add(key)
 
-        pagamentos.append({
-            "mes": mes,
-            "ano": ano,
-            "valor": int(d.get("valor", valor_mensal)),
-            "pago": bool(d.get("pago", False)),
-            "data_registro": d.get("data_registro", None)
-        })
+    if doc.exists:
+        data = doc.to_dict()
+        mensalidade = data.get("mensalidade", {})
+        meses_pagos = int(mensalidade.get("meses", 0))
+        valor_mensal = int(mensalidade.get("valor_mensal", 0))
+        valor_total = int(mensalidade.get("valor_total", 0))
+        data_registro = data.get("data_registro")
 
-    # garantir que o mês corrente esteja sempre presente (se não existir, adiciona como não pago)
+        # 📆 Data base (data do comprovativo)
+        if data_registro:
+            base_date = datetime.fromisoformat(data_registro)
+        else:
+            base_date = datetime.utcnow()
+
+        # 🔁 Gerar meses pagos
+        for i in range(meses_pagos):
+            mes = base_date.month - i
+            ano = base_date.year
+
+            if mes <= 0:
+                mes += 12
+                ano -= 1
+
+            pagamentos.append({
+                "mes": mes,
+                "ano": ano,
+                "valor": valor_mensal,
+                "pago": True,
+                "data_registro": base_date.isoformat()
+            })
+
+    # 📌 Garantir mês atual (se não pago)
     hoje = datetime.utcnow()
     mes_atual = hoje.month
     ano_atual = hoje.year
+
     if not any(p["mes"] == mes_atual and p["ano"] == ano_atual for p in pagamentos):
         pagamentos.append({
             "mes": mes_atual,
             "ano": ano_atual,
-            "valor": valor_mensal,
+            "valor": valor_mensal if pagamentos else 0,
             "pago": False,
             "data_registro": None
         })
 
-    # ordenar por ano/mes descendente (mais recente primeiro)
+    # 🔽 Ordenar (mais recente primeiro)
     pagamentos.sort(key=lambda x: (x["ano"], x["mes"]), reverse=True)
+
     return JSONResponse(content=pagamentos)
 
 

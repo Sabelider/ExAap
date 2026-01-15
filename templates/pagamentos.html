@@ -7,11 +7,11 @@
 
 <style>
 :root {
-  --verde: #1abc9c;
+  --azul: #00aaff;
+  --verde: #2ecc71;
   --vermelho: #e74c3c;
   --cinza: #7f8c8d;
-  --azul: #0d6efd;
-  --fundo: #f4f6f9;
+  --fundo: #f5f7fa;
   --card: #ffffff;
 }
 
@@ -26,42 +26,43 @@ body {
   color: #2c3e50;
   max-width: 480px;
   margin: auto;
+  padding-bottom: 20px;
 }
 
-/* 🔝 TOPO */
 .top-bar {
-  background: linear-gradient(135deg, #0d6efd, #3f8efc);
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
   padding: 18px;
-  border-radius: 0 0 18px 18px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.12);
-  color: #fff;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  color: #ffffff;
 }
 
 .top-bar h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
 }
 
 .top-bar p {
   margin: 4px 0 0;
   font-size: .9rem;
-  opacity: .9;
+  opacity: .95;
 }
 
 .btn-pagar {
   margin-top: 12px;
-  background: #fff;
+  background: #ffffff;
   color: var(--azul);
   border: none;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
-  transition: .3s;
+  transition: 0.3s;
 }
 
 .btn-pagar:hover {
-  background: #f1f1f1;
+  background: #f0f0f0;
 }
 
 /* 📦 LISTA */
@@ -69,17 +70,17 @@ body {
   padding: 15px;
 }
 
-/* 🧾 CARD */
 .pagamento-card {
   background: var(--card);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  animation: fade .3s ease-in;
+  flex-wrap: wrap;
+  animation: fade .25s ease-in;
 }
 
 @keyframes fade {
@@ -94,7 +95,7 @@ body {
 }
 
 .mes {
-  font-weight: 600;
+  font-weight: bold;
   font-size: 1rem;
 }
 
@@ -105,34 +106,43 @@ body {
 
 .data {
   font-size: .75rem;
-  color: #aaa;
+  color: #9aa0a6;
 }
 
-/* STATUS */
 .status {
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: .8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: bold;
-  text-align: center;
+  color: #ffffff;
   min-width: 90px;
+  text-align: center;
 }
 
 .status.pago {
-  background: rgba(26,188,156,.15);
-  color: var(--verde);
+  background: var(--verde);
 }
 
 .status.nao-pago {
-  background: rgba(231,76,60,.15);
-  color: var(--vermelho);
+  background: var(--vermelho);
 }
 
-/* 📭 VAZIO */
 .vazio {
   text-align: center;
   color: var(--cinza);
   margin-top: 40px;
+}
+
+@media (max-width: 400px) {
+  .pagamento-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .btn-pagar {
+    align-self: flex-start;
+  }
 }
 </style>
 </head>

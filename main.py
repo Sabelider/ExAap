@@ -4563,18 +4563,39 @@ async def get_current_account():
     return data["conta_atual"], usos
 
 
+class CreateRoomRequest(BaseModel):
+    name: str
+
+
+# ============================
+# BUSCA CONTA ATIVA
+# ============================
+async def get_current_account():
+    doc = db.collection("CONTAS_100MS").document("contador").get()
+    data = doc.to_dict()
+
+    # garante que todas as chaves do 'usos' são strings
+    usos = {str(k): v for k, v in data["usos"].items()}
+
+    return data["conta_atual"], usos
+
+
+# ============================
+# ROTACIONA CONTA APÓS MAX_USOS
+# ============================
 async def rotate_account():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get().to_dict()
 
     conta = doc["conta_atual"]
-    usos = {str(k): v for k, v in doc["usos"].items()}  # converte chaves para string
-
+    usos = {str(k): v for k, v in doc["usos"].items()}  
+    
     conta_str = str(conta)
-    if usos.get(conta_str, 0) >= 10:  # limite de usos por conta
+    # 🔹 ALTERADO para usar MAX_USOS
+    if usos.get(conta_str, 0) >= MAX_USOS:
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
-        usos[conta_str] = 0  # reset da nova conta
+        usos[conta_str] = 0  
 
     ref.update({
         "conta_atual": conta,
@@ -4588,10 +4609,10 @@ async def incrementar_uso():
     doc = ref.get().to_dict()
 
     conta = doc["conta_atual"]
-    usos = {str(k): v for k, v in doc["usos"].items()}  # garante chaves como string
+    usos = {str(k): v for k, v in doc["usos"].items()} 
 
     conta_str = str(conta)
-    usos[conta_str] = usos.get(conta_str, 0) + 1  # incrementa o uso da conta atual
+    usos[conta_str] = usos.get(conta_str, 0) + 1  
 
     ref.update({"usos": usos})
     await rotate_account()

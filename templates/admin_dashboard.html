@@ -529,148 +529,180 @@ window.addEventListener("load", carregarRelatorioAulas);
     document.getElementById("mensagem-texto").value = "";
   }
 
-async function marcarPago(alunoId, temDivida) { 
+async function marcarPago(alunoId, temDivida) {
+
     if (!temDivida) {
         alert("Este aluno já está com o pagamento em dia.");
         return;
     }
 
-    // Buscar dados do aluno pelo ID
     const res = await fetch("/listar-pagamentos");
     const alunos = await res.json();
-    const aluno = alunos.find(a => a.id === alunoId);
+
+    const aluno = alunos.find(a =>
+        a.id === alunoId &&
+        a.nome &&
+        a.nome.trim() !== ""
+    );
+
     if (!aluno) {
-        alert("Aluno não encontrado.");
+        alert("Aluno não encontrado ou nome inválido.");
         return;
     }
 
-    
     const hoje = new Date();
-    const mes = hoje.getMonth() + 1; 
+    const mes = hoje.getMonth() + 1;
     const ano = hoje.getFullYear();
 
-   
-    const valorMensal = aluno.Valor_mensal_aluno || 0;
+    const valorMensal = aluno.valor_mensal_aluno || 0;
 
-    
     const resposta = await fetch("/api/registrar-pagamento", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             aluno_nome: aluno.nome,
-            mes: mes,
-            ano: ano,
+            mes,
+            ano,
             valor_pago: valorMensal,
             pago: true
         })
     });
 
     if (resposta.ok) {
-        alert(`Pagamento de ${aluno.nome} registrado para ${mes}/${ano} no valor de Kz ${valorMensal},00.`);
+        alert(`Pagamento de ${aluno.nome} registrado para ${mes}/${ano}.`);
         carregarPagamentos();
     } else {
         alert("Erro ao registrar pagamento.");
     }
 }
 
-
 async function carregarPagamentos() {
     try {
+
         const res = await fetch("/listar-pagamentos");
-        if (!res.ok) throw new Error(`Erro ${res.status} ao listar pagamentos`);
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
 
         const alunos = await res.json();
         const tbody = document.querySelector("#tabela-pagamentos tbody");
+
         tbody.innerHTML = "";
 
         alunos.forEach(a => {
+
+            // 🚫 IGNORA registros sem nome
+            if (!a.nome || a.nome.trim() === "") {
+                return;
+            }
+
             const temValor = a.divida && Number(a.divida) > 0;
-            
-            // comportamento inverso:
+
             const statusCor = temValor ? "status-verde" : "status-vermelho";
             const statusTexto = temValor ? "Pago" : "Não Pago";
 
-            // Mostrar último pagamento registrado em paga_passado (se existir)
             let ultimoPagamento = "—";
             if (a.paga_passado && a.paga_passado.length > 0) {
                 const ultimo = a.paga_passado[a.paga_passado.length - 1];
                 const mes = ultimo.mes || "-";
                 const ano = ultimo.ano || "-";
-                const valor = ultimo.valor_pago != null ? Number(ultimo.valor_pago).toLocaleString("pt-AO") : "0";
+                const valor = ultimo.valor_pago != null
+                    ? Number(ultimo.valor_pago).toLocaleString("pt-AO")
+                    : "0";
+
                 ultimoPagamento = `${mes}/${ano} - Kz ${valor},00`;
             }
 
             tbody.innerHTML += `
                 <tr>
                   <td>${a.nome}</td>
-                  <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
-                  <td>Kz ${a.divida ? a.divida : 0},00</td>
-                  <td>${ultimoPagamento}</td>
+
                   <td>
-                    <button onclick="marcarPagoProf('${a.id}', ${temValor}, '${a.professor || ''}', ${a.divida ? a.divida : 0})" 
-                            style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
-                      PAGO
+                    <span class="status-circulo ${statusCor}"></span>
+                    ${statusTexto}
+                  </td>
+
+                  <td>Kz ${a.divida ? Number(a.divida).toLocaleString("pt-AO") : 0},00</td>
+
+                  <td>${ultimoPagamento}</td>
+
+                  <td>
+                    <button 
+                        onclick="marcarPago('${a.id}', ${temValor})"
+                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
+                        PAGO
                     </button>
-                    <button onclick="verPagamentos('${a.nome}', '${a.nome}')" 
-                            style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
-                      Ver Pagamentos
+
+                    <button 
+                        onclick="verPagamentos('${a.nome}', '${a.nome}')"
+                        style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;margin-left:5px;">
+                        Ver Pagamentos
                     </button>
                   </td>
                 </tr>
             `;
         });
+
     } catch (err) {
         console.error("Erro ao carregar pagamentos:", err);
         alert("Erro ao carregar lista de pagamentos.");
     }
 }
-
+  
 async function verPagamentos(nomeAluno, nomeExibicao) {
+
+    if (!nomeAluno || nomeAluno.trim() === "") {
+        alert("Nome inválido.");
+        return;
+    }
+
     try {
+
         const res = await fetch(`/ver-pagamentos/${encodeURIComponent(nomeAluno)}`);
-        if (!res.ok) {
-            throw new Error(`Erro ${res.status} ao buscar pagamentos`);
-        }
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+
         const data = await res.json();
 
-        // Atualiza título do painel
-        document.getElementById("nome-aluno").innerText = `📌 Pagamentos de ${nomeExibicao}`;
+        document.getElementById("nome-aluno").innerText =
+            `📌 Pagamentos de ${nomeExibicao}`;
 
         const tbody = document.getElementById("tabela-meses");
         tbody.innerHTML = "";
 
         const historico = data.historico_pagamentos || [];
 
-        if (historico.length === 0) {
+        if (!historico.length) {
             tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento encontrado</td></tr>`;
-        } else {
-            historico.forEach(p => {
-                const mes = p.mes || "-";
-                const ano = p.ano || "-";
-                const valor = p.valor_pago ? `Kz ${Number(p.valor_pago).toLocaleString("pt-AO")},00` : "Kz 0,00";
-
-                // Determina status baseado em presença de pagamento
-                let status = p.valor_pago && p.valor_pago > 0 ? "Pago" : "Não pago";
-                let statusClass = status === "Pago" ? "style='color: green; font-weight: bold;'" : "style='color: red; font-weight: bold;'";
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${mes}</td>
-                        <td>${ano}</td>
-                        <td>${valor}</td>
-                        <td ${statusClass}>${status}</td>
-                    </tr>
-                `;
-            });
+            return;
         }
 
+        historico.forEach(p => {
+
+            const mes = p.mes || "-";
+            const ano = p.ano || "-";
+
+            const valor = p.valor_pago
+                ? `Kz ${Number(p.valor_pago).toLocaleString("pt-AO")},00`
+                : "Kz 0,00";
+
+            const status = p.valor_pago > 0 ? "Pago" : "Não pago";
+            const cor = status === "Pago" ? "green" : "red";
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${mes}</td>
+                    <td>${ano}</td>
+                    <td>${valor}</td>
+                    <td style="color:${cor};font-weight:bold;">${status}</td>
+                </tr>
+            `;
+        });
+
         document.getElementById("detalhes-aluno").style.display = "block";
+
     } catch (err) {
         console.error("Erro ao buscar pagamentos:", err);
-        alert("Erro ao carregar histórico de pagamentos.");
+        alert("Erro ao carregar histórico.");
     }
 }
-
   
 async function marcarPagoProf(id, statusAtual, professor, saldoAtual) {
     try {

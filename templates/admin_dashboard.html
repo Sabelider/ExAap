@@ -1,285 +1,1209 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login do Administrador</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Nunito', sans-serif;
-  background: #f4f7fa;
-  color: #333;
-  line-height: 1.6;
-}
+  <meta charset="utf-8">
+  <title>Painel Administrativo | SabApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- AdminLTE + Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
 
-.navbar {
-  background: linear-gradient(135deg, #0061a8, #00b4d8);
-  padding: 18px 20px;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  letter-spacing: 0.5px;
-}
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-.login-form {
-  max-width: 400px;
-  margin: 80px auto;
-  padding: 35px 25px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-  text-align: center;
-}
-.login-form h2 {
-  margin-bottom: 20px;
-  font-size: 22px;
-  font-weight: 600;
-  color: #0061a8;
-}
-.login-form input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 15px;
-}
-.login-form button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  font-size: 15px;
-  background: linear-gradient(135deg, #0078d7, #00b4d8);
-  color: #fff;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.3s ease;
-}
-.login-form button:hover {
-  background: linear-gradient(135deg, #005fa3, #0090b8);
-  transform: translateY(-2px);
-}
-#login-erro { font-size: 13px; margin-top: 8px; }
+  <style>
+  /* MAPA */
+  #mapAngola { 
+    height: 350px; 
+    border-radius: 10px;
+  }
 
-/* 🔹 Painel */
-.container {
-  padding: 25px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 25px;
+/* ===============================
+   OVERLAY LISTA DE ALUNOS
+================================ */
+
+.alunos-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.55);
+
+  display: none;
   justify-content: center;
-  max-width: 1300px;
-  margin: 0 auto;
+  align-items: center;
+
+  z-index: 9999;
 }
 
+/* ===============================
+   BLOCO DE LISTAGEM DE ALUNOS
+================================ */
 
-.card {
-  flex: 1 1 360px;
-  background: #fff;
+.alunos-container {
+  width: 90%;
+  max-width: 1150px;
+  max-height: 85vh;
+  overflow-y: auto;
+
+  background: #ffffff;
   border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  padding: 20px;
-  transition: transform 0.2s ease;
+  padding: 22px;
+
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+
+  animation: zoomIn .25s ease;
+  transition: all .3s ease;
 }
-.card:hover { transform: translateY(-4px); }
-.card h2 { font-size: 18px; margin-bottom: 12px; color: #0061a8; }
 
+@keyframes zoomIn {
+  from {
+    transform: scale(.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 
-.btn {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #0078d7, #00b4d8);
+.dark-mode .alunos-container {
+  background: #1f2d3d;
+}
+
+/* ===============================
+   TÍTULO
+================================ */
+
+.alunos-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* ===============================
+   TABELA
+================================ */
+
+table.tabela-alunos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.tabela-alunos thead {
+  background: linear-gradient(45deg,#007bff,#0056b3);
+  color: white;
+}
+
+table.tabela-alunos th,
+table.tabela-alunos td {
+  padding: 11px;
+  border-bottom: 1px solid #e1e1e1;
+  vertical-align: middle;
+}
+
+.dark-mode table.tabela-alunos th,
+.dark-mode table.tabela-alunos td {
+  border-color: #3b3b3b;
+}
+
+table.tabela-alunos tbody tr:hover {
+  background: rgba(0,123,255,0.08);
+}
+
+.dark-mode table.tabela-alunos tbody tr:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* ===============================
+   STATUS VISUAL
+================================ */
+
+.status-online {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.status-offline {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.status-vinculado {
+  background: #28a745;
+  color: white;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.status-nao-vinculado {
+  background: #dc3545;
+  color: white;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* ===============================
+   BOTÕES
+================================ */
+
+.btn-remover {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.btn-remover:hover {
+  opacity: .8;
+}
+
+/* ===============================
+   LOADING
+================================ */
+
+.loader-alunos {
+  text-align: center;
+  padding: 25px;
+  font-weight: bold;
+  font-size: 15px;
+  color: #007bff;
+}
+
+/* ===============================
+   RESPONSIVO
+================================ */
+
+@media (max-width: 768px) {
+
+  .alunos-container {
+    width: 95%;
+    max-height: 90vh;
+    padding: 15px;
+  }
+
+  table.tabela-alunos thead {
+    display: none;
+  }
+
+  table.tabela-alunos tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+  }
+
+  .dark-mode table.tabela-alunos tr {
+    border-color: #444;
+  }
+
+  table.tabela-alunos td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+  }
+
+  table.tabela-alunos td::before {
+    content: attr(data-label);
+    font-weight: 600;
+  }
+}
+
+/* ===============================
+   OVERLAY ALUNOS DISPONÍVEIS
+================================ */
+
+.alunos-disponiveis-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.55);
+
+  display: none;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+/* ===============================
+   CONTAINER
+================================ */
+
+.alunos-disponiveis-container {
+  width: 90%;
+  max-width: 1050px;
+  max-height: 85vh;
+  overflow-y: auto;
+
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 22px;
+
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+
+  animation: zoomIn .25s ease;
+}
+
+.dark-mode .alunos-disponiveis-container {
+  background: #1f2d3d;
+}
+
+/* ===============================
+   TABELA
+================================ */
+
+table.tabela-disponiveis {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.tabela-disponiveis thead {
+  background: linear-gradient(45deg,#17a2b8,#0f6674);
+  color: white;
+}
+
+table.tabela-disponiveis th,
+table.tabela-disponiveis td {
+  padding: 11px;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.dark-mode table.tabela-disponiveis th,
+.dark-mode table.tabela-disponiveis td {
+  border-color: #3b3b3b;
+}
+
+table.tabela-disponiveis tbody tr:hover {
+  background: rgba(23,162,184,0.12);
+}
+
+/* ===============================
+   STATUS
+================================ */
+
+.status-disponivel {
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+/* ===============================
+   LOADING
+================================ */
+
+.loader-disponiveis {
+  text-align: center;
+  padding: 25px;
+  font-weight: bold;
+  font-size: 15px;
+  color: #17a2b8;
+}
+
+/* ===============================
+   MENU PROFESSORES ONLINE
+================================ */
+
+.nav-treeview .nav-link.prof-online-btn {
+  border-left: 3px solid transparent;
+  transition: .2s;
+}
+
+.nav-treeview .nav-link.prof-online-btn:hover {
+  background: rgba(0,123,255,.08);
+  border-left-color: #007bff;
+}
+
+.dark-mode .nav-treeview .nav-link.prof-online-btn:hover {
+  background: rgba(255,255,255,.05);
+}
+
+/* ===============================
+   OVERLAY PROFESSORES
+================================ */
+
+.professores-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* ===============================
+   CONTAINER
+================================ */
+
+.professores-container {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  width: 95%;
+  max-width: 900px;
+  max-height: 80vh;          /* limita altura */
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark-mode .professores-container {
+  background: #1f2d3d;
+}
+
+/* ===============================
+   BOTÕES SCROLL
+================================ */
+
+.scroll-btn {
+  position: absolute;
+  right: 10px;
+  width: 35px;
+  height: 35px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,123,255,0.8);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: .2s;
+  z-index: 10;
+}
+
+.scroll-btn:hover {
+  background: #007bff;
+}
+
+.scroll-up {
+  top: 10px;
+}
+
+.scroll-down {
+  bottom: 10px;
+}
+
+/* ===============================
+   TABELA – PAGAMENTOS ALUNOS
+================================ */
+
+table.tabela-professores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.tabela-professores thead {
+  background: linear-gradient(45deg,#17a2b8,#117a8b);
+  color: #fff;
+}
+
+table.tabela-professores th,
+table.tabela-professores td {
+  padding: 12px;
+  border-bottom: 1px solid #e1e1e1;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dark-mode table.tabela-professores th,
+.dark-mode table.tabela-professores td {
+  border-color: #444;
+}
+
+/* ===============================
+   STATUS
+================================ */
+
+.prof-online {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.prof-offline {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* ===============================
+   BOTÃO PAGO
+================================ */
+
+.btn-prof-remover {
+  background: #dc3545;
   color: #fff;
   border: none;
+  padding: 6px 12px;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.3s ease;
-}
-.btn:hover {
-  background: linear-gradient(135deg, #005fa3, #0090b8);
-  transform: scale(1.05);
-}
-.toggle-btn {
-  width: 100%;
-  text-align: left;
-  margin-bottom: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 13px;
 }
 
+.btn-prof-remover:hover {
+  opacity: .85;
+}
+
+/* ===============================
+   OVERLAY (CORREÇÃO DO SCROLL)
+================================ */
+
+.professores-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: flex-start;     
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  overflow-y: auto;             
+  padding: 40px 0;              
+  z-index: 9999;
+}
+
+/* ===============================
+   CONTAINER INTERNO
+================================ */
+
+.professores-container {
+  background: #fff;
+  width: 90%;
+  max-width: 1100px;
+  max-height: none;            
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark-mode .professores-container {
+  background: #1f2d3d;
+}
+
+/* ===============================
+   SCROLL APENAS NA LISTA (OPCIONAL)
+================================ */
+
+.tabela-scroll {
+  max-height: 65vh;             
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  padding-right: 6px;
+}
+
+.tabela-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tabela-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.25);
+  border-radius: 6px;
+}
+
+.dark-mode .tabela-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.25);
+}
+
+/* ===============================
+   MOBILE (≤ 768px)
+================================ */
+
+@media (max-width: 768px) {
+
+  table.tabela-professores thead {
+    display: none;
+  }
+
+  table.tabela-professores tbody tr {
+    display: block;
+    margin-bottom: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+  }
+
+  .dark-mode table.tabela-professores tbody tr {
+    background: #1f2d3d;
+    border-color: #444;
+  }
+
+  table.tabela-professores tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border: none;
+    font-size: 14px;
+  }
+
+  table.tabela-professores tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+  }
+
+  .dark-mode table.tabela-professores tbody td::before {
+    color: #bbb;
+  }
+
+  table.tabela-professores tbody td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  table.tabela-professores tbody td:last-child button {
+    width: 100%;
+  }
+
+  .professores-container {
+    width: 96%;
+    padding: 14px;
+  }
+}
+
+/* ===============================
+   MOBILE (≤ 768px)
+================================ */
+
+@media (max-width: 768px) {
+
+  table.tabela-professores thead {
+    display: none;
+  }
+
+  table.tabela-professores tbody tr {
+    display: block;
+    margin-bottom: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+  }
+
+  .dark-mode table.tabela-professores tbody tr {
+    background: #1f2d3d;
+    border-color: #444;
+  }
+
+  table.tabela-professores tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border: none;
+    font-size: 14px;
+  }
+
+  table.tabela-professores tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+  }
+
+  .dark-mode table.tabela-professores tbody td::before {
+    color: #bbb;
+  }
+
+  table.tabela-professores tbody td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  table.tabela-professores tbody td:last-child button {
+    width: 100%;
+  }
+
+  
+  .professores-container {
+    width: 96%;
+    max-height: 92vh;
+    padding: 14px;
+  }
+}
+    
+/* ===============================
+   MOBILE (≤ 768px)
+   MESMO COMPORTAMENTO DA TABELA MODERNA
+================================ */
+
+@media (max-width: 768px) {
+
+  /* Remove header */
+  table.tabela-professores thead {
+    display: none;
+  }
+
+  /* Cada linha vira um card */
+  table.tabela-professores tbody tr {
+    display: block;
+    margin-bottom: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+  }
+
+  .dark-mode table.tabela-professores tbody tr {
+    background: #1f2d3d;
+    border-color: #444;
+  }
+
+  /* Células em coluna */
+  table.tabela-professores tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border: none;
+    font-size: 14px;
+  }
+
+  table.tabela-professores tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+  }
+
+  .dark-mode table.tabela-professores tbody td::before {
+    color: #bbb;
+  }
+
+  /* Ações (botões) */
+  table.tabela-professores tbody td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  table.tabela-professores tbody td:last-child button {
+    width: 100%;
+    border-radius: 8px;
+  }
+}
+
+/* ===============================
+   RESPONSIVO
+================================ */
+
+@media(max-width:768px){
+
+  table.tabela-professores thead{display:none}
+
+  table.tabela-professores tr{
+    display:block;
+    margin-bottom:10px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:6px;
+  }
+
+  table.tabela-professores td{
+    display:flex;
+    justify-content:space-between;
+  }
+
+  table.tabela-professores td::before{
+    content:attr(data-label);
+    font-weight:600;
+  }
+}
+
+/* =================================
+   TABELAS – PADRÃO GERAL
+================================= */
 
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  margin-top: 10px;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
 }
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  text-align: left;
-}
-th {
-  background: #f0f4f8;
-  font-weight: 700;
-  color: #333;
-}
-tr:hover td { background: #f9fcff; }
 
+table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+table th,
+table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e1e1e1;
+  vertical-align: middle;
+}
+
+.dark-mode table th,
+.dark-mode table td {
+  border-color: #444;
+}
+
+/* =================================
+   STATUS
+================================= */
 
 .status-circulo {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
   margin-right: 6px;
 }
-.status-verde { background-color: #2ecc71; }
-.status-vermelho { background-color: #e74c3c; }
 
+.status-verde {
+  background: #28a745;
+  color: #28a745;
+  font-weight: bold;
+}
 
-textarea, select {
+.status-vermelho {
+  background: #dc3545;
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* =================================
+   BOTÕES (MOBILE FRIENDLY)
+================================= */
+
+table button {
+  min-width: 80px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+
+  /* ===============================
+     REMOVE HEADER
+  ============================== */
+  table thead {
+    display: none;
+  }
+
+  /* ===============================
+     CARD POR LINHA
+  ============================== */
+  table tbody tr {
+    display: block;
+    margin-bottom: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+  }
+
+  .dark-mode table tbody tr {
+    background: #1f2d3d;
+    border-color: #444;
+  }
+
+  /* ===============================
+     CÉLULAS EM COLUNA
+  ============================== */
+  table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border: none;
+    font-size: 14px;
+  }
+
+  table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+  }
+
+  .dark-mode table tbody td::before {
+    color: #bbb;
+  }
+
+  /* ===============================
+     BOTÕES EM LINHA / COLUNA
+  ============================== */
+  table tbody td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  table tbody td:last-child button {
+    width: 100%;
+    border-radius: 8px;
+  }
+}
+
+/* =================================
+   TÍTULOS DENTRO DOS MODAIS
+================================= */
+
+.alunos-title,
+.professores-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* =================================
+   CONTAINERS – MOBILE
+================================= */
+
+@media (max-width: 768px) {
+
+  .alunos-container,
+  .professores-container {
+    width: 96%;
+    max-height: 92vh;
+    padding: 14px;
+    border-radius: 14px;
+  }
+}
+
+/* =================================
+   SCROLL SUAVE EM MOBILE
+================================= */
+
+table tbody {
+  scroll-behavior: smooth;
+}
+
+/* ===============================
+   WRAPPER
+================================ */
+.tabela-wrapper {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.dark-mode .tabela-wrapper {
+  background: #1f2d3d;
+}
+
+/* ===============================
+   TÍTULO
+================================ */
+.modal-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* ===============================
+   TABELA DESKTOP
+================================ */
+.tabela-pagamentos {
   width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  border-collapse: collapse;
   font-size: 14px;
 }
 
+.tabela-pagamentos thead {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: #fff;
+}
 
+.tabela-pagamentos th,
+.tabela-pagamentos td {
+  padding: 12px;
+  border-bottom: 1px solid #e1e1e1;
+  text-align: left;
+}
+
+.dark-mode .tabela-pagamentos th,
+.dark-mode .tabela-pagamentos td {
+  border-color: #444;
+}
+
+.tabela-pagamentos tbody tr:hover {
+  background: rgba(0,123,255,.08);
+}
+
+/* ===============================
+   STATUS
+================================ */
+.status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pago {
+  background: #28a745;
+  color: #fff;
+}
+
+.status-pendente {
+  background: #dc3545;
+  color: #fff;
+}
+
+/* ===============================
+   BOTÕES
+================================ */
+.btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  opacity: .85;
+}
+
+/* ===============================
+   MOBILE (≤ 768px)
+================================ */
 @media (max-width: 768px) {
-  .container { flex-direction: column; padding: 15px; }
-  .card { flex: 1 1 100%; }
-  table, th, td { font-size: 12px; }
-  .btn { font-size: 13px; padding: 8px 14px; }
+
+  .tabela-pagamentos thead {
+    display: none;
+  }
+
+  .tabela-pagamentos tbody tr {
+    display: block;
+    margin-bottom: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+  }
+
+  .dark-mode .tabela-pagamentos tbody tr {
+    background: #1f2d3d;
+    border-color: #444;
+  }
+
+  .tabela-pagamentos tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+    border: none;
+  }
+
+  .tabela-pagamentos tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+  }
+
+  .dark-mode .tabela-pagamentos tbody td::before {
+    color: #bbb;
+  }
+
+  .tabela-pagamentos tbody td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tabela-pagamentos tbody td:last-child button {
+    width: 100%;
+  }
 }
-@media (max-width: 500px) {
-  .navbar { font-size: 20px; padding: 15px; }
-  .login-form { margin: 40px 15px; padding: 25px; }
-  .btn { font-size: 12px; padding: 7px 12px; }
-  table, th, td { font-size: 11px; }
-}
+    
 </style>
+
+
 </head>
-<body>
-  <div class="navbar">Painel do Administrador</div>
 
-  <div class="login-form" id="login-form">
-    <h2>Entrar</h2>
-    <input type="text" id="username" placeholder="Nome de utilizador">
-    <input type="password" id="password" placeholder="Palavra-passe">
-    <button onclick="verificarLogin()">Entrar</button>
-    <p id="login-erro" style="color:red;"></p>
-  </div>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
 
-  <div class="container" id="painel" style="display:none">
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('alunos-cadastrados')">👨‍🎓 Alunos Cadastrados</button>
-      <div class="section" id="alunos-cadastrados">
-        <button class="btn" onclick="carregarAlunos()">Atualizar</button>
-        <table id="tabela-alunos">
-          <thead><tr><th>Nome</th><th>Disciplina</th><th>Online</th><th>Vinculado</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu"><i class="fas fa-bars"></i></a>
+      </li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-link" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+
+    <a href="#" class="brand-link text-center">
+      <span class="brand-text font-weight-light">Administração SabApp</span>
+    </a>
+
+    <!-- ===============================
+         MENU
+    ================================== -->
+    <div class="sidebar">
+      <nav class="mt-3">
+        <ul class="nav nav-pills nav-sidebar flex-column"
+            data-widget="treeview" role="menu" data-accordion="false">
+
+          <!-- MENU ALUNOS -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-user-graduate"></i>
+              <p>Alunos <i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunos();">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Alunos Cadastrados</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunosDisponiveis();">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Alunos sem vínculo</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- MENU PROFESSORES -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-chalkboard-teacher"></i>
+              <p>Professores <i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarProfessores();">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Professores Online</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- MENU FINANÇAS -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-coins"></i>
+              <p>Finanças <i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+             <li class="nav-item">
+               <a href="#" class="nav-link" onclick="event.preventDefault(); abrirFinanceAlunos();">
+                 <i class="far fa-circle nav-icon"></i>
+                 <p>Pagamentos Alunos</p>
+               </a>
+            </li>
+
+         <li class="nav-item">
+           <a href="#" class="nav-link"
+              onclick="event.preventDefault(); abrirFinanceProf();">
+             <i class="far fa-circle nav-icon"></i>
+             <p>Paga. Professores</p>
+           </a>
+        </li>
+
+<!-- ===============================
+     OVERLAY FINANÇAS PROFESSORES
+================================ -->
+<div class="professores-overlay" id="overlayFinanceProf">
+  <div class="professores-container tabela-wrapper">
+
+    <div class="modal-header">
+      <h3 class="modal-title">💰 Pagamentos – Professores</h3>
+      <button class="btn btn-secondary" onclick="fecharFinanceProf()">Fechar</button>
     </div>
 
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('alunos-disponiveis')">📋 Alunos sem Vínculo</button>
-      <div class="section" id="alunos-disponiveis">
-        <button class="btn" onclick="carregarAlunosDisponiveis()">Atualizar</button>
-        <table id="tabela-disponiveis">
-          <thead><tr><th>Nome</th><th>Disciplina</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('professores-online')">🧑‍🏫 Professores Online</button>
-      <div class="section" id="professores-online">
-        <button class="btn" onclick="carregarProfessores()">Atualizar</button>
-        <table id="tabela-professores">
-          <thead><tr><th>Email</th><th>Status</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-ao-vivo')">🎥 Aulas em Andamento</button>
-      <div class="section" id="aulas-ao-vivo">
-        <button class="btn" onclick="carregarAulas()">Atualizar</button>
-        <table id="tabela-aulas">
-          <thead><tr><th>Aluno</th><th>Professor</th><th>Status</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-   <div class="card">
-  <button class="btn toggle-btn" onclick="alternarVisibilidade('aulas-dadas')">📚 Relatório de Aulas</button>
-  <div class="section" id="aulas-dadas">
-    <!-- Div para exibir notificações -->
-    <div id="notificacoes" style="margin-bottom: 15px;"></div>
-
-    <!-- Botão para atualizar manualmente -->
-    <button class="btn" onclick="carregarRelatorioAulas()">Atualizar</button>
-
-    <!-- Tabela de relatório de aulas -->
-    <table id="tabela-aulas-dadas">
+    <table class="tabela-pagamentos" id="tabela-pagamentos-prof">
       <thead>
         <tr>
           <th>Professor</th>
-          <th>Aluno</th>
-          <th>Aulas Dadas</th>
+          <th>Status</th>
+          <th>Saldo Atual</th>
+          <th>Ações</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- JS injeta linhas aqui -->
+      </tbody>
     </table>
+
+  </div>
+</div>
+<!-- ===============================
+     DETALHES PAGAMENTOS PROFESSOR
+================================ -->
+<div class="professores-overlay" id="detalhes-prof">
+  <div class="professores-container tabela-wrapper">
+
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title" id="nome-prof">Professor</h3>
+        <small>
+          Saldo atual:
+          <strong id="saldo-prof">0 Kz</strong>
+        </small>
+      </div>
+      <button class="btn btn-secondary" onclick="fecharDetalhesProf()">Fechar</button>
+    </div>
+
+    <table class="tabela-pagamentos">
+      <thead>
+        <tr>
+          <th>Mês</th>
+          <th>Data</th>
+          <th>Valor</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-meses">
+        <!-- JS injeta linhas aqui -->
+      </tbody>
+    </table>
+
   </div>
 </div>
 
-    <div class="card">
-      <button class="btn toggle-btn" onclick="alternarVisibilidade('enviar-mensagem')">✉️ Enviar Mensagem</button>
-      <div class="section" id="enviar-mensagem">
-        <h2>Mensagem ao Professor</h2>
-        <select id="lista-professores">
-          <option disabled selected>Selecione o professor</option>
-        </select>
-        <textarea id="mensagem-texto" placeholder="Digite sua mensagem"></textarea>
-        <button class="btn" onclick="enviarMensagem()">Enviar Mensagem</button>
-      </div>
+
+  </div>
+</div>
+
+          <div class="professores-overlay" id="overlayFinanceAlunos">
+  <div class="professores-container">
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h4>💰 Pagamentos de Alunos</h4>
+      <button class="btn btn-secondary" onclick="fecharFinanceAlunos()">Fechar</button>
     </div>
 
-<!-- Controle de Pagamentos de Alunos -->
-<div class="card">
-  <button class="btn toggle-btn" onclick="alternarVisibilidade('controle-pagamentos')">
-    💰 Controle de Pagamentos de Alunos
-  </button>
-  
-  <div class="section" id="controle-pagamentos">
-    <button class="btn" onclick="carregarPagamentos()">Atualizar</button>
-    
-    <!-- Tabela principal de alunos -->
-    <table id="tabela-pagamentos">
+    <table class="tabela-professores" id="tabela-pagamentos">
       <thead>
         <tr>
-          <th>Nome</th>
-          <th>Status Atual</th>
+          <th>Aluno</th>
+          <th>Status</th>
           <th>Dívida</th>
           <th>Último Pagamento</th>
           <th>Ações</th>
@@ -288,598 +1212,841 @@ textarea, select {
       <tbody></tbody>
     </table>
 
-    <!-- Tabela de meses (detalhes do aluno) -->
-    <div id="detalhes-aluno" style="display:none; margin-top:15px; position: relative;">
-      <!-- Botão Fechar -->
-      <button onclick="document.getElementById('detalhes-aluno').style.display='none'" 
-              style="position: absolute; top: 5px; right: 5px; background: transparent; border: none; font-size: 18px; cursor: pointer;">
-        ❌
-      </button>
-
-      <h3 id="nome-aluno" style="margin-top:0;"></h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Ano</th>
-            <th>Valor</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-meses"></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
-<!-- Controle de Pagamentos de Professores -->
-<div class="card">
-  <button class="btn toggle-btn" onclick="alternarVisibilidade('controle-pagamentos-prof')">
-    💰 Controle de Pagamento de Professores
-  </button>
-  
-  <div class="section" id="controle-pagamentos-prof">
-    <button class="btn" onclick="carregarPagamentosProf()">Atualizar</button>
-    
-    <!-- Tabela principal de professores -->
-    <table id="tabela-pagamentos-prof">
+<div class="professores-overlay" id="detalhes-aluno">
+  <div class="professores-container">
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h4 id="nome-aluno">📌 Pagamentos</h4>
+      <button class="btn btn-secondary" onclick="fecharDetalhesAluno()">Fechar</button>
+    </div>
+
+    <table class="tabela-professores">
       <thead>
         <tr>
-          <th>Professor</th>
-          <th>Status Atual</th>
-          <th>Valor a Pagar (R$)</th>
-          <th>Ação</th>
+          <th>Mês</th>
+          <th>Ano</th>
+          <th>Valor</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="tabela-meses"></tbody>
     </table>
 
-    <!-- Tabela de meses (detalhes do professor) -->
-    <div id="detalhes-prof" style="display:none; margin-top:15px; position: relative;">
-      <button onclick="document.getElementById('detalhes-prof').style.display='none'" 
-              style="position: absolute; top: 5px; right: 5px; background: transparent; border: none; font-size: 18px; cursor: pointer;">
-        ❌
-      </button>
-      <h3 id="nome-prof" style="margin-top:0;"></h3>
-      <table>
+  </div>
+</div>          
+          
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ===============================
+       OVERLAYS (TODOS MANTIDOS)
+  ================================== -->
+  <!-- ALUNOS -->
+  <div class="alunos-overlay" id="overlayAlunos">
+    <div class="alunos-container">
+      <div style="display:flex;justify-content:space-between">
+        <div class="alunos-title">📋 Alunos Cadastrados</div>
+        <button class="btn btn-secondary" onclick="fecharAlunos()">Fechar</button>
+      </div>
+      <table class="tabela-alunos" id="tabela-alunos">
         <thead>
           <tr>
-            <th>Mês</th>
-            <th>Data Pagamento</th>
-            <th>Valor Pago (Kz)</th>
-            <th>Email do Professor</th>
+            <th>Nome</th><th>Disciplina</th><th>Online</th><th>Vínculo</th><th>Ações</th>
           </tr>
         </thead>
-        <tbody id="tabela-meses-prof"></tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
+
+  <!-- ALUNOS SEM VÍNCULO -->
+  <div class="alunos-disponiveis-overlay" id="overlayDisponiveis">
+    <div class="alunos-disponiveis-container">
+      <div style="display:flex;justify-content:space-between">
+        <div class="alunos-title">👤 Alunos sem vínculo</div>
+        <button class="btn btn-secondary" onclick="fecharAlunosDisponiveis()">Fechar</button>
+      </div>
+      <table class="tabela-disponiveis" id="tabela-disponiveis">
+        <thead>
+          <tr>
+            <th>Nome</th><th>Disciplina</th><th>Bairro</th><th>Província</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROFESSORES -->
+  <div class="professores-overlay" id="overlayProfessores">
+    <div class="professores-container">
+      <div style="display:flex;justify-content:space-between">
+        <div class="alunos-title">👨‍🏫 Professores Online</div>
+        <button class="btn btn-secondary" onclick="fecharProfessores()">Fechar</button>
+      </div>
+      <table class="tabela-professores" id="tabela-professores">
+        <thead>
+          <tr>
+            <th>Email</th><th>Nome</th><th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+ <!-- Conteúdo -->
+  <div class="content-wrapper">
+    <section class="content pt-3">
+      <div class="container-fluid">
+
+        <!-- CARDS -->
+        <div class="row">
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3 id="total-alunos">0</h3>
+                <p>Alunos</p>
+              </div>
+              <div class="icon"><i class="fas fa-user-graduate"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+              <div class="inner">
+                <h3 id="total-professores">0</h3>
+                <p>Professores</p>
+              </div>
+              <div class="icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+              <div class="inner">
+                <h3 id="chamadas-ativas">0</h3>
+                <p>Aulas Ativas</p>
+              </div>
+              <div class="icon"><i class="fas fa-video"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+              <div class="inner">
+                <h3 id="alunos-nao-vinculados">0</h3>
+                <p>Alunos Não Vinculados</p>
+              </div>
+              <div class="icon"><i class="fas fa-unlink"></i></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- GRÁFICO + MAPA -->
+        <div class="row">
+
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Resumo Geral</h3>
+              </div>
+              <div class="card-body">
+                <canvas id="grafico"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Mapa de Angola</h3>
+              </div>
+              <div class="card-body">
+                <div id="mapAngola"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer text-center">
+    <strong>Todos os Direitos reservados à SabApp 2026</strong>
+  </footer>
+
 </div>
 
-
-
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  function alternarVisibilidade(id) {
-    const el = document.getElementById(id);
-    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+}
+
+// 📊 BUSCAR ESTATÍSTICAS
+fetch("/estatisticas-dashboard")
+  .then(res => res.json())
+  .then(dados => {
+
+    document.getElementById("total-alunos").innerText = dados.alunos.total;
+    document.getElementById("total-professores").innerText = dados.professores.total;
+    document.getElementById("chamadas-ativas").innerText = dados.chamadas.em_andamento;
+    document.getElementById("alunos-nao-vinculados").innerText = dados.alunos.nao_vinculados;
+
+    new Chart(document.getElementById("grafico"), {
+      type: "doughnut",
+      data: {
+        labels: [
+          "Alunos Online",
+          "Alunos Offline",
+          "Vinculados",
+          "Não Vinculados"
+        ],
+        datasets: [{
+          data: [
+            dados.alunos.online,
+            dados.alunos.offline,
+            dados.alunos.vinculados,
+            dados.alunos.nao_vinculados
+          ]
+        }]
+      }
+    });
+  });
+
+// 🗺️ MAPA
+const map = L.map('mapAngola').setView([-11.2027, 17.8739], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.marker([-8.839, 13.289]).addTo(map).bindPopup("Luanda");
+
+async function carregarAlunos() {
+
+  const overlay = document.getElementById("overlayAlunos");
+  const tbody = document.querySelector("#tabela-alunos tbody");
+
+  if (!overlay || !tbody) {
+    console.error("Overlay ou tabela não encontrados");
+    return;
   }
 
-  function verificarLogin() {
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value.trim();
-    if (user === 'admin' && pass === '12345') {
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('painel').style.display = 'block';
-    } else {
-      document.getElementById('login-erro').innerText = 'Credenciais inválidas';
-    }
-  }
+  // abre modal
+  overlay.style.display = "flex";
 
-  async function carregarAlunos() {
+  // loading inicial
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="loader-alunos">
+        Carregando alunos...
+      </td>
+    </tr>
+  `;
+
+  try {
+
     const res = await fetch("/listar-alunos");
-    const alunos = await res.json();
-    const tbody = document.querySelector("#tabela-alunos tbody");
+
+    if (!res.ok) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="loader-alunos" style="color:red">
+            Erro ao buscar alunos
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    let alunos = await res.json();
+
+    // ✅ FILTRA NOMES VAZIOS / NULL
+    alunos = alunos.filter(a =>
+      a &&
+      a.nome &&
+      a.nome.toString().trim() !== ""
+    );
+
     tbody.innerHTML = "";
+
+    if (!alunos.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;font-weight:bold">
+            Nenhum aluno válido encontrado
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     alunos.forEach(a => {
+
+      const nome = a.nome?.toString().trim() || "—";
+      const disciplina = a.disciplina || "—";
+
+      tbody.innerHTML += `
+        <tr>
+          <td data-label="Nome">${nome}</td>
+          <td data-label="Disciplina">${disciplina}</td>
+
+          <td data-label="Status"
+              class="${a.online ? 'status-online' : 'status-offline'}">
+            ${a.online ? "Online" : "Offline"}
+          </td>
+
+          <td data-label="Vinculado">
+            <span class="${a.vinculado ? 'status-vinculado' : 'status-nao-vinculado'}">
+              ${a.vinculado ? "Sim" : "Não"}
+            </span>
+          </td>
+
+          <td data-label="Ações">
+            <button class="btn-remover"
+              onclick="removerAluno('${nome}')">
+              Remover
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error("Erro JS:", err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="loader-alunos" style="color:red">
+          Erro inesperado
+        </td>
+      </tr>
+    `;
+  }
+
+}
+function fecharAlunos() {
+  const overlay = document.getElementById("overlayAlunos");
+
+  if (overlay) {
+    overlay.style.display = "none";
+  }
+}
+  
+  async function carregarAlunosDisponiveis() {
+
+  const overlay = document.getElementById("overlayDisponiveis");
+  const tbody = document.querySelector("#tabela-disponiveis tbody");
+
+  if (!overlay || !tbody) {
+    console.error("Overlay ou tabela disponíveis não encontrados");
+    return;
+  }
+
+  overlay.style.display = "flex";
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="loader-disponiveis">
+        Carregando alunos...
+      </td>
+    </tr>
+  `;
+
+  try {
+
+    const res = await fetch("/alunos-nao-vinculados");
+
+    if (!res.ok) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="loader-disponiveis" style="color:red">
+            Erro ao buscar alunos
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    let alunos = await res.json();
+
+    // filtra nomes vazios
+    alunos = alunos.filter(a =>
+      a.nome && a.nome.toString().trim() !== ""
+    );
+
+    tbody.innerHTML = "";
+
+    if (!alunos.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;font-weight:bold">
+            Nenhum aluno disponível
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    alunos.forEach(a => {
+
       tbody.innerHTML += `
         <tr>
           <td>${a.nome}</td>
-          <td>${a.disciplina}</td>
-          <td>${a.online ? "✅" : "❌"}</td>
-          <td>${a.vinculado ? "Sim" : "Não"}</td>
-          <td><button onclick="removerAluno('${a.nome}')" style="background:red;color:white;border:none;padding:4px 8px;border-radius:4px;">Remover</button></td>
+          <td>${a.disciplina || "—"}</td>
+          <td>${a.bairro || "—"}</td>
+          <td>${a.provincia || "—"}</td>
+          <td class="status-disponivel">
+            ${a.online ? "Online" : "Offline"}
+          </td>
         </tr>
       `;
     });
+
+  } catch (err) {
+
+    console.error("Erro JS:", err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="loader-disponiveis" style="color:red">
+          Erro inesperado
+        </td>
+      </tr>
+    `;
+  }
+}
+  
+function fecharAlunosDisponiveis() {
+
+  const overlay = document.getElementById("overlayDisponiveis");
+  const tbody = document.querySelector("#tabela-disponiveis tbody");
+
+  // fecha o overlay
+  if (overlay) {
+    overlay.style.display = "none";
   }
 
-  async function carregarAlunosDisponiveis() {
-    const res = await fetch("/alunos-nao-vinculados");
-    const dados = await res.json();
-    const tbody = document.querySelector("#tabela-disponiveis tbody");
+  // limpa tabela
+  if (tbody) {
     tbody.innerHTML = "";
-    dados.forEach(aluno => {
-      tbody.innerHTML += `
-        <tr><td>${aluno.nome}</td><td>${aluno.disciplina}</td></tr>
-      `;
-    });
+  }
+}
+
+async function carregarProfessores() {
+
+  const overlay = document.getElementById("overlayProfessores");
+  const tbody = document.querySelector("#tabela-professores tbody");
+  const select = document.getElementById("lista-professores");
+
+  if (!overlay || !tbody) {
+    console.error("Overlay professores não encontrado");
+    return;
   }
 
-  async function carregarProfessores() {
+  overlay.style.display = "flex";
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4" class="loader-alunos">
+        Carregando professores...
+      </td>
+    </tr>
+  `;
+
+  try {
+
     const res = await fetch("/listar-professores-online");
+
+    if (!res.ok) throw new Error();
+
     const profs = await res.json();
-    const tbody = document.querySelector("#tabela-professores tbody");
-    const select = document.getElementById("lista-professores");
+
     tbody.innerHTML = "";
+
+    if (!profs.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center;font-weight:bold">
+            Nenhum professor online
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     if (select) {
       select.innerHTML = `
         <option disabled selected>Selecione o professor</option>
         <option value="todos">Todos os Professores</option>
       `;
     }
+
     profs.forEach(p => {
+
       tbody.innerHTML += `
         <tr>
-          <td>${p.email}</td>
-          <td>${p.online ? "✅" : "❌"}</td>
-          <td><button onclick="removerProfessor('${p.email}')" style="background:red;color:white;border:none;padding:4px 8px;border-radius:4px;">Remover</button></td>
+
+          <td data-label="Email">${p.email}</td>
+
+          <td data-label="Nome">${p.nome}</td>
+
+          <td data-label="Status"
+              class="${p.online ? 'prof-online' : 'prof-offline'}">
+            ${p.online ? "Online" : "Offline"}
+          </td>
+
+          <td data-label="Ações">
+            <button class="btn-prof-remover"
+              onclick="removerProfessor('${p.email}')">
+              Remover
+            </button>
+          </td>
+
         </tr>
       `;
+
       if (select && p.email) {
         select.innerHTML += `<option value="${p.email}">${p.email}</option>`;
       }
+
     });
-  }
 
-  async function carregarAulas() {
-    const res = await fetch("/listar-chamadas");
-    const chamadas = await res.json();
-    const tbody = document.querySelector("#tabela-aulas tbody");
-    tbody.innerHTML = "";
-    chamadas.forEach(ch => {
-      tbody.innerHTML += `
-        <tr><td>${ch.aluno}</td><td>${ch.professor}</td><td>${ch.status}</td></tr>
-      `;
-    });
-  }
+  } catch (err) {
 
- async function carregarRelatorioAulas() {
-  const res = await fetch("/relatorio-aulas");
-  const dados = await res.json();
-
-  // Atualiza tabela
-  const tbody = document.querySelector("#tabela-aulas-dadas tbody");
-  tbody.innerHTML = "";
-  dados.relatorio.forEach(item => {
-    tbody.innerHTML += `
-      <tr><td>${item.professor}</td><td>${item.aluno}</td><td>${item.aulas_dadas}</td></tr>
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="loader-alunos" style="color:red">
+          Erro ao carregar professores
+        </td>
+      </tr>
     `;
-  });
 
-  // Mostra notificações
-  const notificacoesDiv = document.querySelector("#notificacoes");
-  notificacoesDiv.innerHTML = "";
-  if (dados.notificacoes.length > 0) {
-    dados.notificacoes.forEach(msg => {
-      const p = document.createElement("p");
-      p.textContent = msg;
-      p.style.fontWeight = "bold";
-      p.style.color = "green";
-      notificacoesDiv.appendChild(p);
-    });
   }
+
+}
+  
+function fecharProfessores() {
+
+  const overlay = document.getElementById("overlayProfessores");
+  const tbody = document.querySelector("#tabela-professores tbody");
+
+  if (overlay) overlay.style.display = "none";
+
+  if (tbody) tbody.innerHTML = "";
 }
 
-// Chama a função ao carregar a página
-window.addEventListener("load", carregarRelatorioAulas);
+ async function marcarPago(alunoId, temDivida) {
 
-  async function removerAluno(nome) {
-    if (confirm(`Deseja mesmo remover o aluno "${nome}"?`)) {
-      await fetch("/remover-aluno", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome })
-      });
-      carregarAlunos();
-    }
+  if (!temDivida) {
+    alert("Este aluno já está com o pagamento em dia.");
+    return;
   }
 
-  async function removerProfessor(email) {
-    if (confirm(`Deseja mesmo remover o professor "${email}"?`)) {
-      await fetch("/remover-professor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
-      carregarProfessores();
-    }
+  const res = await fetch("/listar-pagamentos");
+  const alunos = await res.json();
+
+  const aluno = alunos.find(a => a.id === alunoId && a.nome);
+
+  if (!aluno) {
+    alert("Aluno não encontrado.");
+    return;
   }
 
-  async function enviarMensagem() {
-    const email = document.getElementById("lista-professores").value;
-    const mensagem = document.getElementById("mensagem-texto").value.trim();
+  const hoje = new Date();
+  const mes = hoje.getMonth() + 1;
+  const ano = hoje.getFullYear();
 
-    if (!email || !mensagem) {
-      alert("Selecione o professor ou todos, e digite a mensagem.");
-      return;
-    }
+  const resposta = await fetch("/api/registrar-pagamento", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      aluno_nome: aluno.nome,
+      mes,
+      ano,
+      valor_pago: aluno.valor_mensal_aluno || 0,
+      pago: true
+    })
+  });
 
-    if (email === "todos") {
-      const res = await fetch("/listar-professores-online");
-      const professores = await res.json();
-      for (const prof of professores) {
-        if (prof.email) {
-          await fetch("/enviar-mensagem-professor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: prof.email, mensagem })
-          });
-        }
-      }
-      alert("Mensagem enviada para todos os professores.");
-    } else {
-      await fetch("/enviar-mensagem-professor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, mensagem })
-      });
-      alert("Mensagem enviada com sucesso.");
-    }
-
-    document.getElementById("mensagem-texto").value = "";
+  if (resposta.ok) {
+    alert("Pagamento registrado com sucesso!");
+    carregarPagamentos();
+  } else {
+    alert("Erro ao registrar pagamento.");
   }
-
-async function marcarPago(alunoId, temDivida) {
-
-    if (!temDivida) {
-        alert("Este aluno já está com o pagamento em dia.");
-        return;
-    }
-
-    const res = await fetch("/listar-pagamentos");
-    const alunos = await res.json();
-
-    const aluno = alunos.find(a =>
-        a.id === alunoId &&
-        a.nome &&
-        a.nome.trim() !== ""
-    );
-
-    if (!aluno) {
-        alert("Aluno não encontrado ou nome inválido.");
-        return;
-    }
-
-    const hoje = new Date();
-    const mes = hoje.getMonth() + 1;
-    const ano = hoje.getFullYear();
-
-    const valorMensal = aluno.valor_mensal_aluno || 0;
-
-    const resposta = await fetch("/api/registrar-pagamento", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            aluno_nome: aluno.nome,
-            mes,
-            ano,
-            valor_pago: valorMensal,
-            pago: true
-        })
-    });
-
-    if (resposta.ok) {
-        alert(`Pagamento de ${aluno.nome} registrado para ${mes}/${ano}.`);
-        carregarPagamentos();
-    } else {
-        alert("Erro ao registrar pagamento.");
-    }
 }
 
 async function carregarPagamentos() {
-    try {
 
-        const res = await fetch("/listar-pagamentos");
-        if (!res.ok) throw new Error(`Erro ${res.status}`);
+  const res = await fetch("/listar-pagamentos");
+  const alunos = await res.json();
+  const tbody = document.querySelector("#tabela-pagamentos tbody");
 
-        const alunos = await res.json();
-        const tbody = document.querySelector("#tabela-pagamentos tbody");
+  tbody.innerHTML = "";
 
-        tbody.innerHTML = "";
+  alunos.forEach(a => {
 
-        alunos.forEach(a => {
+    if (!a.nome) return;
 
-            // 🚫 IGNORA registros sem nome
-            if (!a.nome || a.nome.trim() === "") {
-                return;
-            }
+    const temDivida = a.divida && Number(a.divida) > 0;
+    const statusTexto = temDivida ? "Não Pago" : "Pago";
+    const statusCor = temDivida ? "prof-offline" : "prof-online";
 
-            const temValor = a.divida && Number(a.divida) > 0;
-
-            const statusCor = temValor ? "status-verde" : "status-vermelho";
-            const statusTexto = temValor ? "Pago" : "Não Pago";
-
-            let ultimoPagamento = "—";
-            if (a.paga_passado && a.paga_passado.length > 0) {
-                const ultimo = a.paga_passado[a.paga_passado.length - 1];
-                const mes = ultimo.mes || "-";
-                const ano = ultimo.ano || "-";
-                const valor = ultimo.valor_pago != null
-                    ? Number(ultimo.valor_pago).toLocaleString("pt-AO")
-                    : "0";
-
-                ultimoPagamento = `${mes}/${ano} - Kz ${valor},00`;
-            }
-
-            tbody.innerHTML += `
-                <tr>
-                  <td>${a.nome}</td>
-
-                  <td>
-                    <span class="status-circulo ${statusCor}"></span>
-                    ${statusTexto}
-                  </td>
-
-                  <td>Kz ${a.divida ? Number(a.divida).toLocaleString("pt-AO") : 0},00</td>
-
-                  <td>${ultimoPagamento}</td>
-
-                  <td>
-                    <button 
-                        onclick="marcarPago('${a.id}', ${temValor})"
-                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
-                        PAGO
-                    </button>
-
-                    <button 
-                        onclick="verPagamentos('${a.nome}', '${a.nome}')"
-                        style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;margin-left:5px;">
-                        Ver Pagamentos
-                    </button>
-                  </td>
-                </tr>
-            `;
-        });
-
-    } catch (err) {
-        console.error("Erro ao carregar pagamentos:", err);
-        alert("Erro ao carregar lista de pagamentos.");
+    let ultimoPagamento = "—";
+    if (a.paga_passado?.length) {
+      const u = a.paga_passado[a.paga_passado.length - 1];
+      ultimoPagamento = `${u.mes}/${u.ano} - Kz ${Number(u.valor_pago).toLocaleString("pt-AO")},00`;
     }
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${a.nome}</td>
+        <td class="${statusCor}">${statusTexto}</td>
+        <td>Kz ${Number(a.divida || 0).toLocaleString("pt-AO")},00</td>
+        <td>${ultimoPagamento}</td>
+        <td>
+          <button class="btn-prof-remover"
+            onclick="marcarPago('${a.id}', ${temDivida})">
+            PAGO
+          </button>
+
+          <button class="btn btn-info btn-sm"
+            onclick="verPagamentos('${a.nome}', '${a.nome}')">
+            Ver
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+  async function verPagamentos(nomeAluno, nomeExibicao) {
+
+  const res = await fetch(`/ver-pagamentos/${encodeURIComponent(nomeAluno)}`);
+  const data = await res.json();
+
+  document.getElementById("nome-aluno").innerText =
+    `📌 Pagamentos de ${nomeExibicao}`;
+
+  const tbody = document.getElementById("tabela-meses");
+  tbody.innerHTML = "";
+
+  if (!data.historico_pagamentos.length) {
+    tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento encontrado</td></tr>`;
+  }
+
+  data.historico_pagamentos.forEach(p => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${p.mes}</td>
+        <td>${p.ano}</td>
+        <td>Kz ${Number(p.valor_pago).toLocaleString("pt-AO")},00</td>
+        <td style="color:green;font-weight:bold">Pago</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("detalhes-aluno").style.display = "flex";
 }
   
-async function verPagamentos(nomeAluno, nomeExibicao) {
-
-    if (!nomeAluno || nomeAluno.trim() === "") {
-        alert("Nome inválido.");
-        return;
-    }
-
-    try {
-
-        const res = await fetch(`/ver-pagamentos/${encodeURIComponent(nomeAluno)}`);
-        if (!res.ok) throw new Error(`Erro ${res.status}`);
-
-        const data = await res.json();
-
-        document.getElementById("nome-aluno").innerText =
-            `📌 Pagamentos de ${nomeExibicao}`;
-
-        const tbody = document.getElementById("tabela-meses");
-        tbody.innerHTML = "";
-
-        const historico = data.historico_pagamentos || [];
-
-        if (!historico.length) {
-            tbody.innerHTML = `<tr><td colspan="4">Nenhum pagamento encontrado</td></tr>`;
-            return;
-        }
-
-        historico.forEach(p => {
-
-            const mes = p.mes || "-";
-            const ano = p.ano || "-";
-
-            const valor = p.valor_pago
-                ? `Kz ${Number(p.valor_pago).toLocaleString("pt-AO")},00`
-                : "Kz 0,00";
-
-            const status = p.valor_pago > 0 ? "Pago" : "Não pago";
-            const cor = status === "Pago" ? "green" : "red";
-
-            tbody.innerHTML += `
-                <tr>
-                    <td>${mes}</td>
-                    <td>${ano}</td>
-                    <td>${valor}</td>
-                    <td style="color:${cor};font-weight:bold;">${status}</td>
-                </tr>
-            `;
-        });
-
-        document.getElementById("detalhes-aluno").style.display = "block";
-
-    } catch (err) {
-        console.error("Erro ao buscar pagamentos:", err);
-        alert("Erro ao carregar histórico.");
-    }
-}
   
-async function marcarPagoProf(id, statusAtual, professor, saldoAtual) {
-    try {
-        // Se ainda não estava pago → registra pagamento
-        if (!statusAtual) {
-            await fetch("/registrar-pagamento-prof", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: id,
-                    professor: professor,
-                    valor_pago: saldoAtual 
-                })
-            });
-        } else {
-           
-            await fetch("/atualizar-pagamento-prof", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: id,
-                    professor: professor,
-                    valor_pago: 0 
-                })
-            });
-        }
 
-       
-        carregarPagamentosProf();
-
-    } catch (err) {
-        console.error("Erro ao atualizar pagamento do professor:", err);
-        alert("Ocorreu um erro ao atualizar o pagamento. Veja o console para detalhes.");
-    }
+  function abrirFinanceAlunos() {
+  document.getElementById("overlayFinanceAlunos").style.display = "flex";
+  carregarPagamentos();
 }
 
-async function verMeses(id) {
-    const res = await fetch(`/detalhes-pagamento/${id}`);
-    const dados = await res.json();
+function fecharFinanceAlunos() {
+  document.getElementById("overlayFinanceAlunos").style.display = "none";
+}
 
-    document.getElementById("nome-aluno").textContent = dados.aluno;
+function fecharDetalhesAluno() {
+  document.getElementById("detalhes-aluno").style.display = "none";
+}
+
+/* ==============================
+   ABRIR FINANÇAS PROFESSORES
+================================ */
+function abrirFinanceProf() {
+  const overlay = document.getElementById("overlayFinanceProf");
+  overlay.style.display = "flex";
+
+  carregarPagamentosProf();
+}
+
+/* ==============================
+   LISTAR PAGAMENTOS PROFESSORES
+================================ */
+async function carregarPagamentosProf() {
+  try {
+    const res = await fetch("/listar-pagamentos-prof");
+    const professores = await res.json();
+    const tbody = document.querySelector("#tabela-pagamentos-prof tbody");
+
+    tbody.innerHTML = "";
+
+    professores.forEach(p => {
+
+      const statusPago = Number(p.saldo_atual) <= 0;
+      const statusCor = statusPago ? "status-verde" : "status-vermelho";
+      const statusTexto = statusPago ? "PAGO" : "NÃO PAGO";
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.professor}</td>
+          <td>
+            <span class="status-circulo ${statusCor}"></span>
+            ${statusTexto}
+          </td>
+          <td>${Number(p.saldo_atual).toFixed(2)} Kz</td>
+          <td>
+            <button
+              onclick="marcarPagoProf('${p.id}', ${statusPago}, '${p.professor}', ${p.saldo_atual})"
+              style="background:${statusPago ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
+              ${statusTexto}
+            </button>
+
+            <button
+              onclick="verMesesProf('${p.id}')"
+              style="background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;margin-left:5px;">
+              Ver Meses
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar pagamentos de professores:", err);
+    alert("Erro ao carregar pagamentos.");
+  }
+}
+
+/* ==============================
+   MARCAR PAGO / NÃO PAGO
+================================ */
+async function marcarPagoProf(id, statusPago, professor, saldoAtual) {
+  try {
+
+    if (!statusPago) {
+      await fetch("/registrar-pagamento-prof", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          professor,
+          valor_pago: saldoAtual
+        })
+      });
+    } else {
+      await fetch("/atualizar-pagamento-prof", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          professor,
+          valor_pago: 0
+        })
+      });
+    }
+
+    carregarPagamentosProf();
+
+  } catch (err) {
+    console.error("Erro ao atualizar pagamento do professor:", err);
+    alert("Erro ao atualizar pagamento.");
+  }
+}
+
+/* ==============================
+   VER MESES DO PROFESSOR
+================================ */
+async function verMesesProf(id) {
+  try {
+    const res = await fetch(`/salarios?email=${encodeURIComponent(id)}`);
+    const data = await res.json();
+
+    if (!data || !data.nome) {
+      alert("Professor não encontrado.");
+      return;
+    }
+
+    document.getElementById("nome-prof").textContent = data.nome;
+    document.getElementById("saldo-prof").textContent =
+      `${Number(data.saldo_atual).toFixed(2)} Kz`;
+
     const tbody = document.getElementById("tabela-meses");
     tbody.innerHTML = "";
 
-    dados.meses.forEach(m => {
-        const cor = m.status ? "status-verde" : "status-vermelho";
-        const texto = m.status ? "PAGA" : "Não paga";
+    if (!data.pagamentos || !data.pagamentos.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="color:#777;">Nenhum pagamento registrado</td>
+        </tr>
+      `;
+    }
 
-        tbody.innerHTML += `
-            <tr>
-              <td>${m.mes}</td>
-              <td><span class="status-circulo ${cor}"></span>${texto}</td>
-              <td>
-                <button onclick="marcarPagoMes('${id}', '${m.campo}', ${m.status})" 
-                        style="background:green;color:white;border:none;padding:4px 8px;border-radius:4px;">
-                  PAGO
-                </button>
-              </td>
-            </tr>
-        `;
+    data.pagamentos.forEach(p => {
+      const pago = Number(p.valor_pago) > 0;
+      const cor = pago ? "status-verde" : "status-vermelho";
+      const texto = pago ? "PAGO" : "NÃO PAGO";
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.mes}</td>
+          <td>${p.data_pagamento || "-"}</td>
+          <td>${Number(p.valor_pago).toFixed(2)} Kz</td>
+          <td>${p.email_professor || "-"}</td>
+          <td><span class="${cor}">${texto}</span></td>
+          <td>
+            <button
+              onclick="marcarPagoMesProf('${id}', '${p.mes}', ${pago})"
+              style="background:${pago ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
+              ${texto}
+            </button>
+          </td>
+        </tr>
+      `;
     });
 
-    document.getElementById("detalhes-aluno").style.display = "block";
+    document.getElementById("detalhes-prof").style.display = "flex";
+
+  } catch (err) {
+    console.error("Erro ao carregar meses do professor:", err);
+    alert("Erro ao carregar detalhes.");
+  }
 }
 
-async function marcarPagoMes(id, campo, statusAtual) {
-    const novoStatus = !statusAtual;
-    await fetch("/atualizar-pagamento-mes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, campo, status: novoStatus })
-    });
-    verMeses(id);
+/* ==============================
+   FECHAR OVERLAYS
+================================ */
+function fecharFinanceProf() {
+  document.getElementById("overlayFinanceProf").style.display = "none";
 }
 
-async function carregarPagamentosProf() {
-    try {
-        const res = await fetch("/listar-pagamentos-prof");
-        const professores = await res.json();
-        const tbody = document.querySelector("#tabela-pagamentos-prof tbody");
-        tbody.innerHTML = "";
-
-        professores.forEach(p => {
-            // Agora o status depende do saldo_atual
-            const statusCor = p.saldo_atual > 0 ? "status-vermelho" : "status-verde";
-            const statusTexto = p.saldo_atual > 0 ? "NÃO PAGO" : "PAGO";
-
-            tbody.innerHTML += `
-                <tr>
-                  <td><a href="#" onclick="verMesesProf('${p.id}')">${p.professor}</a></td>
-                  <td><span class="status-circulo ${statusCor}"></span>${statusTexto}</td>
-                  <td>R$ ${Number(p.saldo_atual).toFixed(2)}</td>
-                  <td>
-                    <button onclick="marcarPagoProf('${p.id}', '${p.proximo_mes_a_pagar}', '${p.professor}', ${p.saldo_atual})" 
-                            style="background:${statusCor === 'status-verde' ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
-                      ${statusTexto}
-                    </button>
-                    <button onclick="verHistoricoPagamentos('${p.professor}')" 
-                            style="background:blue;color:white;border:none;padding:4px 8px;border-radius:4px; margin-left:5px;">
-                      Ver Histórico de Pagamentos
-                    </button>
-                  </td>
-                </tr>
-            `;
-        });
-    } catch (error) {
-        console.error("Erro ao carregar pagamentos de professores:", error);
-    }
-}
-
-
-function verHistoricoPagamentos(nomeProfessor) {
-    window.location.href = `/ver-pagamentos?professor=${encodeURIComponent(nomeProfessor)}`;
-}
-
-async function verMesesProf(emailProf) {
-    try {
-        // Faz a requisição passando o email como query parameter
-        const res = await fetch(`/salarios?email=${encodeURIComponent(emailProf)}`);
-        if (!res.ok) throw new Error(`Erro ${res.status} ao buscar dados`);
-
-        // Recebe o JSON com nome, saldo e pagamentos
-        const data = await res.json();
-
-        if (!data || !data.nome) {
-            alert("Professor não encontrado.");
-            return;
-        }
-
-        // Atualiza o nome do professor
-        document.getElementById("nome-prof").textContent = data.nome;
-
-        // Atualiza o saldo atual
-        document.getElementById("saldo-prof").textContent = `${Number(data.saldo_atual).toFixed(2)} Kz`;
-
-        // Preenche a tabela de meses/pagamentos
-        const tbody = document.getElementById("tabela-meses");
-        tbody.innerHTML = "";
-
-        if (data.pagamentos && data.pagamentos.length > 0) {
-            data.pagamentos.forEach(pagamento => {
-                const statusCor = pagamento.valor_pago > 0 ? "status-verde" : "status-vermelho";
-                const statusTexto = pagamento.valor_pago > 0 ? "PAGO" : "NÃO PAGO";
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${pagamento.mes}</td>
-                        <td>${pagamento.data_pagamento || "-"}</td>
-                        <td>R$ ${Number(pagamento.valor_pago).toFixed(2)}</td>
-                        <td>${pagamento.email_professor || "-"}</td>
-                        <td><span class="${statusCor}">${statusTexto}</span></td>
-                        <td>
-                            <button onclick="marcarPagoMesProf('${emailProf}', '${pagamento.mes}', ${!!pagamento.valor_pago})" 
-                                    style="background:${statusCor === 'status-verde' ? 'green' : 'red'};color:white;border:none;padding:4px 8px;border-radius:4px;">
-                                ${statusTexto}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } else {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="color:#777;">Nenhum pagamento registrado.</td>
-                </tr>
-            `;
-        }
-
-        // Mostra o modal ou div de detalhes
-        document.getElementById("detalhes-prof").style.display = "block";
-
-    } catch (err) {
-        console.error("Erro ao carregar meses do professor:", err);
-        alert("Erro ao carregar detalhes do professor.");
-    }
+function fecharDetalhesProf() {
+  document.getElementById("detalhes-prof").style.display = "none";
 }
   
 </script>
+
 </body>
 </html>
+
+
+

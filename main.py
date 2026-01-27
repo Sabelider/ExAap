@@ -8,14 +8,11 @@ import shutil
 import time
 import jwt
 import unicodedata
-import httpx
-import firebase_admin
-import logging
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import unquote
-from fastapi import BackgroundTasks
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Form, UploadFile, File, Body, Query, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse, FileResponse, HTMLResponse
@@ -24,10 +21,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_303_SEE_OTHER
 from typing import List, Optional
-from fastapi import BackgroundTasks
 
+import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -35,9 +33,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from fpdf import FPDF
 from pydantic import BaseModel
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet
-
 
 # --- Load environment ---
 load_dotenv()
@@ -131,6 +126,12 @@ gerar_html_professores()
 # ============================
 CONTAS_100MS = [
     {
+        "ACCESS_KEY": "68e12ac3bd0dab5f9a013f93",
+        "SECRET": "4agaGFjtDBN9VtVehvbZDt7mNMHWSeoN05Q_SfzjAs0sTwhDbmkH4SFaxVqYFIcgcDCoBCgDBLofpmog6VUlwNmzkxi3PWQ9N3KZYYHNRZYItsxETK0qU_mfeA4ita1-OVzrq9m37nf6Ns-C-KBGWaLV3S45ZvhsxOHTzK-5A4g=",
+        "TEMPLATE": "68e132db74147bd574bb494a",
+        "SUBDOMAIN": "sabe-videoconf-1518"
+    },
+    {
         "ACCESS_KEY": "68e8c88cbd0dab5f9a01409d",
         "SECRET": "rI932W7abnwd9NC5vTY54e_DSfG8UNFxxgz5JD7_6stDWSbnOevqsaeeyaRfDitue4-IkmlgAR7c7fr_n42Wx0pKw4fhofXEGa3fj5R9Q3xcdxQJvHjMD6sM-VP9XL-HLKEFT7X1lK8hZAxh0DsCKrjaU2o5Bk2UoVN9pRQNnTc=",
         "TEMPLATE": "691af3a4033903926e62a61a",
@@ -210,13 +211,13 @@ async def get_account_and_increment():
     usos = data["usos"]
     conta_str = str(conta)
 
-    
+    # ✅ SÓ TROCA DE CONTA SE ATINGIR 50
     if usos[conta_str] >= MAX_USOS:
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
         usos[conta_str] = 0
 
-    
+    # ✅ INCREMENTA SEM TROCAR
     usos[conta_str] += 1
 
     ref.update({
@@ -226,7 +227,81 @@ async def get_account_and_increment():
 
     return conta
 
+from starlette.middleware.sessions import SessionMiddleware
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="segredo_super_secreto",
+    same_site="lax",
+    https_only=False  # True em produção
+)
+
+templates = Jinja2Templates(directory="templates")
+
+# ===============================
+# CONFIGURAÇÃO DO ADMIN
+# (PODE ALTERAR AQUI)
+# ===============================
+ADMIN_USER = "admin"
+ADMIN_PASS = "1234"
+
+# ===============================
+# ROTA LOGIN
+# ===============================
+
+@app.get("/logini", response_class=HTMLResponse)
+def logini_get(request: Request):
+
+    # 🔁 Se já estiver logado, não mostra login
+    if request.session.get("logged_in"):
+        return RedirectResponse("/admin", status_code=302)
+
+    return templates.TemplateResponse(
+        "logini.html",
+        {"request": request}
+    )
+
+@app.post("/logini")
+def logini(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    # 🧹 Garante sessão limpa
+    request.session.clear()
+
+    # 🔐 Validação simples (editável)
+    if username == ADMIN_USER and password == ADMIN_PASS:
+        request.session["logged_in"] = True
+        return RedirectResponse(url="/admin", status_code=302)
+
+    # ❌ Login inválido
+    return templates.TemplateResponse(
+        "logini.html",
+        {
+            "request": request,
+            "error": "Usuário ou senha inválidos"
+        }
+    )
+
+@app.get("/admin", response_class=HTMLResponse)
+def painel_admin(request: Request):
+
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/logini", status_code=302)
+
+    return templates.TemplateResponse(
+        "admin_dashboard.html",
+        {"request": request}
+    )
+
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=302)
+
+        
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -956,8 +1031,8 @@ async def cadastrar_aluno(
     provincia: str = Form(...),
     municipio: str = Form(...),
     bairro: str = Form(...),
-    latitude: str = Form(None),
-    longitude: str = Form(None),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
     telefone: str = Form(...),
     disciplina: str = Form(...),
     bilhete: str = Form(...),
@@ -967,55 +1042,26 @@ async def cadastrar_aluno(
     alunos_ref = db.collection("alunos")
     nome_normalizado = nome.strip().lower()
 
-    # 📍 TENTA CAPTURAR LOCALIZAÇÃO (SEM BLOQUEAR)
-    lat = None
-    lng = None
-    aviso_localizacao = None
-
-    try:
-        if latitude and longitude:
-            lat = float(latitude)
-            lng = float(longitude)
-
-            if lat == 0 or lng == 0:
-                lat = None
-                lng = None
-                aviso_localizacao = (
-                    "⚠️ Não foi possível capturar a sua localização. "
-                    "Ative a localização do dispositivo para melhorar a ligação com professores próximos."
-                )
-    except:
-        lat = None
-        lng = None
-        aviso_localizacao = (
-            "⚠️ Não foi possível capturar a sua localização. "
-            "Ative a localização do dispositivo para melhorar a ligação com professores próximos."
-        )
-
     # 🔎 Verifica se já existe aluno com esse nome normalizado
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
     if existente:
-        return templates.TemplateResponse(
-            "cadastro-aluno.html",
-            {
-                "request": request,
-                "erro": "Este nome já está cadastrado. Tente outro."
-            }
-        )
+        return templates.TemplateResponse("cadastro-aluno.html", {
+            "request": request,
+            "erro": "Este nome já está cadastrado. Tente outro."
+        })
 
-    # 🔄 Busca histórico de pagamentos
+    # 🔄 Busca histórico de pagamentos na coleção alunos_professor (com base no NOME, não no normalizado)
     paga_passado = []
     vinculo_query = db.collection("alunos_professor") \
         .where("aluno", "==", nome.strip().lower()) \
         .limit(1).stream()
-
     vinculo_doc = next(vinculo_query, None)
     if vinculo_doc:
-        paga_passado = vinculo_doc.to_dict().get("paga_passado", [])
+        vinculo_data = vinculo_doc.to_dict()
+        paga_passado = vinculo_data.get("paga_passado", [])
 
-    # 🆔 ID único
+    # ✅ Gera ID único para o aluno
     aluno_id = str(uuid.uuid4())
-
     dados = {
         "nome": nome,
         "nome_normalizado": nome_normalizado,
@@ -1026,9 +1072,9 @@ async def cadastrar_aluno(
         "municipio": municipio,
         "bairro": bairro,
         "localizacao": {
-            "latitude": lat,
-            "longitude": lng
-        } if lat and lng else None,
+            "latitude": latitude,
+            "longitude": longitude
+        },
         "telefone": telefone,
         "disciplina": disciplina,
         "outra_disciplina": outra_disciplina,
@@ -1039,34 +1085,28 @@ async def cadastrar_aluno(
         "notificacao": False,
         "vinculado": False,
         "horario": {},
-        "paga_passado": paga_passado,
-        "aviso_localizacao": aviso_localizacao  # 👈 opcional
+        "paga_passado": paga_passado  # ✅ agora usa dados de alunos_professor se existir
     }
 
-    # 💾 Salva aluno
-    alunos_ref.document(aluno_id).set(dados)
+    # Salva novo aluno
+    db.collection("alunos").document(aluno_id).set(dados)
 
-    # 🔄 Atualiza alunos antigos sem "paga_passado"
-    for aluno in alunos_ref.stream():
+    # 🔄 Atualiza alunos antigos sem campo "paga_passado"
+    alunos_antigos = alunos_ref.stream()
+    for aluno in alunos_antigos:
         dados_aluno = aluno.to_dict()
         if "paga_passado" not in dados_aluno:
             paga_passado_antigo = []
+            # busca também pelo NOME do aluno em alunos_professor
             vinculo_query = db.collection("alunos_professor") \
                 .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
                 .limit(1).stream()
-
             vinculo_doc = next(vinculo_query, None)
             if vinculo_doc:
                 paga_passado_antigo = vinculo_doc.to_dict().get("paga_passado", [])
+            alunos_ref.document(aluno.id).update({"paga_passado": paga_passado_antigo})
 
-            alunos_ref.document(aluno.id).update({
-                "paga_passado": paga_passado_antigo
-            })
-
-    return RedirectResponse(
-        url="/login?sucesso=1",
-        status_code=HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse(url="/login?sucesso=1", status_code=HTTP_303_SEE_OTHER)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -1395,6 +1435,11 @@ def registrar_pagamento_mensal(aluno_nome: str):
         })
 
 
+import logging
+
+MAX_TENTATIVAS = 3
+
+
 @app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
     request: Request,
@@ -1405,48 +1450,38 @@ async def upload_comprovativo(
     tentativas: int = Form(default=0)
 ):
     try:
-        # ================= NORMALIZAÇÃO =================
         aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
         banco_norm = banco.strip().lower()
 
-        # ================= VALIDAÇÕES =================
-        limites = {
-            "bai": 32,
-            "bni": 32,
-            "bpc": 31,
-            "multicaixa express": 33
-        }
-
+        # Limites de tamanho
+        limites = {"bai": 32, "bni": 32, "bpc": 31, "multicaixa express": 33}
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
 
+        # Validar tipo PDF
         if comprovativo.content_type != "application/pdf":
-            return HTMLResponse("<h3>Apenas ficheiros PDF são aceites.</h3>", status_code=400)
+            return HTMLResponse("<h3>Apenas PDFs são aceites.</h3>", status_code=400)
 
         conteudo = await comprovativo.read()
         tamanho_kb = len(conteudo) / 1024
 
         if banco_norm == "multicaixa express":
-            if not (24 <= tamanho_kb <= 33):
+            if tamanho_kb < 24 or tamanho_kb > 33:
                 raise HTTPException(status_code=400, detail="Comprovativo inválido para Multicaixa Express.")
         elif tamanho_kb > limites[banco_norm]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"O comprovativo excede o limite permitido para {banco.upper()}."
-            )
+            raise HTTPException(status_code=400, detail=f"O comprovativo excede o limite para {banco.upper()}.")
 
         await comprovativo.close()
         nome_comprovativo = comprovativo.filename
 
-        # ================= CÁLCULO FINANCEIRO =================
+        # Cálculo financeiro
         valor_mensal = 15000
         desconto_por_mes = 100
         desconto_total = meses * desconto_por_mes
         valor_total = (meses * valor_mensal) - desconto_total
 
-        # ================= FIREBASE =================
+        # Registrar no Firebase (mantive tua lógica)
         doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
-
         if not doc_ref.get().exists:
             doc_ref.set({"comprovativos": []})
 
@@ -1454,12 +1489,8 @@ async def upload_comprovativo(
             tentativas += 1
             if tentativas >= MAX_TENTATIVAS:
                 atualizar_status_conta(aluno_normalizado, "Desativada")
-                return HTMLResponse("<h3>Comprovativo duplicado. Conta desativada.</h3>", status_code=403)
-
-            return HTMLResponse(
-                f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>",
-                status_code=400
-            )
+                return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
+            return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
         registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
         registrar_pagamento_mensal(aluno_normalizado)
@@ -1468,176 +1499,89 @@ async def upload_comprovativo(
         doc_ref.update({
             "mensalidade": {
                 "meses": meses,
+                "valor_total": valor_total,
                 "valor_mensal": valor_mensal,
-                "desconto_total": desconto_total,
-                "valor_total": valor_total
+                "desconto_total": desconto_total
             }
         })
 
-        # ================= GERAR PDF (FACTURA PROFISSIONAL) =================
+        # Criar PDF no servidor
         pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
-
-        doc = SimpleDocTemplate(
-            pdf_path,
-            pagesize=A4,
-            rightMargin=40,
-            leftMargin=40,
-            topMargin=40,
-            bottomMargin=40
-        )
-
+        doc = SimpleDocTemplate(pdf_path, pagesize=A4)
         styles = getSampleStyleSheet()
         elementos = []
 
-        # ---------- CABEÇALHO ----------
-        cabecalho = Table(
-            [[
-                Paragraph(
-                    "<b>SabApp </b><br/>Centro de formação online<br/>NIF: 5002232529",
-                    styles["Normal"]
-                ),
-                Paragraph(
-                    f"<b>FACTURA / RECIBO</b><br/>"
-                    f"Data: {datetime.now().strftime('%d/%m/%Y')}<br/>"
-                    f"Nº: {aluno_normalizado.upper()}",
-                    styles["Normal"]
-                )
-            ]],
-            colWidths=[270, 200]
-        )
-
-        cabecalho.setStyle(TableStyle([
-            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]))
-
-        elementos.append(cabecalho)
-        elementos.append(Spacer(1, 15))
-
-        # ---------- LINHA SEPARADORA ----------
-        elementos.append(Table(
-            [[""]],
-            colWidths=[470],
-            style=[("LINEBELOW", (0, 0), (-1, -1), 1, colors.black)]
-        ))
+        elementos.append(Paragraph("<b>Sabi Lider</b> - N.I.F nº 5002232529", styles["Title"]))
+        elementos.append(Spacer(1, 12))
+        elementos.append(Paragraph("<b>Recibo de Pagamento</b>", styles["Heading2"]))
         elementos.append(Spacer(1, 20))
 
-        # ---------- DADOS DO ALUNO ----------
-        elementos.append(Paragraph("<b>DADOS DO ALUNO</b>", styles["Heading3"]))
-        elementos.append(Spacer(1, 8))
+        dados = [
+            ["Aluno", aluno_nome],
+            ["Banco", banco.upper()],
+            ["Meses", str(meses)],
+            ["Mensalidade", f"{valor_mensal:,.0f} Kz"],
+            ["Desconto", f"{desconto_total:,.0f} Kz"],
+            ["Valor Total", f"{valor_total:,.0f} Kz"],
+            ["Comprovativo", nome_comprovativo],
+        ]
 
-        dados_cliente = Table(
-            [
-                ["Nome do Aluno:", aluno_nome],
-                ["Banco:", banco.upper()],
-                ["Meses Pagos:", str(meses)]
-            ],
-            colWidths=[150, 320]
-        )
-
-        dados_cliente.setStyle(TableStyle([
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
-            ("FONT", (0, 0), (0, -1), "Helvetica-Bold"),
+        tabela = Table(dados, hAlign="LEFT")
+        tabela.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.grey),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
+            ("ALIGN", (0,0), (-1,-1), "LEFT"),
+            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+            ("BACKGROUND", (0,1), (-1,-1), colors.beige),
         ]))
 
-        elementos.append(dados_cliente)
-        elementos.append(Spacer(1, 25))
-
-        # ---------- DETALHE FINANCEIRO ----------
-        elementos.append(Paragraph("<b>DETALHE DO PAGAMENTO</b>", styles["Heading3"]))
-        elementos.append(Spacer(1, 8))
-
-        tabela_pagamento = Table(
-            [
-                ["Descrição", "Valor (Kz)"],
-                ["Mensalidade", f"{valor_mensal:,.0f}"],
-                ["Desconto Total", f"- {desconto_total:,.0f}"],
-                ["TOTAL A PAGAR", f"{valor_total:,.0f}"]
-            ],
-            colWidths=[300, 170]
-        )
-
-        tabela_pagamento.setStyle(TableStyle([
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-            ("FONT", (0, -1), (-1, -1), "Helvetica-Bold"),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.whitesmoke),
-        ]))
-
-        elementos.append(tabela_pagamento)
-        elementos.append(Spacer(1, 25))
-
-        # ---------- COMPROVATIVO ----------
-        elementos.append(
-            Paragraph(f"<b>Comprovativo:</b> {nome_comprovativo}", styles["Normal"])
-        )
-        elementos.append(Spacer(1, 25))
-
-        # ---------- RODAPÉ ----------
-        elementos.append(
-            Paragraph(
-                "Documento gerado automaticamente pelo sistema electronico SabApp. Não necessita de assinatura.",
-                styles["Italic"]
-            )
-        )
-
+        elementos.append(tabela)
         doc.build(elementos)
 
-        # ================= HTML DE RESPOSTA =================
+        # Retornar HTML com botão de download
         html_content = f"""
-        <!DOCTYPE html>
-        <html lang="pt">
+        <html>
         <head>
             <meta charset="UTF-8">
-            <title>Factura Gerada</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Recibo Gerado</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
-                    background: #f2f4f8;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                }}
-                .box {{
-                    background: #fff;
-                    max-width: 420px;
-                    width: 100%;
-                    padding: 25px;
-                    border-radius: 10px;
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                    background: #f4f4f8;
+                    padding: 20px;
                     text-align: center;
                 }}
                 .btn {{
-                    display: block;
-                    margin-top: 15px;
-                    padding: 14px;
+                    padding: 12px 20px;
                     border-radius: 8px;
+                    font-size: 16px;
                     text-decoration: none;
-                    font-weight: bold;
+                    margin: 10px;
+                    display: inline-block;
+                }}
+                .download {{
+                    background: #28a745;
                     color: white;
                 }}
-                .download {{ background: #28a745; }}
-                .perfil {{ background: #0d6efd; }}
+                .perfil {{
+                    background: #007bff;
+                    color: white;
+                }}
+                @media(max-width:600px) {{
+                    body {{
+                        padding: 10px;
+                    }}
+                    .btn {{
+                        width: 100%;
+                        font-size: 14px;
+                    }}
+                }}
             </style>
         </head>
         <body>
-            <div class="box">
-                <h2>✅ Factura Gerada com Sucesso</h2>
-                <p>Pode baixar a factura em PDF ou voltar ao perfil.</p>
-
-                <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>
-                    📄 Baixar Factura
-                </a>
-
-                <a href="/perfil/{aluno_normalizado}" class="btn perfil">
-                    🔙 Voltar ao Perfil
-                </a>
-            </div>
+            <h2>✅ Recibo Gerado com Sucesso!</h2>
+            <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>📄 Baixar Recibo PDF</a>
+            <a href="/perfil/{aluno_normalizado}" class="btn perfil">🔙 Voltar ao Perfil</a>
         </body>
         </html>
         """
@@ -1646,10 +1590,7 @@ async def upload_comprovativo(
 
     except Exception as e:
         logging.error(f"Erro inesperado: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao processar comprovativo: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)
@@ -2373,50 +2314,18 @@ async def verificar_aluno_vinculo(data: VerificarAlunoInput):
             content={"detail": "Erro interno ao verificar vínculo do aluno."}
         )
 
-
 class NotificacaoRequest(BaseModel):
     aluno: str
-
-
-def desativar_notificacao_todos_apos_tempo():
-    try:
-        # Aguarda 15 minutos (900 segundos)
-        time.sleep(600)
-
-        docs = db.collection("alunos_professor").stream()
-        batch = db.batch()
-
-        for d in docs:
-            batch.update(d.reference, {
-                "notificacao_todos": False
-            })
-
-        batch.commit()
-
-        print("🔕 A notificação irá desaparecer automaticamente após 15 minutos")
-
-    except Exception as e:
-        print(f"Erro ao desativar notificacao_todos: {e}")
-
-
-class NotificacaoRequest(BaseModel):
-    aluno: str
-
 
 @app.post("/ativar-notificacao")
-async def ativar_notificacao(
-    data: NotificacaoRequest,
-    background_tasks: BackgroundTasks
-):
+async def ativar_notificacao(data: NotificacaoRequest):
     try:
         aluno_nome = data.aluno.strip().lower()
 
-        docs = (
-            db.collection("alunos_professor")
-            .where("aluno", "==", aluno_nome)
-            .limit(1)
-            .stream()
-        )
+        # Buscar o documento do aluno na coleção alunos_professor
+        docs = db.collection("alunos_professor") \
+                 .where("aluno", "==", aluno_nome) \
+                 .limit(1).stream()
         doc = next(docs, None)
 
         if not doc:
@@ -2425,28 +2334,8 @@ async def ativar_notificacao(
                 status_code=404
             )
 
-        # 🔔 1️⃣ Ativa notificação individual
-        doc.reference.update({
-            "notificacao": True
-        })
-
-        # 🔔 2️⃣ Ativa notificacao_todos PARA TODA A COLEÇÃO
-        todos_docs = db.collection("alunos_professor").stream()
-        batch = db.batch()
-
-        for d in todos_docs:
-            batch.update(d.reference, {
-                "notificacao_todos": True
-            })
-
-        batch.commit()
-
-        
-        background_tasks.add_task(desativar_notificacao_todos_apos_tempo)
-
-        return {
-            "msg": f"Notificação ativada para '{aluno_nome}' e aplicada a todos por 15 minutos."
-        }
+        db.collection("alunos_professor").document(doc.id).update({"notificacao": True})
+        return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
 
     except Exception as e:
         return JSONResponse(
@@ -2458,18 +2347,15 @@ async def ativar_notificacao(
 class AlunoInfo(BaseModel):
     aluno: str
 
-
 @app.post("/desativar-notificacao")
 async def desativar_notificacao(info: AlunoInfo):
     try:
         aluno = info.aluno.strip().lower()
 
-        docs = (
-            db.collection("alunos_professor")
-            .where("aluno", "==", aluno)
-            .limit(1)
-            .stream()
-        )
+        docs = db.collection("alunos_professor") \
+                 .where("aluno", "==", aluno) \
+                 .limit(1).stream()
+
         doc = next(docs, None)
 
         if not doc:
@@ -2478,22 +2364,12 @@ async def desativar_notificacao(info: AlunoInfo):
                 status_code=404
             )
 
-        # 🔕 Desativa APENAS a notificação individual
-        doc.reference.update({
-            "notificacao": False
-        })
-
-        return {
-            "status": "ok",
-            "mensagem": "Notificação individual desativada com sucesso"
-        }
+        doc.reference.update({"notificacao": False})
+        return {"status": "ok", "mensagem": "Notificação desativada"}
 
     except Exception as e:
         return JSONResponse(
-            content={
-                "status": "erro",
-                "mensagem": f"Erro ao desativar notificação: {str(e)}"
-            },
+            content={"status": "erro", "mensagem": f"Erro ao desativar notificação: {str(e)}"},
             status_code=500
         )
 
@@ -2505,10 +2381,7 @@ async def verificar_notificacao(request: Request):
         nome_aluno = str(dados.get("aluno", "")).strip().lower()
 
         if not nome_aluno:
-            return JSONResponse(
-                content={"erro": "Nome do aluno não fornecido"},
-                status_code=400
-            )
+            return JSONResponse(content={"erro": "Nome do aluno não fornecido"}, status_code=400)
 
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", nome_aluno) \
@@ -2523,18 +2396,16 @@ async def verificar_notificacao(request: Request):
             )
 
         dados_aluno = doc.to_dict()
+        notificacao = dados_aluno.get("notificacao", False)
+        professor_email = dados_aluno.get("professor", "")
 
         return JSONResponse(content={
-            "notificacao": dados_aluno.get("notificacao", False),
-            "notificacao_todos": dados_aluno.get("notificacao_todos", False),
-            "professor_email": dados_aluno.get("professor", "")
+            "notificacao": notificacao,
+            "professor_email": professor_email
         })
 
     except Exception as e:
-        return JSONResponse(
-            content={"erro": str(e)},
-            status_code=500
-        )
+        return JSONResponse(content={"erro": str(e)}, status_code=500)
 
 
 from fastapi import Request
@@ -3749,64 +3620,62 @@ async def pagina_pagamentos(aluno_nome: str, request: Request):
     # passa o nome para o template (será injetado de forma segura)
     return templates.TemplateResponse("pagamentos.html", {"request": request, "aluno_nome": aluno_nome})
 
+
 @app.get("/api/historico-pagamentos/{aluno_nome}")
 async def historico_pagamentos_api(aluno_nome: str):
-    aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
+    aluno_normalizado = aluno_nome.strip().lower()
 
-    # 🔍 Busca comprovativos reais
-    doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
-    doc = doc_ref.get()
+    # busca vinculo (aluno_professor)
+    vinculos = db.collection("alunos_professor") \
+                 .where("aluno", "==", aluno_normalizado) \
+                 .limit(1).stream()
+    vinculo_doc = next(vinculos, None)
+    if not vinculo_doc:
+        raise HTTPException(status_code=404, detail="Aluno/vínculo não encontrado")
+
+    vinculo_data = vinculo_doc.to_dict()
+    total_aulas = int(vinculo_data.get("total_aulas", 0))
+    valor_mensal = total_aulas * 1250  # 1.250 Kz por aula
+
+    # busca pagamentos já registados
+    pagamentos_query = db.collection("pagamentos") \
+                         .where("aluno", "==", aluno_normalizado) \
+                         .stream()
 
     pagamentos = []
+    seen = set()
+    for doc in pagamentos_query:
+        d = doc.to_dict()
+        mes = int(d.get("mes", 0))
+        ano = int(d.get("ano", 0))
+        key = (ano, mes)
+        if key in seen:
+            continue
+        seen.add(key)
 
-    if doc.exists:
-        data = doc.to_dict()
-        mensalidade = data.get("mensalidade", {})
-        meses_pagos = int(mensalidade.get("meses", 0))
-        valor_mensal = int(mensalidade.get("valor_mensal", 0))
-        valor_total = int(mensalidade.get("valor_total", 0))
-        data_registro = data.get("data_registro")
+        pagamentos.append({
+            "mes": mes,
+            "ano": ano,
+            "valor": int(d.get("valor", valor_mensal)),
+            "pago": bool(d.get("pago", False)),
+            "data_registro": d.get("data_registro", None)
+        })
 
-        # 📆 Data base (data do comprovativo)
-        if data_registro:
-            base_date = datetime.fromisoformat(data_registro)
-        else:
-            base_date = datetime.utcnow()
-
-        # 🔁 Gerar meses pagos
-        for i in range(meses_pagos):
-            mes = base_date.month - i
-            ano = base_date.year
-
-            if mes <= 0:
-                mes += 12
-                ano -= 1
-
-            pagamentos.append({
-                "mes": mes,
-                "ano": ano,
-                "valor": valor_mensal,
-                "pago": True,
-                "data_registro": base_date.isoformat()
-            })
-
-    # 📌 Garantir mês atual (se não pago)
+    # garantir que o mês corrente esteja sempre presente (se não existir, adiciona como não pago)
     hoje = datetime.utcnow()
     mes_atual = hoje.month
     ano_atual = hoje.year
-
     if not any(p["mes"] == mes_atual and p["ano"] == ano_atual for p in pagamentos):
         pagamentos.append({
             "mes": mes_atual,
             "ano": ano_atual,
-            "valor": valor_mensal if pagamentos else 0,
+            "valor": valor_mensal,
             "pago": False,
             "data_registro": None
         })
 
-    # 🔽 Ordenar (mais recente primeiro)
+    # ordenar por ano/mes descendente (mais recente primeiro)
     pagamentos.sort(key=lambda x: (x["ano"], x["mes"]), reverse=True)
-
     return JSONResponse(content=pagamentos)
 
 
@@ -4435,12 +4304,6 @@ async def atualizar_pagamento_prof(item: AtualizarPagamentoProfIn):
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
         
-
-        
-@app.get("/admin", response_class=HTMLResponse)
-async def painel_admin(request: Request):
-    return templates.TemplateResponse("admin_dashboard.html", {"request": request})
-
 class EntradaItem(BaseModel):
     nome: str
     preco: float
@@ -4563,39 +4426,18 @@ async def get_current_account():
     return data["conta_atual"], usos
 
 
-class CreateRoomRequest(BaseModel):
-    name: str
-
-
-# ============================
-# BUSCA CONTA ATIVA
-# ============================
-async def get_current_account():
-    doc = db.collection("CONTAS_100MS").document("contador").get()
-    data = doc.to_dict()
-
-    # garante que todas as chaves do 'usos' são strings
-    usos = {str(k): v for k, v in data["usos"].items()}
-
-    return data["conta_atual"], usos
-
-
-# ============================
-# ROTACIONA CONTA APÓS MAX_USOS
-# ============================
 async def rotate_account():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get().to_dict()
 
     conta = doc["conta_atual"]
-    usos = {str(k): v for k, v in doc["usos"].items()}  
-    
+    usos = {str(k): v for k, v in doc["usos"].items()}  # converte chaves para string
+
     conta_str = str(conta)
-    # 🔹 ALTERADO para usar MAX_USOS
-    if usos.get(conta_str, 0) >= MAX_USOS:
+    if usos.get(conta_str, 0) >= 10:  # limite de usos por conta
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
-        usos[conta_str] = 0  
+        usos[conta_str] = 0  # reset da nova conta
 
     ref.update({
         "conta_atual": conta,
@@ -4609,10 +4451,10 @@ async def incrementar_uso():
     doc = ref.get().to_dict()
 
     conta = doc["conta_atual"]
-    usos = {str(k): v for k, v in doc["usos"].items()} 
+    usos = {str(k): v for k, v in doc["usos"].items()}  # garante chaves como string
 
     conta_str = str(conta)
-    usos[conta_str] = usos.get(conta_str, 0) + 1  
+    usos[conta_str] = usos.get(conta_str, 0) + 1  # incrementa o uso da conta atual
 
     ref.update({"usos": usos})
     await rotate_account()
@@ -4787,43 +4629,24 @@ async def enviar_id_aula(payload: EnviarIdPayload):
     aluno_norm = payload.aluno.strip().lower().replace(" ", "")
     professor_norm = payload.professor.strip().lower().replace(" ", "")
 
-    # 🔁 Buscar conta ativa do 100ms
+    # Buscar conta ativa para este envio
     conta_atual, _ = await get_current_account()
     conta = CONTAS_100MS[conta_atual]
 
-    # 📌 Guardar dados da sala para o aluno
     ALUNO_ROOM[aluno_norm] = {
         "room_id": payload.room_id,
         "professor": professor_norm,
-        "prebuilt_link": payload.prebuilt_link,
-        "subdomain": conta["SUBDOMAIN"],
-        "template_id": conta["TEMPLATE"],
-        "nome_aluno": payload.aluno  # ✅ NOVA ATUALIZAÇÃO
+        "prebuilt_link": payload.prebuilt_link,  
+        "subdomain": conta["SUBDOMAIN"],        
+        "template_id": conta["TEMPLATE"]        
     }
-
-    # 🔔 CRIAR NOTIFICAÇÃO NO FIREBASE
-    notif_ref = (
-        db.collection("notificacoes")
-        .document(aluno_norm)
-        .collection("itens")
-        .document()
-    )
-
-    notif_ref.set({
-        "titulo": "📚 Aula a decorrer",
-        "mensagem": "O professor iniciou uma aula agora",
-        "room_id": payload.room_id,
-        "prebuilt_link": payload.prebuilt_link,
-        "professor": professor_norm,
-        "lida": False,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
 
     return {
         "status": "ok",
-        "message": "Link da aula enviado e notificação criada com sucesso!",
-        "conta_usada": conta_atual
+        "message": "Link real da aula enviado ao aluno com sucesso!",
+        "conta_usada": conta_atual  # ✅ retorna qual conta foi usada
     }
+
 
 @app.get("/buscar-id-professor")
 async def buscar_id_professor(aluno: str):
@@ -4831,16 +4654,11 @@ async def buscar_id_professor(aluno: str):
     data = ALUNO_ROOM.get(aluno_norm)
 
     if not data:
-        return {
-            "room_id": None,
-            "prebuilt_link": None,
-            "nome_aluno": None
-        }
+        return {"room_id": None, "prebuilt_link": None}
 
     return {
         "room_id": data["room_id"],
-        "prebuilt_link": data["prebuilt_link"],
-        "nome_aluno": data.get("nome_aluno")  # ✅ NOVO RETORNO
+        "prebuilt_link": data["prebuilt_link"]
     }
 
 
@@ -5079,4 +4897,94 @@ async def buscar_professor_nome(email: str):
 
     except Exception as e:
         return {"erro": str(e)}
+        
 
+@app.get("/estatisticas-dashboard")
+async def estatisticas_dashboard():
+    # =========================
+    # 📊 ALUNOS
+    # =========================
+    alunos_ref = db.collection("alunos").stream()
+
+    total_alunos = 0
+    alunos_online = 0
+    alunos_offline = 0
+    alunos_vinculados = 0
+    alunos_nao_vinculados = 0
+
+    for aluno in alunos_ref:
+        dados = aluno.to_dict()
+        total_alunos += 1
+
+        # Online / Offline
+        if dados.get("online") is True:
+            alunos_online += 1
+        else:
+            alunos_offline += 1
+
+        # Vinculado / Não vinculado
+        if dados.get("vinculado") is True:
+            alunos_vinculados += 1
+        else:
+            alunos_nao_vinculados += 1
+
+    # =========================
+    # 📊 PROFESSORES
+    # =========================
+    professores_ref = db.collection("professores_online").stream()
+
+    total_professores = 0
+    professores_online = 0
+    professores_offline = 0
+
+    for prof in professores_ref:
+        dados = prof.to_dict()
+        total_professores += 1
+
+        if dados.get("online") is True:
+            professores_online += 1
+        else:
+            professores_offline += 1
+
+    # =========================
+    # 📞 CHAMADAS AO VIVO
+    # =========================
+    chamadas_ref = db.collection("chamadas_ao_vivo").stream()
+
+    chamadas_em_andamento = 0
+    chamadas_pendentes = 0
+    chamadas_recusadas = 0
+
+    for chamada in chamadas_ref:
+        dados = chamada.to_dict()
+        status = dados.get("status", "").lower()
+
+        if status == "aceito":
+            chamadas_em_andamento += 1
+        elif status == "pendente":
+            chamadas_pendentes += 1
+        elif status == "recusado":
+            chamadas_recusadas += 1
+
+    # =========================
+    # 📦 RESPOSTA FINAL
+    # =========================
+    return JSONResponse({
+        "alunos": {
+            "total": total_alunos,
+            "online": alunos_online,
+            "offline": alunos_offline,
+            "vinculados": alunos_vinculados,
+            "nao_vinculados": alunos_nao_vinculados
+        },
+        "professores": {
+            "total": total_professores,
+            "online": professores_online,
+            "offline": professores_offline
+        },
+        "chamadas": {
+            "em_andamento": chamadas_em_andamento,
+            "pendentes": chamadas_pendentes,
+            "recusadas": chamadas_recusadas
+        }
+    })

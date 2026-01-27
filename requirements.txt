@@ -9,3 +9,4 @@ firebase-admin
 python-slugify
 pytz
 python-dotenv>=1.0.0
+itsdangerous

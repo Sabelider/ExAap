@@ -1121,11 +1121,11 @@ async def exibir_login(request: Request, sucesso: int = 0):
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     alunos_ref = db.collection("alunos")
 
-    # Normaliza os valores digitados
+    # 🔎 Normaliza os valores digitados
     nome_digitado = nome.strip().lower()
     senha_digitada = senha.strip().lower()
 
-    # Busca todos os alunos para fazer comparação segura
+    # 🔍 Busca todos os alunos
     alunos = alunos_ref.stream()
 
     for aluno in alunos:
@@ -1134,15 +1134,29 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
         senha_banco = dados.get("senha", "").strip().lower()
 
         if nome_banco == nome_digitado and senha_banco == senha_digitada:
-            aluno.reference.update({"online": True})
-            return RedirectResponse(url=f"/perfil/{dados.get('nome')}", status_code=303)
+            # 🔐 SALVA DADOS NA SESSÃO
+            request.session["aluno_logado"] = True
+            request.session["aluno_nome"] = nome_banco
 
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "erro": "Nome de usuário ou senha inválidos",
-        "sucesso": 0
-    })
+            # 🟢 Marca aluno como online
+            aluno.reference.update({
+                "online": True
+            })
 
+            return RedirectResponse(
+                url=f"/perfil/{dados.get('nome')}",
+                status_code=HTTP_303_SEE_OTHER
+            )
+
+    # ❌ Login inválido
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "erro": "Nome de usuário ou senha inválidos",
+            "sucesso": 0
+        }
+    )
 
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):

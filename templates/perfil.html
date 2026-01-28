@@ -842,9 +842,12 @@ body {
 </style>
 </head>
 <body>
-<a href="/logout_aluno" class="btn-logout-aluno">
+
+<button class="btn-logout-aluno" onclick="logoutAluno()">
   <i class="fa-solid fa-right-from-bracket"></i>
   <span>Sair</span>
+</button>
+
 </a>
  <div class="top-bar">
   <img src="/static/perfil.png" alt="Perfil" />
@@ -2883,10 +2886,41 @@ window.carregarPerguntas();
     }
   };
 
-  function logoutAluno() {
-  // Redireciona para a rota de logout do aluno
+/* ===============================
+   LOGOUT AUTOMÁTICO POR INATIVIDADE
+================================ */
+
+const TEMPO_INATIVIDADE = 30 * 60 * 1000; 
+let timerInatividade = null;
+
+// Dispara logout
+function logoutAluno() {
+  console.warn("⏳ Logout do aluno acionado");
   window.location.href = "/logout_aluno";
 }
+
+// Reinicia o contador
+function resetarInatividade() {
+  if (timerInatividade) {
+    clearTimeout(timerInatividade);
+  }
+
+  timerInatividade = setTimeout(() => {
+    alert("Sessão expirada por inatividade. Você será desconectado.");
+    logoutAluno();
+  }, TEMPO_INATIVIDADE);
+}
+
+// Eventos que contam como atividade
+["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evento => {
+  document.addEventListener(evento, resetarInatividade, true);
+});
+
+// Inicia o contador assim que a página carrega
+resetarInatividade();
+
+console.log("⏱️ Controle de inatividade ativado (30 minutos)");
+  
   console.log("Funções exportadas para window: toggleAulas, verNotificacao, verHorario, toggleProfessor, verificarResposta, proximaPergunta, subirNivel, carregarPerguntas");
 </script>
 

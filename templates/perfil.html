@@ -843,7 +843,7 @@ body {
 </head>
 <body>
 
-<button class="btn-logout-aluno" onclick="logoutAluno()">
+<button class="btn-logout-aluno" onclick="logoutAluno('manual')">
   <i class="fa-solid fa-right-from-bracket"></i>
   <span>Sair</span>
 </button>
@@ -2890,36 +2890,48 @@ window.carregarPerguntas();
    LOGOUT AUTOMÁTICO POR INATIVIDADE
 ================================ */
 
-const TEMPO_INATIVIDADE = 30 * 60 * 1000; 
+const TEMPO_INATIVIDADE = 30 * 60 * 1000; // 30 minutos
 let timerInatividade = null;
+let logoutExecutado = false; // 🛑 impede duplicação
 
-// Dispara logout
-function logoutAluno() {
-  console.warn("⏳ Logout do aluno acionado");
+// 🔐 Função central de logout (manual ou automático)
+function logoutAluno(motivo = 'auto') {
+  if (logoutExecutado) return; // evita múltiplos redirects
+  logoutExecutado = true;
+
+  console.warn(`⏳ Logout do aluno acionado (${motivo})`);
+
+  // Limpa timer
+  if (timerInatividade) {
+    clearTimeout(timerInatividade);
+  }
+
   window.location.href = "/logout_aluno";
 }
 
-// Reinicia o contador
+// 🔄 Reinicia o contador de inatividade
 function resetarInatividade() {
+  if (logoutExecutado) return;
+
   if (timerInatividade) {
     clearTimeout(timerInatividade);
   }
 
   timerInatividade = setTimeout(() => {
     alert("Sessão expirada por inatividade. Você será desconectado.");
-    logoutAluno();
+    logoutAluno('inatividade');
   }, TEMPO_INATIVIDADE);
 }
 
-// Eventos que contam como atividade
+// 📡 Eventos que contam como atividade
 ["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evento => {
   document.addEventListener(evento, resetarInatividade, true);
 });
 
-// Inicia o contador assim que a página carrega
+// ▶️ Inicia ao carregar a página
 resetarInatividade();
 
-console.log("⏱️ Controle de inatividade ativado (30 minutos)");
+console.log("⏱️ Logout automático ativado (30 minutos)");
   
   console.log("Funções exportadas para window: toggleAulas, verNotificacao, verHorario, toggleProfessor, verificarResposta, proximaPergunta, subirNivel, carregarPerguntas");
 </script>

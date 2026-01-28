@@ -846,12 +846,11 @@ body {
 <button
   type="button"
   class="btn-logout-aluno"
-  onclick="logoutManual()"
+  id="btnLogoutAluno"
 >
   <i class="fa-solid fa-right-from-bracket"></i>
   <span>Sair</span>
 </button>
-
 
 </a>
  <div class="top-bar">
@@ -2890,13 +2889,14 @@ window.carregarPerguntas();
       inglesEl.textContent = "{{ aluno.nivel_ingles }}";
     }
   };
-
 /* ===============================
    CONFIGURAÇÃO
 ================================ */
-const TEMPO_INATIVIDADE = 30 * 60 * 1000;
+const TEMPO_INATIVIDADE = 30 * 60 * 1000; // 30 minutos
 let timerInatividade = null;
 let jaSaiu = false;
+
+console.log("🔥 logout.js carregado com sucesso");
 
 /* ===============================
    FUNÇÃO ÚNICA DE LOGOUT
@@ -2916,7 +2916,7 @@ function executarLogout(tipo) {
 }
 
 /* ===============================
-   LOGOUT MANUAL (BOTÃO)
+   LOGOUT MANUAL
 ================================ */
 function logoutManual() {
   executarLogout("manual");
@@ -2943,13 +2943,30 @@ function resetarInatividade() {
   );
 }
 
-// Eventos que contam como atividade
+/* ===============================
+   EVENTOS DE ATIVIDADE
+================================ */
 ["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evento => {
   document.addEventListener(evento, resetarInatividade, true);
 });
 
-// Inicia ao carregar a página
-resetarInatividade();
+/* ===============================
+   INICIALIZAÇÃO APÓS DOM
+================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  // Inicia o temporizador
+  resetarInatividade();
+
+  // Liga o botão de logout (SEM onclick no HTML)
+  const btnLogout = document.querySelector(".btn-logout-aluno");
+
+  if (btnLogout) {
+    btnLogout.addEventListener("click", logoutManual);
+    console.log("✅ Botão de logout conectado");
+  } else {
+    console.warn("⚠️ Botão .btn-logout-aluno não encontrado");
+  }
+});
 
 console.log("✅ Controle de logout ativo (manual + 30min inatividade)");
 

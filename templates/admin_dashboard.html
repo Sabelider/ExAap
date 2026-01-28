@@ -16,6 +16,30 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
+.btn-logout {
+  color: #dc3545 !important;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  color: #a71d2a !important;
+  transform: scale(1.1);
+}
+
+/* Ajuste navbar fixa */
+body {
+  padding-top: 56px;
+}
+
+/* Dark mode ajustes */
+.dark-mode .main-header {
+  background-color: #1f2d3d;
+}
+
+.dark-mode .btn-logout {
+  color: #ff6b6b !important;
+}
   /* MAPA */
   #mapAngola { 
     height: 350px; 
@@ -1036,19 +1060,37 @@ table tbody {
 <div class="wrapper">
 
   <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link" data-widget="pushmenu"><i class="fas fa-bars"></i></a>
-      </li>
-    </ul>
-    <ul class="navbar-nav ml-auto">
-      <li class="nav-item">
-        <a class="nav-link" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></a>
-      </li>
-    </ul>
-  </nav>
+<nav class="main-header navbar navbar-expand navbar-white navbar-light fixed-top">
 
+  <!-- LADO ESQUERDO (MENU) -->
+  <ul class="navbar-nav">
+    <li class="nav-item">
+      <a class="nav-link" data-widget="pushmenu" href="#">
+        <i class="fas fa-bars"></i>
+      </a>
+    </li>
+  </ul>
+
+  <!-- LADO DIREITO (OPPOSTO AO MENU) -->
+  <ul class="navbar-nav ml-auto align-items-center">
+
+    <!-- Dark Mode -->
+    <li class="nav-item mr-2">
+      <a class="nav-link" href="#" onclick="toggleDarkMode()" title="Modo escuro">
+        <i class="fas fa-moon"></i>
+      </a>
+    </li>
+
+    <!-- Logout -->
+    <li class="nav-item">
+      <a class="nav-link btn-logout" href="#" onclick="logoutConfirm()" title="Sair">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </li>
+
+  </ul>
+</nav>
+  
   <!-- Sidebar -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
@@ -2042,7 +2084,28 @@ function fecharFinanceProf() {
 function fecharDetalhesProf() {
   document.getElementById("detalhes-prof").style.display = "none";
 }
-  
+
+  function logoutConfirm() {
+    if (confirm("Tem certeza que deseja sair do painel administrativo?")) {
+      window.location.href = "/logout";
+    }
+  }
+
+  function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+    localStorage.setItem(
+      "darkMode",
+      document.body.classList.contains("dark-mode")
+    );
+  }
+
+  // Persistência do dark mode
+  window.onload = () => {
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark-mode");
+    }
+  };
+
 </script>
 
 </body>

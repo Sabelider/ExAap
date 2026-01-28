@@ -2407,106 +2407,97 @@ async def verificar_notificacao(request: Request):
     except Exception as e:
         return JSONResponse(content={"erro": str(e)}, status_code=500)
 
-
-from fastapi import Request
-from fastapi.responses import JSONResponse
+from google.cloud.firestore import SERVER_TIMESTAMP
 
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):
     try:
         dados = await request.json()
-        aluno_raw = dados.get("aluno")
-        professor_raw = dados.get("professor")
 
-        if not aluno_raw or not professor_raw:
-            return JSONResponse(content={"erro": "Dados incompletos"}, status_code=400)
+        aluno = dados.get("aluno")
+        professor = dados.get("professor")
 
-        # Normalização
-        aluno_normalizado = str(aluno_raw).strip().lower().replace(" ", "")
-        professor_normalizado = str(professor_raw).strip().lower()
-        nome_sala = f"{professor_normalizado.replace(' ', '_')}-{aluno_normalizado}"
+        if not aluno or not professor:
+            return JSONResponse(
+                content={"erro": "Dados incompletos"},
+                status_code=400
+            )
 
-        # Verificar vínculo
-        vinculo_docs = db.collection("alunos_professor") \
-                         .where("professor", "==", professor_normalizado) \
-                         .stream()
+        # ===============================
+        # NORMALIZAÇÃO
+        # ===============================
+        aluno_nome = aluno.strip().lower()
+        aluno_slug = aluno_nome.replace(" ", "-")
 
-        vinculo_encontrado = False
-        for doc in vinculo_docs:
-            data = doc.to_dict()
-            aluno_db = data.get("aluno", "").strip().lower().replace(" ", "")
-            if aluno_db == aluno_normalizado:
-                vinculo_encontrado = True
-                break
+        professor_email = professor.strip().lower()
 
-        if not vinculo_encontrado:
+        sala = f"{professor_email}-{aluno_slug}"
+
+        # ===============================
+        # VERIFICAR VÍNCULO
+        # ===============================
+        vinculo_query = (
+            db.collection("alunos_professor")
+              .where("professor", "==", professor_email)
+              .where("aluno", "==", aluno_nome)
+              .stream()
+        )
+
+        if not any(vinculo_query):
             return JSONResponse(
                 content={"erro": "Vínculo entre professor e aluno não encontrado."},
                 status_code=403
             )
 
-        # Verificar ou criar o documento de chamada
-        doc_ref = db.collection("chamadas_ao_vivo").document(aluno_normalizado)
+        # ===============================
+        # DOCUMENTO ÚNICO POR DIA
+        # ===============================
+        hoje = date.today().isoformat()  # ex: 2026-01-27
+        doc_id = f"{aluno_slug}_{hoje}"
+
+        doc_ref = db.collection("chamadas_ao_vivo").document(doc_id)
         doc = doc_ref.get()
 
+        # ===============================
+        # SE NÃO EXISTE → CRIA COMO PENDENTE
+        # ===============================
         if not doc.exists:
-            # 🔧 Se não existir, cria automaticamente com status 'aceito'
             doc_ref.set({
-                "aluno": aluno_normalizado,
-                "professor": professor_normalizado,
-                "status": "aceito",
-                "sala": nome_sala
-            }, merge=True)
+                "aluno": aluno_nome,
+                "professor": professor_email,
+                "sala": sala,
+                "status": "pendente",
+                "timestamp": SERVER_TIMESTAMP
+            })
 
             return JSONResponse(
                 content={
-                    "mensagem": "Conexão autorizada - documento criado.",
-                    "sala": nome_sala
+                    "mensagem": "Chamada registrada com sucesso.",
+                    "status": "pendente",
+                    "sala": sala
                 },
                 status_code=200
             )
 
-        # Verificar status existente
-        dados_atuais = doc.to_dict() or {}
-        status_atual = dados_atuais.get("status", "")
+        # ===============================
+        # SE JÁ EXISTE → NÃO DUPLICA
+        # ===============================
+        dados_existentes = doc.to_dict()
+        status_atual = dados_existentes.get("status", "pendente")
 
-        if status_atual == "aceito":
-            doc_ref.set({
-                "aluno": aluno_normalizado,
-                "professor": professor_normalizado,
-                "sala": nome_sala
-            }, merge=True)
-
-            return JSONResponse(
-                content={
-                    "mensagem": "Conexão autorizada com status 'aceito'.",
-                    "sala": nome_sala
-                },
-                status_code=200
-            )
-
-        elif status_atual == "pendente":
-            return JSONResponse(
-                content={"erro": "Aguardando o aluno aceitar a chamada..."},
-                status_code=403
-            )
-
-        elif status_atual == "recusado":
-            return JSONResponse(
-                content={"erro": "O aluno recusou a chamada."},
-                status_code=403
-            )
-
-        else:
-            return JSONResponse(
-                content={"erro": f"Status de chamada desconhecido: '{status_atual}'"},
-                status_code=403
-            )
+        return JSONResponse(
+            content={
+                "mensagem": "Chamada já registrada hoje.",
+                "status": status_atual,
+                "sala": sala
+            },
+            status_code=200
+        )
 
     except Exception as e:
         print(f"❌ ERRO AO REGISTRAR CHAMADA: {str(e)}")
         return JSONResponse(
-            content={"erro": f"Erro interno ao registrar chamada: {str(e)}"},
+            content={"erro": "Erro interno ao registrar chamada."},
             status_code=500
         )
 

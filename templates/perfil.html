@@ -793,9 +793,59 @@ body {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  /* ===============================
+   BOTÃO SAIR - ALUNO
+================================ */
+.btn-logout-aluno {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  background: #dc3545;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 30px;
+
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transition: all 0.25s ease;
+}
+
+.btn-logout-aluno i {
+  font-size: 14px;
+}
+
+.btn-logout-aluno:hover {
+  background: #b02a37;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .btn-logout-aluno span {
+    display: none;
+  }
+
+  .btn-logout-aluno {
+    padding: 8px 10px;
+  }
+}
 </style>
 </head>
 <body>
+<a href="/logout_aluno" class="btn-logout-aluno">
+  <i class="fa-solid fa-right-from-bracket"></i>
+  <span>Sair</span>
+</a>
  <div class="top-bar">
   <img src="/static/perfil.png" alt="Perfil" />
   <div class="info">
@@ -2833,7 +2883,10 @@ window.carregarPerguntas();
     }
   };
 
-
+  function logoutAluno() {
+  // Redireciona para a rota de logout do aluno
+  window.location.href = "/logout_aluno";
+}
   console.log("Funções exportadas para window: toggleAulas, verNotificacao, verHorario, toggleProfessor, verificarResposta, proximaPergunta, subirNivel, carregarPerguntas");
 </script>
 

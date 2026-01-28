@@ -843,10 +843,15 @@ body {
 </head>
 <body>
 
-<button class="btn-logout-aluno" onclick="logoutAluno('manual')">
+<button
+  type="button"
+  class="btn-logout-aluno"
+  onclick="logoutManual()"
+>
   <i class="fa-solid fa-right-from-bracket"></i>
   <span>Sair</span>
 </button>
+
 
 </a>
  <div class="top-bar">
@@ -2887,51 +2892,62 @@ window.carregarPerguntas();
   };
 
 /* ===============================
-   LOGOUT AUTOMÁTICO POR INATIVIDADE
+   LOGOUT MANUAL + AUTOMÁTICO
 ================================ */
 
-const TEMPO_INATIVIDADE = 30 * 60 * 1000; // 30 minutos
+const TEMPO_INATIVIDADE = 30 * 60 * 1000; 
 let timerInatividade = null;
-let logoutExecutado = false; // 🛑 impede duplicação
+let jaSaiu = false;
 
-// 🔐 Função central de logout (manual ou automático)
-function logoutAluno(motivo = 'auto') {
-  if (logoutExecutado) return; // evita múltiplos redirects
-  logoutExecutado = true;
+/* ===============================
+   LOGOUT MANUAL (BOTÃO)
+================================ */
+function logoutManual() {
+  if (jaSaiu) return;
+  jaSaiu = true;
 
-  console.warn(`⏳ Logout do aluno acionado (${motivo})`);
+  console.log("🔴 Logout manual acionado");
+  window.location.href = "/logout_aluno";
+}
 
-  // Limpa timer
-  if (timerInatividade) {
-    clearTimeout(timerInatividade);
-  }
+/* ===============================
+   LOGOUT AUTOMÁTICO (INATIVIDADE)
+================================ */
+function logoutAutomatico() {
+  if (jaSaiu) return;
+  jaSaiu = true;
+
+  alert("Sessão expirada por inatividade. Você será desconectado.");
+  console.log("⏳ Logout automático por inatividade");
 
   window.location.href = "/logout_aluno";
 }
 
-// 🔄 Reinicia o contador de inatividade
+/* ===============================
+   CONTROLE DE INATIVIDADE
+================================ */
 function resetarInatividade() {
-  if (logoutExecutado) return;
+  if (jaSaiu) return;
 
   if (timerInatividade) {
     clearTimeout(timerInatividade);
   }
 
-  timerInatividade = setTimeout(() => {
-    alert("Sessão expirada por inatividade. Você será desconectado.");
-    logoutAluno('inatividade');
-  }, TEMPO_INATIVIDADE);
+  timerInatividade = setTimeout(
+    logoutAutomatico,
+    TEMPO_INATIVIDADE
+  );
 }
 
-// 📡 Eventos que contam como atividade
+// Eventos que contam como atividade do usuário
 ["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evento => {
   document.addEventListener(evento, resetarInatividade, true);
 });
 
-// ▶️ Inicia ao carregar a página
+// Inicia o temporizador ao carregar a página
 resetarInatividade();
 
-console.log("⏱️ Logout automático ativado (30 minutos)");
+console.log("✅ Controle de logout ativo (manual + 30min inatividade)");
   
   console.log("Funções exportadas para window: toggleAulas, verNotificacao, verHorario, toggleProfessor, verificarResposta, proximaPergunta, subirNivel, carregarPerguntas");
 </script>

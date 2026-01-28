@@ -4979,3 +4979,30 @@ async def estatisticas_dashboard():
             "recusadas": chamadas_recusadas
         }
     })
+
+@app.get("/logout_aluno")
+async def logout_aluno(request: Request):
+    try:
+        referer = request.headers.get("referer", "")
+
+        if "/perfil/" in referer:
+            nome = referer.split("/perfil/")[-1]
+            nome_normalizado = nome.strip().lower()
+
+            query = db.collection("alunos") \
+                .where("nome_normalizado", "==", nome_normalizado) \
+                .limit(1) \
+                .stream()
+
+            for doc in query:
+                doc.reference.update({
+                    "online": False
+                })
+                break
+
+        return RedirectResponse("/login", status_code=303)
+
+    except Exception as e:
+        print(f"❌ Erro no logout do aluno: {e}")
+        return RedirectResponse("/login", status_code=303)
+

@@ -287,12 +287,27 @@ def logini(
 @app.get("/admin", response_class=HTMLResponse)
 def painel_admin(request: Request):
 
+    # 🔐 Proteção de sessão
     if not request.session.get("logged_in"):
         return RedirectResponse("/logini", status_code=302)
 
+    # 🔥 Buscar equipa administrativa no Firebase
+    docs = db.collection("equipa_administrativa").stream()
+    equipa = []
+
+    for doc in docs:
+        data = doc.to_dict()
+        if data:
+            data["id"] = doc.id
+            equipa.append(data)
+
+    # 📄 Renderiza o dashboard com os dados
     return templates.TemplateResponse(
         "admin_dashboard.html",
-        {"request": request}
+        {
+            "request": request,
+            "equipa": equipa
+        }
     )
 
 
@@ -4439,7 +4454,7 @@ async def rotate_account():
     usos = {str(k): v for k, v in doc["usos"].items()}  # converte chaves para string
 
     conta_str = str(conta)
-    if usos.get(conta_str, 0) >= 10:  # limite de usos por conta
+    if usos.get(conta_str, 0) >= 50:  
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
         usos[conta_str] = 0  # reset da nova conta
@@ -4456,11 +4471,11 @@ async def incrementar_uso():
     doc = ref.get().to_dict()
 
     conta = doc["conta_atual"]
-    usos = {str(k): v for k, v in doc["usos"].items()}  # garante chaves como string
-
+    usos = {str(k): v for k, v in doc["usos"].items()} 
+    
     conta_str = str(conta)
-    usos[conta_str] = usos.get(conta_str, 0) + 1  # incrementa o uso da conta atual
-
+    usos[conta_str] = usos.get(conta_str, 0) + 1  
+    
     ref.update({"usos": usos})
     await rotate_account()
 
@@ -4476,7 +4491,7 @@ async def generate_100ms_token():
         "iat": int(time.time()),
         "exp": int(time.time()) + 3600,  # válido por 1 hora
         "access_key": conta["ACCESS_KEY"],
-        "type": "management",  # 🔥 ESSENCIAL para criar salas e room codes
+        "type": "management",  
         "jti": str(uuid.uuid4()),
     }
     return jwt.encode(payload, conta["SECRET"], algorithm="HS256")
@@ -5019,4 +5034,38 @@ async def logout_aluno(request: Request):
     except Exception as e:
         print(f"❌ Erro no logout do aluno: {e}")
         return RedirectResponse("/login", status_code=303)
+
+@app.post("/equipa-administrativa/adicionar")
+def adicionar_equipa(
+    nome: str = Form(...),
+    cargo: str = Form(...),
+    telefone: str = Form(...),
+    localizacao: str = Form(...)
+):
+    db.collection("equipa_administrativa").add({
+        "nome": nome,
+        "cargo": cargo,
+        "telefone": telefone,
+        "localizacao": localizacao
+    })
+    return RedirectResponse("/admin", status_code=302)
+
+
+@app.post("/equipa-administrativa/editar/{id}")
+def editar_equipa(
+    id: str,
+    nome: str = Form(...),
+    cargo: str = Form(...),
+    telefone: str = Form(...),
+    localizacao: str = Form(...)
+):
+    db.collection("equipa_administrativa").document(id).update({
+        "nome": nome,
+        "cargo": cargo,
+        "telefone": telefone,
+        "localizacao": localizacao
+    })
+    return RedirectResponse("/admin", status_code=302)
+
+
 

@@ -16,348 +16,30 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
+    
+body { padding-top: 56px; }
+
 .btn-logout {
   color: #dc3545 !important;
   font-size: 1.1rem;
-  transition: all 0.2s ease;
+  transition: .2s;
 }
-
 .btn-logout:hover {
   color: #a71d2a !important;
   transform: scale(1.1);
 }
+.dark-mode .btn-logout { color: #ff6b6b !important; }
 
-/* Ajuste navbar fixa */
-body {
-  padding-top: 56px;
+#mapAngola {
+  height: 350px;
+  border-radius: 10px;
 }
 
-/* Dark mode ajustes */
-.dark-mode .main-header {
-  background-color: #1f2d3d;
-}
-
-.dark-mode .btn-logout {
-  color: #ff6b6b !important;
-}
-  /* MAPA */
-  #mapAngola { 
-    height: 350px; 
-    border-radius: 10px;
-  }
-
-/* ===============================
-   OVERLAY LISTA DE ALUNOS
-================================ */
-
-.alunos-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.55);
-
-  display: none;
-  justify-content: center;
-  align-items: center;
-
-  z-index: 9999;
-}
-
-/* ===============================
-   BLOCO DE LISTAGEM DE ALUNOS
-================================ */
-
-.alunos-container {
-  width: 90%;
-  max-width: 1150px;
-  max-height: 85vh;
-  overflow-y: auto;
-
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 22px;
-
-  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-
-  animation: zoomIn .25s ease;
-  transition: all .3s ease;
-}
-
-@keyframes zoomIn {
-  from {
-    transform: scale(.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.dark-mode .alunos-container {
-  background: #1f2d3d;
-}
-
-/* ===============================
-   TÍTULO
-================================ */
-
-.alunos-title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 15px;
-}
-
-/* ===============================
-   TABELA
-================================ */
-
-table.tabela-alunos {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table.tabela-alunos thead {
-  background: linear-gradient(45deg,#007bff,#0056b3);
-  color: white;
-}
-
-table.tabela-alunos th,
-table.tabela-alunos td {
-  padding: 11px;
-  border-bottom: 1px solid #e1e1e1;
-  vertical-align: middle;
-}
-
-.dark-mode table.tabela-alunos th,
-.dark-mode table.tabela-alunos td {
-  border-color: #3b3b3b;
-}
-
-table.tabela-alunos tbody tr:hover {
-  background: rgba(0,123,255,0.08);
-}
-
-.dark-mode table.tabela-alunos tbody tr:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-/* ===============================
-   STATUS VISUAL
-================================ */
-
-.status-online {
-  color: #28a745;
-  font-weight: bold;
-}
-
-.status-offline {
-  color: #dc3545;
-  font-weight: bold;
-}
-
-.status-vinculado {
-  background: #28a745;
-  color: white;
-  padding: 4px 9px;
-  border-radius: 8px;
-  font-size: 12px;
-}
-
-.status-nao-vinculado {
-  background: #dc3545;
-  color: white;
-  padding: 4px 9px;
-  border-radius: 8px;
-  font-size: 12px;
-}
-
-/* ===============================
-   BOTÕES
-================================ */
-
-.btn-remover {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 5px 12px;
-  border-radius: 7px;
-  cursor: pointer;
-  transition: .2s;
-}
-
-.btn-remover:hover {
-  opacity: .8;
-}
-
-/* ===============================
-   LOADING
-================================ */
-
-.loader-alunos {
-  text-align: center;
-  padding: 25px;
-  font-weight: bold;
-  font-size: 15px;
-  color: #007bff;
-}
-
-/* ===============================
-   RESPONSIVO
-================================ */
-
-@media (max-width: 768px) {
-
-  .alunos-container {
-    width: 95%;
-    max-height: 90vh;
-    padding: 15px;
-  }
-
-  table.tabela-alunos thead {
-    display: none;
-  }
-
-  table.tabela-alunos tr {
-    display: block;
-    margin-bottom: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 5px;
-  }
-
-  .dark-mode table.tabela-alunos tr {
-    border-color: #444;
-  }
-
-  table.tabela-alunos td {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-  }
-
-  table.tabela-alunos td::before {
-    content: attr(data-label);
-    font-weight: 600;
-  }
-}
-
-/* ===============================
-   OVERLAY ALUNOS DISPONÍVEIS
-================================ */
-
-.alunos-disponiveis-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.55);
-
-  display: none;
-  justify-content: center;
-  align-items: center;
-
-  z-index: 9999;
-}
-
-/* ===============================
-   CONTAINER
-================================ */
-
-.alunos-disponiveis-container {
-  width: 90%;
-  max-width: 1050px;
-  max-height: 85vh;
-  overflow-y: auto;
-
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 22px;
-
-  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-
-  animation: zoomIn .25s ease;
-}
-
-.dark-mode .alunos-disponiveis-container {
-  background: #1f2d3d;
-}
-
-/* ===============================
-   TABELA
-================================ */
-
-table.tabela-disponiveis {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table.tabela-disponiveis thead {
-  background: linear-gradient(45deg,#17a2b8,#0f6674);
-  color: white;
-}
-
-table.tabela-disponiveis th,
-table.tabela-disponiveis td {
-  padding: 11px;
-  border-bottom: 1px solid #e1e1e1;
-}
-
-.dark-mode table.tabela-disponiveis th,
-.dark-mode table.tabela-disponiveis td {
-  border-color: #3b3b3b;
-}
-
-table.tabela-disponiveis tbody tr:hover {
-  background: rgba(23,162,184,0.12);
-}
-
-/* ===============================
-   STATUS
-================================ */
-
-.status-disponivel {
-  color: #17a2b8;
-  font-weight: bold;
-}
-
-/* ===============================
-   LOADING
-================================ */
-
-.loader-disponiveis {
-  text-align: center;
-  padding: 25px;
-  font-weight: bold;
-  font-size: 15px;
-  color: #17a2b8;
-}
-
-/* ===============================
-   MENU PROFESSORES ONLINE
-================================ */
-
-.nav-treeview .nav-link.prof-online-btn {
-  border-left: 3px solid transparent;
-  transition: .2s;
-}
-
-.nav-treeview .nav-link.prof-online-btn:hover {
-  background: rgba(0,123,255,.08);
-  border-left-color: #007bff;
-}
-
-.dark-mode .nav-treeview .nav-link.prof-online-btn:hover {
-  background: rgba(255,255,255,.05);
-}
-
-/* ===============================
-   OVERLAY PROFESSORES
-================================ */
-
+/* =====================================================
+   OVERLAYS
+===================================================== */
+.alunos-overlay,
+.alunos-disponiveis-overlay,
 .professores-overlay {
   position: fixed;
   inset: 0;
@@ -368,107 +50,142 @@ table.tabela-disponiveis tbody tr:hover {
   z-index: 9999;
 }
 
-/* ===============================
-   CONTAINER
-================================ */
-
+/* =====================================================
+   CONTAINERS
+===================================================== */
+.alunos-container,
+.alunos-disponiveis-container,
 .professores-container {
-  background: white;
+  background: #fff;
   border-radius: 14px;
-  padding: 20px;
-  width: 95%;
-  max-width: 900px;
-  max-height: 80vh;          /* limita altura */
-  box-shadow: 0 10px 40px rgba(0,0,0,.25);
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  padding: 22px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
 }
 
-.dark-mode .professores-container {
+.dark-mode
+.alunos-container,
+.dark-mode
+.alunos-disponiveis-container,
+.dark-mode
+.professores-container {
   background: #1f2d3d;
 }
 
-/* ===============================
-   BOTÕES SCROLL
-================================ */
-
-.scroll-btn {
-  position: absolute;
-  right: 10px;
-  width: 35px;
-  height: 35px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(0,123,255,0.8);
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  transition: .2s;
-  z-index: 10;
+/* =====================================================
+   TABELA — ALUNOS
+===================================================== */
+.alunos-container table.tabela-alunos {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.scroll-btn:hover {
-  background: #007bff;
+.alunos-container table.tabela-alunos thead {
+  background: linear-gradient(45deg,#007bff,#0056b3);
+  color: #fff;
 }
 
-.scroll-up {
-  top: 10px;
+.alunos-container table.tabela-alunos th,
+.alunos-container table.tabela-alunos td {
+  padding: 11px;
+  border-bottom: 1px solid #e1e1e1;
 }
 
-.scroll-down {
-  bottom: 10px;
+.dark-mode
+.alunos-container table.tabela-alunos th,
+.dark-mode
+.alunos-container table.tabela-alunos td {
+  border-color: #444;
 }
 
-/* ===============================
-   TABELA – PAGAMENTOS ALUNOS
-================================ */
+/* =====================================================
+   TABELA — ALUNOS DISPONÍVEIS
+===================================================== */
+.alunos-disponiveis-container table.tabela-disponiveis {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-table.tabela-professores {
+.alunos-disponiveis-container table.tabela-disponiveis thead {
+  background: linear-gradient(45deg,#17a2b8,#0f6674);
+  color: #fff;
+}
+
+.alunos-disponiveis-container table.tabela-disponiveis th,
+.alunos-disponiveis-container table.tabela-disponiveis td {
+  padding: 11px;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+/* =====================================================
+   TABELA — PROFESSORES (LISTAGEM)
+===================================================== */
+.professores-container table.tabela-professores {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-table.tabela-professores thead {
+.professores-container table.tabela-professores thead {
   background: linear-gradient(45deg,#17a2b8,#117a8b);
   color: #fff;
 }
 
-table.tabela-professores th,
-table.tabela-professores td {
+.professores-container table.tabela-professores th,
+.professores-container table.tabela-professores td {
   padding: 12px;
   border-bottom: 1px solid #e1e1e1;
-  text-align: left;
-  vertical-align: middle;
 }
 
-.dark-mode table.tabela-professores th,
-.dark-mode table.tabela-professores td {
-  border-color: #444;
+/* =====================================================
+   TABELA — PAGAMENTOS · PROFESSORES (NOVA)
+===================================================== */
+.professores-container table.tabela-pagamentos-professores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-/* ===============================
-   STATUS
-================================ */
+.professores-container table.tabela-pagamentos-professores thead {
+  background: linear-gradient(45deg,#28a745,#1e7e34);
+  color: #fff;
+}
 
-.prof-online {
+.professores-container table.tabela-pagamentos-professores th,
+.professores-container table.tabela-pagamentos-professores td {
+  padding: 12px;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+/* valores monetários */
+.tabela-pagamentos-professores .valor {
+  font-weight: 700;
   color: #28a745;
-  font-weight: bold;
 }
 
-.prof-offline {
-  color: #dc3545;
-  font-weight: bold;
+.dark-mode
+.tabela-pagamentos-professores .valor {
+  color: #6ee7b7;
 }
 
-/* ===============================
-   BOTÃO PAGO
-================================ */
+/* status de pagamento */
+.status-pago { color: #28a745; font-weight: 600; }
+.status-pendente { color: #ffc107; font-weight: 600; }
+.status-atrasado { color: #dc3545; font-weight: 600; }
 
+/* =====================================================
+   STATUS GERAIS
+===================================================== */
+.status-online { color: #28a745; font-weight: 600; }
+.status-offline { color: #dc3545; font-weight: 600; }
+.status-disponivel { color: #17a2b8; font-weight: 600; }
+
+/* =====================================================
+   BOTÕES
+===================================================== */
+.btn-remover,
 .btn-prof-remover {
   background: #dc3545;
   color: #fff;
@@ -476,581 +193,66 @@ table.tabela-professores td {
   padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
 }
+.btn-remover:hover,
+.btn-prof-remover:hover { opacity: .85; }
 
-.btn-prof-remover:hover {
-  opacity: .85;
-}
-
-/* ===============================
-   OVERLAY (CORREÇÃO DO SCROLL)
-================================ */
-
-.professores-overlay {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: flex-start;     
-  justify-content: center;
-  background: rgba(0,0,0,.55);
-  overflow-y: auto;             
-  padding: 40px 0;              
-  z-index: 9999;
-}
-
-/* ===============================
-   CONTAINER INTERNO
-================================ */
-
-.professores-container {
-  background: #fff;
-  width: 90%;
-  max-width: 1100px;
-  max-height: none;            
-  border-radius: 14px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.dark-mode .professores-container {
-  background: #1f2d3d;
-}
-
-/* ===============================
-   SCROLL APENAS NA LISTA (OPCIONAL)
-================================ */
-
-.tabela-scroll {
-  max-height: 65vh;             
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  padding-right: 6px;
-}
-
-.tabela-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.tabela-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,.25);
-  border-radius: 6px;
-}
-
-.dark-mode .tabela-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.25);
-}
-
-/* ===============================
-   MOBILE (≤ 768px)
-================================ */
-
+/* =====================================================
+   MOBILE — ISOLADO POR TABELA
+===================================================== */
 @media (max-width: 768px) {
 
-  table.tabela-professores thead {
+  .alunos-container table.tabela-alunos thead,
+  .alunos-disponiveis-container table.tabela-disponiveis thead,
+  .professores-container table.tabela-professores thead,
+  .professores-container table.tabela-pagamentos-professores thead {
     display: none;
   }
 
-  table.tabela-professores tbody tr {
+  .alunos-container table.tabela-alunos tr,
+  .alunos-disponiveis-container table.tabela-disponiveis tr,
+  .professores-container table.tabela-professores tr,
+  .professores-container table.tabela-pagamentos-professores tr {
     display: block;
-    margin-bottom: 14px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-
-  .dark-mode table.tabela-professores tbody tr {
-    background: #1f2d3d;
-    border-color: #444;
-  }
-
-  table.tabela-professores tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 6px;
-    border: none;
-    font-size: 14px;
-  }
-
-  table.tabela-professores tbody td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #555;
-  }
-
-  .dark-mode table.tabela-professores tbody td::before {
-    color: #bbb;
-  }
-
-  table.tabela-professores tbody td:last-child {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  table.tabela-professores tbody td:last-child button {
-    width: 100%;
-  }
-
-  .professores-container {
-    width: 96%;
-    padding: 14px;
-  }
-}
-
-/* ===============================
-   MOBILE (≤ 768px)
-================================ */
-
-@media (max-width: 768px) {
-
-  table.tabela-professores thead {
-    display: none;
-  }
-
-  table.tabela-professores tbody tr {
-    display: block;
-    margin-bottom: 14px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-
-  .dark-mode table.tabela-professores tbody tr {
-    background: #1f2d3d;
-    border-color: #444;
-  }
-
-  table.tabela-professores tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 6px;
-    border: none;
-    font-size: 14px;
-  }
-
-  table.tabela-professores tbody td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #555;
-  }
-
-  .dark-mode table.tabela-professores tbody td::before {
-    color: #bbb;
-  }
-
-  table.tabela-professores tbody td:last-child {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  table.tabela-professores tbody td:last-child button {
-    width: 100%;
-  }
-
-  
-  .professores-container {
-    width: 96%;
-    max-height: 92vh;
-    padding: 14px;
-  }
-}
-    
-/* ===============================
-   MOBILE (≤ 768px)
-   MESMO COMPORTAMENTO DA TABELA MODERNA
-================================ */
-
-@media (max-width: 768px) {
-
-  /* Remove header */
-  table.tabela-professores thead {
-    display: none;
-  }
-
-  /* Cada linha vira um card */
-  table.tabela-professores tbody tr {
-    display: block;
-    margin-bottom: 14px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-
-  .dark-mode table.tabela-professores tbody tr {
-    background: #1f2d3d;
-    border-color: #444;
-  }
-
-  /* Células em coluna */
-  table.tabela-professores tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 6px;
-    border: none;
-    font-size: 14px;
-  }
-
-  table.tabela-professores tbody td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #555;
-  }
-
-  .dark-mode table.tabela-professores tbody td::before {
-    color: #bbb;
-  }
-
-  /* Ações (botões) */
-  table.tabela-professores tbody td:last-child {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  table.tabela-professores tbody td:last-child button {
-    width: 100%;
-    border-radius: 8px;
-  }
-}
-
-/* ===============================
-   RESPONSIVO
-================================ */
-
-@media(max-width:768px){
-
-  table.tabela-professores thead{display:none}
-
-  table.tabela-professores tr{
-    display:block;
-    margin-bottom:10px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    padding:6px;
-  }
-
-  table.tabela-professores td{
-    display:flex;
-    justify-content:space-between;
-  }
-
-  table.tabela-professores td::before{
-    content:attr(data-label);
-    font-weight:600;
-  }
-}
-
-/* =================================
-   TABELAS – PADRÃO GERAL
-================================= */
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-table th,
-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e1e1e1;
-  vertical-align: middle;
-}
-
-.dark-mode table th,
-.dark-mode table td {
-  border-color: #444;
-}
-
-/* =================================
-   STATUS
-================================= */
-
-.status-circulo {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-.status-verde {
-  background: #28a745;
-  color: #28a745;
-  font-weight: bold;
-}
-
-.status-vermelho {
-  background: #dc3545;
-  color: #dc3545;
-  font-weight: bold;
-}
-
-/* =================================
-   BOTÕES (MOBILE FRIENDLY)
-================================= */
-
-table button {
-  min-width: 80px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-@media (max-width: 768px) {
-
-  /* ===============================
-     REMOVE HEADER
-  ============================== */
-  table thead {
-    display: none;
-  }
-
-  /* ===============================
-     CARD POR LINHA
-  ============================== */
-  table tbody tr {
-    display: block;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     border: 1px solid #ddd;
     border-radius: 12px;
     padding: 10px;
     background: #fff;
   }
 
-  .dark-mode table tbody tr {
+  .dark-mode
+  .alunos-container table tr,
+  .dark-mode
+  .alunos-disponiveis-container table tr,
+  .dark-mode
+  .professores-container table tr {
     background: #1f2d3d;
     border-color: #444;
   }
 
-  /* ===============================
-     CÉLULAS EM COLUNA
-  ============================== */
-  table tbody td {
+  .alunos-container table td,
+  .alunos-disponiveis-container table td,
+  .professores-container table td {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 8px 6px;
     border: none;
-    font-size: 14px;
   }
 
-  table tbody td::before {
+  .alunos-container table td::before,
+  .alunos-disponiveis-container table td::before,
+  .professores-container table td::before {
     content: attr(data-label);
     font-weight: 600;
     color: #555;
   }
 
-  .dark-mode table tbody td::before {
+  .dark-mode table td::before {
     color: #bbb;
   }
-
-  /* ===============================
-     BOTÕES EM LINHA / COLUNA
-  ============================== */
-  table tbody td:last-child {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  table tbody td:last-child button {
-    width: 100%;
-    border-radius: 8px;
-  }
 }
-
-/* =================================
-   TÍTULOS DENTRO DOS MODAIS
-================================= */
-
-.alunos-title,
-.professores-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-/* =================================
-   CONTAINERS – MOBILE
-================================= */
-
-@media (max-width: 768px) {
-
-  .alunos-container,
-  .professores-container {
-    width: 96%;
-    max-height: 92vh;
-    padding: 14px;
-    border-radius: 14px;
-  }
-}
-
-/* =================================
-   SCROLL SUAVE EM MOBILE
-================================= */
-
-table tbody {
-  scroll-behavior: smooth;
-}
-
-/* ===============================
-   WRAPPER
-================================ */
-.tabela-wrapper {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-  max-height: 85vh;
-  overflow-y: auto;
-}
-
-.dark-mode .tabela-wrapper {
-  background: #1f2d3d;
-}
-
-/* ===============================
-   TÍTULO
-================================ */
-.modal-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 15px;
-}
-
-/* ===============================
-   TABELA DESKTOP
-================================ */
-.tabela-pagamentos {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.tabela-pagamentos thead {
-  background: linear-gradient(45deg, #007bff, #0056b3);
-  color: #fff;
-}
-
-.tabela-pagamentos th,
-.tabela-pagamentos td {
-  padding: 12px;
-  border-bottom: 1px solid #e1e1e1;
-  text-align: left;
-}
-
-.dark-mode .tabela-pagamentos th,
-.dark-mode .tabela-pagamentos td {
-  border-color: #444;
-}
-
-.tabela-pagamentos tbody tr:hover {
-  background: rgba(0,123,255,.08);
-}
-
-/* ===============================
-   STATUS
-================================ */
-.status {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-pago {
-  background: #28a745;
-  color: #fff;
-}
-
-.status-pendente {
-  background: #dc3545;
-  color: #fff;
-}
-
-/* ===============================
-   BOTÕES
-================================ */
-.btn {
-  border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.btn-danger {
-  background: #dc3545;
-  color: #fff;
-}
-
-.btn-danger:hover {
-  opacity: .85;
-}
-
-/* ===============================
-   MOBILE (≤ 768px)
-================================ */
-@media (max-width: 768px) {
-
-  .tabela-pagamentos thead {
-    display: none;
-  }
-
-  .tabela-pagamentos tbody tr {
-    display: block;
-    margin-bottom: 14px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-
-  .dark-mode .tabela-pagamentos tbody tr {
-    background: #1f2d3d;
-    border-color: #444;
-  }
-
-  .tabela-pagamentos tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 4px;
-    border: none;
-  }
-
-  .tabela-pagamentos tbody td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #555;
-  }
-
-  .dark-mode .tabela-pagamentos tbody td::before {
-    color: #bbb;
-  }
-
-  .tabela-pagamentos tbody td:last-child {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .tabela-pagamentos tbody td:last-child button {
-    width: 100%;
-  }
-}
-    
+ 
 </style>
 
 
@@ -1062,7 +264,7 @@ table tbody {
   <!-- Navbar -->
 <nav class="main-header navbar navbar-expand navbar-white navbar-light fixed-top">
 
-  <!-- LADO ESQUERDO (MENU) -->
+  
   <ul class="navbar-nav">
     <li class="nav-item">
       <a class="nav-link" data-widget="pushmenu" href="#">
@@ -1106,65 +308,168 @@ table tbody {
         <ul class="nav nav-pills nav-sidebar flex-column"
             data-widget="treeview" role="menu" data-accordion="false">
 
-          <!-- MENU ALUNOS -->
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-user-graduate"></i>
-              <p>Alunos <i class="right fas fa-angle-left"></i></p>
+      <!-- MENU ALUNOS -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-user-graduate"></i>
+          <p>Alunos <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunos();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Alunos Cadastrados</p>
             </a>
-            <ul class="nav nav-treeview">
-              <li class="nav-item">
-                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunos();">
-                  <i class="far fa-circle nav-icon"></i>
-                  <p>Alunos Cadastrados</p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunosDisponiveis();">
-                  <i class="far fa-circle nav-icon"></i>
-                  <p>Alunos sem vínculo</p>
-                </a>
-              </li>
-            </ul>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); carregarAlunosDisponiveis();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Alunos sem vínculo</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- MENU PROFESSORES -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-chalkboard-teacher"></i>
+          <p>Professores <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); carregarProfessores();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Professores Online</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- MENU FINANÇAS -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-coins"></i>
+          <p>Finanças <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); abrirFinanceAlunos();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Pagamentos Alunos</p>
+            </a>
           </li>
 
-          <!-- MENU PROFESSORES -->
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-chalkboard-teacher"></i>
-              <p>Professores <i class="right fas fa-angle-left"></i></p>
+          <li class="nav-item">
+            <a href="#" class="nav-link"
+               onclick="event.preventDefault(); abrirFinanceProf();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Paga. Professores</p>
             </a>
-            <ul class="nav nav-treeview">
-              <li class="nav-item">
-                <a href="#" class="nav-link" onclick="event.preventDefault(); carregarProfessores();">
-                  <i class="far fa-circle nav-icon"></i>
-                  <p>Professores Online</p>
-                </a>
-              </li>
-            </ul>
           </li>
+        </ul>
+      </li>
 
-          <!-- MENU FINANÇAS -->
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-coins"></i>
-              <p>Finanças <i class="right fas fa-angle-left"></i></p>
+      <!-- ===============================
+           NOVO MENU RH
+      ================================= -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-users-cog"></i>
+          <p>RH Administrativo <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="abrirEquipaAdministrativa(); return false;">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Equipa Administrativa</p>
             </a>
-            <ul class="nav nav-treeview">
-             <li class="nav-item">
-               <a href="#" class="nav-link" onclick="event.preventDefault(); abrirFinanceAlunos();">
-                 <i class="far fa-circle nav-icon"></i>
-                 <p>Pagamentos Alunos</p>
-               </a>
-            </li>
+         </li>
 
-         <li class="nav-item">
-           <a href="#" class="nav-link"
-              onclick="event.preventDefault(); abrirFinanceProf();">
-             <i class="far fa-circle nav-icon"></i>
-             <p>Paga. Professores</p>
-           </a>
-        </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); abrirRemuneracoes();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Remunerações e Salários</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- ===============================
+           MENU RELATÓRIOS
+      ================================= -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-chart-line"></i>
+          <p>Relatórios <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); abrirRelatoriosMensais();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Relatórios Mensais</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="event.preventDefault(); abrirRelatoriosDiarios();">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Relatórios Diários</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- ===============================
+           MENU EXEMPLO 1
+      ================================= -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-folder"></i>
+          <p>Exemplo 1 <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Botão 1</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Botão 2</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- ===============================
+           MENU EXEMPLO 2
+      ================================= -->
+      <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+          <i class="nav-icon fas fa-folder-open"></i>
+          <p>Exemplo 2 <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Botão 1</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="far fa-circle nav-icon"></i>
+              <p>Botão 2</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+    </ul>
+  </nav>
+</div>
 
 <!-- ===============================
      OVERLAY FINANÇAS PROFESSORES
@@ -1229,11 +534,7 @@ table tbody {
   </div>
 </div>
 
-
-  </div>
-</div>
-
-          <div class="professores-overlay" id="overlayFinanceAlunos">
+  <div class="professores-overlay" id="overlayFinanceAlunos">
   <div class="professores-container">
 
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1279,7 +580,85 @@ table tbody {
 
   </div>
 </div>          
-          
+
+<!-- ===============================
+     TABELA ADMINISTRATIVA
+================================ -->
+<div class="professores-overlay" id="equipaAdministrativaWrapper" style="display:none;">
+  <div class="professores-container tabela-wrapper">
+
+    <!-- HEADER -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 class="modal-title">Equipa Administrativa</h2>
+      <button class="btn btn-secondary" onclick="fecharEquipaAdministrativa()">✖ Fechar</button>
+    </div>
+
+    <!-- BOTÃO ADICIONAR PESSOAL -->
+    <button class="btn btn-primary" onclick="document.getElementById('formAdd').style.display='block'">
+      ➕ Adicionar Pessoal
+    </button>
+
+    <!-- TABELA -->
+    <table class="tabela-professores">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Cargo</th>
+          <th>Telefone</th>
+          <th>Localização</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in equipa %}
+        <tr>
+          <td data-label="Nome">{{ p.nome }}</td>
+          <td data-label="Cargo">{{ p.cargo }}</td>
+          <td data-label="Telefone">{{ p.telefone }}</td>
+          <td data-label="Localização">{{ p.localizacao }}</td>
+          <td data-label="Ações">
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="abrirEditar(
+                '{{ p.id }}',
+                '{{ p.nome }}',
+                '{{ p.cargo }}',
+                '{{ p.telefone }}',
+                '{{ p.localizacao }}'
+               )">
+               ✏️ Editar
+             </button>
+           </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!-- ===============================
+     FORMULÁRIO ADICIONAR PESSOAL
+================================ -->
+<div id="formAdd" class="professores-overlay" style="display:none;">
+  <div class="professores-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 class="professores-title">Adicionar Pessoal Administrativo</h3>
+      <button class="btn btn-secondary" onclick="document.getElementById('formAdd').style.display='none'">✖ Fechar</button>
+    </div>
+
+    <form method="post" action="/equipa-administrativa/adicionar">
+      <input name="nome" placeholder="Nome completo" required>
+      <input name="cargo" placeholder="Cargo" required>
+      <input name="telefone" placeholder="Telefone" required>
+      <input name="localizacao" placeholder="Localização" required>
+
+      <button class="btn btn-primary">Guardar</button>
+    </form>
+  </div>
+</div>
+    
         </ul>
       </nav>
     </div>
@@ -2074,6 +1453,89 @@ async function verMesesProf(id) {
   }
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+
+  document.querySelectorAll(".nav-item.has-treeview > a").forEach(link => {
+
+    link.addEventListener("click", function (e) {
+
+      e.preventDefault();
+      e.stopPropagation();         
+      e.stopImmediatePropagation(); 
+
+      const parent = this.closest(".nav-item");
+      const submenu = parent.querySelector(".nav-treeview");
+
+      if (!submenu) return;
+
+      // Toggle manual controlado
+      if (parent.classList.contains("menu-open")) {
+        parent.classList.remove("menu-open");
+        submenu.style.display = "none";
+      } else {
+        parent.classList.add("menu-open");
+        submenu.style.display = "block";
+      }
+
+    }, true); 
+    
+  });
+
+});
+  
+  document.addEventListener("DOMContentLoaded", function () {
+
+  window.abrirEquipaAdministrativa = function () {
+    const overlay = document.getElementById("equipaAdministrativaWrapper");
+    if (!overlay) {
+      console.warn("equipaAdministrativaWrapper não encontrado");
+      return;
+    }
+
+    // Fecha outros overlays abertos (opcional, mas recomendado)
+    document.querySelectorAll(".professores-overlay").forEach(el => {
+      el.style.display = "none";
+    });
+
+    overlay.style.display = "flex";
+  };
+
+  window.fecharEquipaAdministrativa = function () {
+    const overlay = document.getElementById("equipaAdministrativaWrapper");
+    if (!overlay) {
+      console.warn("equipaAdministrativaWrapper não encontrado");
+      return;
+    }
+
+    overlay.style.display = "none";
+  };
+
+});
+
+function abrirEditar(id, nome, cargo, telefone, localizacao) {
+  console.log("Abrir edição:", id);
+
+  const overlay = document.getElementById("formEdit");
+  const form = document.getElementById("formEditar");
+
+  if (!overlay || !form) {
+    console.warn("Modal ou formulário de edição não encontrado");
+    return;
+  }
+
+  // Define a rota correta
+  form.action = "/equipa-administrativa/editar/" + id;
+
+  // Preenche os campos
+  document.getElementById("editNome").value = nome;
+  document.getElementById("editCargo").value = cargo;
+  document.getElementById("editTelefone").value = telefone;
+  document.getElementById("editLocalizacao").value = localizacao;
+
+  // Mostra o modal
+  overlay.style.display = "flex";
+}
+  
 /* ==============================
    FECHAR OVERLAYS
 ================================ */
@@ -2110,6 +1572,7 @@ function fecharDetalhesProf() {
 
 </body>
 </html>
+
 
 
 

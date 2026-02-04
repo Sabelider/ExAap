@@ -100,6 +100,52 @@ body { padding-top: 56px; }
   border-color: #444;
 }
 
+/* ============================
+   BOTÃO COPIAR TELEFONE
+============================ */
+
+.btn-copiar-tel {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  margin-left: 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.btn-copiar-tel:hover {
+  background: #0b5ed7;
+  transform: scale(1.05);
+}
+
+/* ============================
+   TOAST DE CONFIRMAÇÃO
+============================ */
+
+.toast-copia {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  background: #222;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: .3s ease;
+  font-size: 0.9rem;
+  z-index: 9999;
+  box-shadow: 0 8px 25px rgba(0,0,0,.2);
+}
+
+.toast-copia.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+    
 /* =====================================================
    TABELA — ALUNOS DISPONÍVEIS
 ===================================================== */
@@ -197,6 +243,14 @@ body { padding-top: 56px; }
 .btn-remover:hover,
 .btn-prof-remover:hover { opacity: .85; }
 
+   .btn-copiar {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 14px;
+} 
+    
 /* =====================================================
    MOBILE — ISOLADO POR TABELA
 ===================================================== */
@@ -492,7 +546,7 @@ body { padding-top: 56px; }
         </tr>
       </thead>
       <tbody>
-        <!-- JS injeta linhas aqui -->
+        
       </tbody>
     </table>
 
@@ -703,23 +757,30 @@ body { padding-top: 56px; }
     </div>
   </div>
 
-  <!-- PROFESSORES -->
-  <div class="professores-overlay" id="overlayProfessores">
-    <div class="professores-container">
-      <div style="display:flex;justify-content:space-between">
-        <div class="alunos-title">👨‍🏫 Professores Online</div>
-        <button class="btn btn-secondary" onclick="fecharProfessores()">Fechar</button>
-      </div>
-      <table class="tabela-professores" id="tabela-professores">
-        <thead>
-          <tr>
-            <th>Email</th><th>Nome</th><th>Status</th><th>Ações</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+ <!-- PROFESSORES -->
+<div class="professores-overlay" id="overlayProfessores">
+  <div class="professores-container">
+    <div style="display:flex;justify-content:space-between">
+      <div class="alunos-title">👨‍🏫 Professores Online</div>
+      <button class="btn btn-secondary" onclick="fecharProfessores()">Fechar</button>
     </div>
+
+    <table class="tabela-professores" id="tabela-professores">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Nome</th>
+          <th>Telefone</th> 
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+    </table>
   </div>
+</div>
+
 
  <!-- Conteúdo -->
   <div class="content-wrapper">
@@ -820,7 +881,7 @@ function toggleDarkMode() {
   document.body.classList.toggle("dark-mode");
 }
 
-// 📊 BUSCAR ESTATÍSTICAS
+
 fetch("/estatisticas-dashboard")
   .then(res => res.json())
   .then(dados => {
@@ -866,13 +927,11 @@ async function carregarAlunos() {
     return;
   }
 
-  // abre modal
   overlay.style.display = "flex";
 
-  // loading inicial
   tbody.innerHTML = `
     <tr>
-      <td colspan="5" class="loader-alunos">
+      <td colspan="6" class="loader-alunos">
         Carregando alunos...
       </td>
     </tr>
@@ -885,7 +944,7 @@ async function carregarAlunos() {
     if (!res.ok) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="loader-alunos" style="color:red">
+          <td colspan="6" class="loader-alunos" style="color:red">
             Erro ao buscar alunos
           </td>
         </tr>
@@ -895,7 +954,6 @@ async function carregarAlunos() {
 
     let alunos = await res.json();
 
-    // ✅ FILTRA NOMES VAZIOS / NULL
     alunos = alunos.filter(a =>
       a &&
       a.nome &&
@@ -907,7 +965,7 @@ async function carregarAlunos() {
     if (!alunos.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center;font-weight:bold">
+          <td colspan="6" style="text-align:center;font-weight:bold">
             Nenhum aluno válido encontrado
           </td>
         </tr>
@@ -919,11 +977,20 @@ async function carregarAlunos() {
 
       const nome = a.nome?.toString().trim() || "—";
       const disciplina = a.disciplina || "—";
+      const telefone = a.telefone || "—";
 
       tbody.innerHTML += `
         <tr>
           <td data-label="Nome">${nome}</td>
           <td data-label="Disciplina">${disciplina}</td>
+
+          <td data-label="Telefone">
+            ${telefone}
+            <button class="btn-copiar"
+                onclick="copiarTelefone('${telefone}')">
+                📋
+            </button>
+          </td>
 
           <td data-label="Status"
               class="${a.online ? 'status-online' : 'status-offline'}">
@@ -952,7 +1019,7 @@ async function carregarAlunos() {
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="loader-alunos" style="color:red">
+        <td colspan="6" class="loader-alunos" style="color:red">
           Erro inesperado
         </td>
       </tr>
@@ -960,6 +1027,50 @@ async function carregarAlunos() {
   }
 
 }
+
+function copiarTelefone(numero) {
+
+  if (!numero || numero === "—") return;
+
+  navigator.clipboard.writeText(numero).then(() => {
+    alert("📞 Número copiado: " + numero);
+  });
+
+}
+
+async function removerAluno(nome) {
+
+  if (!nome) return;
+
+  const confirmar = confirm(
+    `Tem certeza que deseja remover o aluno:\n${nome}?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+
+    const res = await fetch("/remover-aluno", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ nome })
+    });
+
+    const data = await res.json();
+
+    console.log("🔍 Resposta backend:", data);
+
+    alert(data.message || "Aluno removido com sucesso ✅");
+    carregarAlunos(); // 🔄 Atualiza a tabela
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro de conexão com o servidor ❌");
+  }
+}
+  
 function fecharAlunos() {
   const overlay = document.getElementById("overlayAlunos");
 
@@ -1083,7 +1194,7 @@ async function carregarProfessores() {
 
   tbody.innerHTML = `
     <tr>
-      <td colspan="4" class="loader-alunos">
+      <td colspan="5" class="loader-alunos">
         Carregando professores...
       </td>
     </tr>
@@ -1102,7 +1213,7 @@ async function carregarProfessores() {
     if (!profs.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="4" style="text-align:center;font-weight:bold">
+          <td colspan="5" style="text-align:center;font-weight:bold">
             Nenhum professor online
           </td>
         </tr>
@@ -1122,9 +1233,21 @@ async function carregarProfessores() {
       tbody.innerHTML += `
         <tr>
 
-          <td data-label="Email">${p.email}</td>
+          <td data-label="Email">${p.email || "-"}</td>
 
-          <td data-label="Nome">${p.nome}</td>
+          <td data-label="Nome">${p.nome || "-"}</td>
+
+          <td data-label="Telefone">
+            <span class="telefone-texto">${p.telefone || "-"}</span>
+
+            ${p.telefone ? `
+              <button 
+                class="btn-copiar-tel"
+                onclick="copiarTelefone('${p.telefone}')">
+                Copiar
+              </button>
+            ` : ""}
+          </td>
 
           <td data-label="Status"
               class="${p.online ? 'prof-online' : 'prof-offline'}">
@@ -1142,7 +1265,10 @@ async function carregarProfessores() {
       `;
 
       if (select && p.email) {
-        select.innerHTML += `<option value="${p.email}">${p.email}</option>`;
+        select.innerHTML += `
+          <option value="${p.email}">
+            ${p.nome} - ${p.telefone || "Sem nº"}
+          </option>`;
       }
 
     });
@@ -1151,7 +1277,7 @@ async function carregarProfessores() {
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="loader-alunos" style="color:red">
+        <td colspan="5" class="loader-alunos" style="color:red">
           Erro ao carregar professores
         </td>
       </tr>
@@ -1160,6 +1286,68 @@ async function carregarProfessores() {
   }
 
 }
+
+  function copiarTelefone(numero) {
+
+  if (!numero || numero === "-") {
+    alert("Número indisponível");
+    return;
+  }
+
+  navigator.clipboard.writeText(numero)
+    .then(() => {
+
+      const toast = document.createElement("div");
+      toast.className = "toast-copia";
+      toast.innerText = "📋 Número copiado!";
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => toast.classList.add("show"), 50);
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+
+    })
+    .catch(() => alert("Erro ao copiar número"));
+}
+
+async function removerProfessor(email) {
+
+  if (!email) return;
+
+  const confirmar = confirm(
+    `Tem certeza que deseja remover o professor:\n${email}?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+
+    const res = await fetch("/remover-professor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+
+    console.log("🔍 Resposta backend:", data);
+
+    // 🔥 SEMPRE trata como sucesso
+    alert(data.message || "Professor removido com sucesso ✅");
+    carregarProfessores(); // 🔄 Atualiza a tabela
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro de conexão com o servidor ❌");
+  }
+}
+
   
 function fecharProfessores() {
 
@@ -1572,6 +1760,8 @@ function fecharDetalhesProf() {
 
 </body>
 </html>
+
+
 
 
 

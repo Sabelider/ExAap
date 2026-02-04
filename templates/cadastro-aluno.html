@@ -4,116 +4,159 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cadastro de Aluno</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      margin: 0;
-      padding: 0;
-      color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
+<style>
+  * {
+    box-sizing: border-box;
+  }
 
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    margin: 0;
+    padding: 10px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 520px;
+    color: #000;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 22px;
+    color: #181d38;
+  }
+
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 500;
+    font-size: 15px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    background: #f9f9f9;
+    transition: 0.3s;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    background: #ffffff;
+    border: 1px solid #00c9ff;
+  }
+
+  button {
+    margin-top: 25px;
+    padding: 14px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+    color: #000;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: linear-gradient(135deg, #00a0c9, #7cd77b);
+  }
+
+  .logo {
+    display: block;
+    margin: 0 auto 20px;
+    max-width: 120px;
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.15));
+  }
+
+  /* 📱 Tablets e celulares médios */
+  @media (max-width: 768px) {
     .container {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-      width: 100%;
-      max-width: 520px;
-      color: #000;
+      padding: 25px;
+      border-radius: 16px;
     }
 
     h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      font-size: 22px;
-      color: #181d38;
+      font-size: 20px;
+    }
+  }
+
+  /* 📱 Celulares pequenos */
+  @media (max-width: 480px) {
+    body {
+      padding: 8px;
+    }
+
+    .container {
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 18px;
     }
 
     label {
-      display: block;
-      margin-top: 15px;
-      font-weight: 500;
-      font-size: 15px;
+      font-size: 14px;
     }
 
     input, select {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      background: #f9f9f9;
-      transition: 0.3s;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      background: #ffffff;
-      border: 1px solid #00c9ff;
+      font-size: 14px;
+      padding: 10px;
     }
 
     button {
-      margin-top: 25px;
-      padding: 14px;
-      width: 100%;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      color: #000;
-      font-weight: 700;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: linear-gradient(135deg, #00a0c9, #7cd77b);
+      font-size: 15px;
+      padding: 12px;
     }
 
     .logo {
-      display: block;
-      margin: 0 auto 20px;
-      max-width: 120px;
-      filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.15));
+      max-width: 95px;
+      margin-bottom: 15px;
+    }
+  }
+
+ 
+  @media (max-width: 360px) {
+    h2 {
+      font-size: 16px;
     }
 
-    @media (max-width: 500px) {
-      .container {
-        padding: 25px;
-        margin: 10px;
-      }
+    button {
+      font-size: 14px;
     }
-  </style>
+  }
+</style>
 
-  <script>
-    function capturarLocalizacao() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          document.getElementById("latitude").value = position.coords.latitude;
-          document.getElementById("longitude").value = position.coords.longitude;
-        }, function(error) {
-          alert("Erro ao capturar localização. Permita o acesso.");
-        });
-      } else {
-        alert("Geolocalização não suportada pelo seu navegador.");
-      }
-    }
-  </script>
 </head>
 
-<body onload="capturarLocalizacao()">
+<body>
   <div class="container">
     <img src="/static/logo.png" alt="Logo da Escola" class="logo">
     <h2>Cadastro de Aluno</h2>
 
     <form method="post" action="/cadastro-aluno">
+
       <label for="nome">Nome Completo</label>
       <input type="text" name="nome" required>
 
@@ -138,8 +181,6 @@
       <label for="bairro">Bairro</label>
       <input type="text" name="bairro" required>
 
-      <input type="hidden" name="latitude" id="latitude">
-      <input type="hidden" name="longitude" id="longitude">
 
       <label for="telefone">Telefone</label>
       <input type="tel" name="telefone" required>
@@ -148,17 +189,12 @@
       <select name="disciplina" required>
         <option value="">Selecione</option>
         <option>Inglês</option>
-        <option>Língua Portuguesa</option>
-        <option>Língua Francesa</option>
-        <option>Matemática</option>
-        <option>Química</option>
-        <option>Física</option>
       </select>
 
       <label for="outra_disciplina">Outra Disciplina (opcional)</label>
       <input type="text" name="outra_disciplina">
 
-      <!-- NOVO CAMPO ADICIONADO AQUI: Nível de Inglês -->
+      <!-- NÍVEL DE INGLÊS -->
       <label for="nivel_ingles">Nível de Inglês</label>
       <select name="nivel_ingles" required>
         <option value="">Selecione o nível</option>
@@ -168,7 +204,7 @@
         <option value="Fluente">Fluente</option>
       </select>
 
-      <button type="submit">Cadastrar</button>
+      <button type="submit">Registrar</button>
     </form>
   </div>
 </body>

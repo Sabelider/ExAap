@@ -8,103 +8,129 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #f4f4f4;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      padding: 20px 12px;
-      flex-direction: column;
-      align-items: center;
-    }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f4f4f4;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  padding: 18px 12px;
+  flex-direction: column;
+  align-items: center;
+}
 
-    .top-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 60px;
-      background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
+/* ================= TOP BAR ================= */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 58px;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
 
-    .top-bar img {
-      height: 42px;
-    }
+.top-bar img {
+  height: 40px;
+}
 
-    .form-container {
-      background: #ffffff;
-      padding: 90px 20px 25px;
-      border-radius: 18px;
-      width: 100%;
-      max-width: 680px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      margin-top: 70px;
-    }
+/* ================= FORM ================= */
+.form-container {
+  background: #ffffff;
+  padding: 85px 20px 22px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+  margin-top: 68px;
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 22px;
-      color: #181d38;
-    }
+h1 {
+  text-align: center;
+  margin-bottom: 18px;
+  font-size: 21px;
+  color: #181d38;
+  font-weight: 600;
+}
 
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-      background: #f9f9f9;
-    }
+/* ================= INPUTS ================= */
+input,
+select {
+  width: 100%;
+  padding: 9px 11px;
+  margin-bottom: 10px;
+  border-radius: 7px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #f9f9f9;
+  transition: 0.2s ease;
+}
 
-    input:focus, select:focus {
-      border-color: #00c9ff;
-      outline: none;
-      background: #fff;
-    }
+input:focus,
+select:focus {
+  border-color: #00c9ff;
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0,201,255,0.15);
+}
 
-    button {
-      padding: 14px;
-      background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
+/* ================= BUTTON ================= */
+button {
+  padding: 12px;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  border: none;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: 0.25s ease;
+}
 
-    button:hover {
-      background: linear-gradient(135deg, #00a0c9, #7cd77b);
-    }
+button:hover {
+  background: linear-gradient(135deg, #00a0c9, #7cd77b);
+  transform: translateY(-1px);
+}
 
-    .success {
-      background: #4ade80;
-      color: #064e3b;
-      padding: 14px;
-      border-radius: 10px;
-      width: 100%;
-      max-width: 680px;
-      margin-top: 90px;
-      text-align: center;
-      font-weight: 600;
-    }
+/* ================= SUCCESS ================= */
+.success {
+  background: #4ade80;
+  color: #064e3b;
+  padding: 13px;
+  border-radius: 9px;
+  width: 100%;
+  max-width: 680px;
+  margin-top: 85px;
+  text-align: center;
+  font-weight: 600;
+}
 
-    @media (max-width: 480px) {
-      h1 { font-size: 20px; }
-      input, select { font-size: 14px; padding: 10px; }
-      button { font-size: 15px; padding: 12px; }
-      .form-container { padding: 85px 15px 20px; }
-    }
-  </style>
+/* ================= MOBILE ================= */
+@media (max-width: 480px) {
+  h1 { font-size: 19px; }
+
+  input,
+  select {
+    font-size: 13.5px;
+    padding: 8px 10px;
+  }
+
+  button {
+    font-size: 14.5px;
+    padding: 11px;
+  }
+
+  .form-container {
+    padding: 80px 14px 18px;
+  }
+}
+</style>
+
 </head>
 
 <body>

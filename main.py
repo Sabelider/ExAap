@@ -1896,7 +1896,6 @@ async def post_cadastro(
     bairro: str = Form(...),
     residencia: str = Form(...),
     ponto_referencia: str = Form(...),
-    localizacao: str = Form(...),
     telefone: str = Form(...),
     telefone_alternativo: str = Form(None),
     email: str = Form(...),
@@ -1906,15 +1905,9 @@ async def post_cadastro(
     senha: str = Form(...)
 ):
     try:
-        # ============================
-        # VALIDAR EMAIL
-        # ============================
-        if not email or email.strip() == "":
+        if not email.strip():
             raise Exception("Email inválido")
 
-        # ============================
-        # DADOS DO PROFESSOR
-        # ============================
         dados = {
             "nome_completo": nome_completo,
             "nome_mae": nome_mae,
@@ -1925,7 +1918,6 @@ async def post_cadastro(
             "bairro": bairro,
             "residencia": residencia,
             "ponto_referencia": ponto_referencia,
-            "localizacao": localizacao,
             "telefone": telefone,
             "telefone_alternativo": telefone_alternativo,
             "email": email,
@@ -1937,31 +1929,13 @@ async def post_cadastro(
             "foto_perfil": "perfil.png"
         }
 
-        # ============================
-        # SALVAR NAS DUAS COLEÇÕES
-        # ============================
         db.collection("professores_online").add(dados)
         db.collection("professores_online2").document(email).set(dados)
 
-        # ============================
-        # FORÇAR FOTO EM PROFESSORES ANTIGOS
-        # ============================
-        try:
-            for doc in db.collection("professores_online").stream():
-                if "foto_perfil" not in doc.to_dict():
-                    db.collection("professores_online").document(doc.id).update({
-                        "foto_perfil": "perfil.png"
-                    })
-        except:
-            pass
-
-        # ============================
-        # RETORNO COM REDIRECIONAMENTO
-        # ============================
         return templates.TemplateResponse("sucesso.html", {
             "request": request,
             "mensagem": "Professor cadastrado com sucesso!",
-            "redirect_url": "/login_prof"   # envia a rota para o HTML
+            "redirect_url": "/login_prof"
         })
 
     except Exception as e:

@@ -1884,7 +1884,7 @@ async def verificar_aluno(
 async def get_cadastro(request: Request):
     return templates.TemplateResponse("professores_online.html", {"request": request, "success": False})
 
-app.post("/professores_online", response_class=HTMLResponse)
+@app.post("/professores_online", response_class=HTMLResponse)
 async def post_cadastro(
     request: Request,
     nome_completo: str = Form(...),

@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cadastro de Professores</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-yI1D+/s0IV8I+0+Vgqgk19MrbEbQnZQkAIK5w1rZsU3u4XhG8yT1A4rFZ5cOa2kxkG7rA3+3kd4xQ5aK0d1ckA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
     body {
       margin: 0;
@@ -13,7 +15,7 @@
       color: #333;
       display: flex;
       justify-content: center;
-      padding: 40px 20px;
+      padding: 20px 12px;
       flex-direction: column;
       align-items: center;
     }
@@ -29,59 +31,55 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     .top-bar img {
-      height: 45px;
+      height: 42px;
     }
 
     .form-container {
-      background-color: #ffffff;
-      padding: 100px 30px 30px;
-      border-radius: 20px;
+      background: #ffffff;
+      padding: 90px 20px 25px;
+      border-radius: 18px;
       width: 100%;
-      max-width: 700px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-      margin-top: 80px;
+      max-width: 680px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      margin-top: 70px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
+      font-size: 22px;
       color: #181d38;
-      font-size: 24px;
     }
 
     input, select {
       width: 100%;
       padding: 12px;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      font-size: 16px;
-      background-color: #f9f9f9;
-      transition: border-color 0.3s ease;
+      font-size: 15px;
+      background: #f9f9f9;
     }
 
     input:focus, select:focus {
       border-color: #00c9ff;
       outline: none;
-      background-color: #fff;
+      background: #fff;
     }
 
     button {
-      padding: 14px 20px;
+      padding: 14px;
       background: linear-gradient(135deg, #00c9ff, #92fe9d);
       border: none;
       border-radius: 10px;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      color: #000;
       width: 100%;
-      margin-top: 10px;
-      transition: background 0.3s ease;
     }
 
     button:hover {
@@ -89,41 +87,50 @@
     }
 
     .success {
-      background-color: #4ade80;
+      background: #4ade80;
       color: #064e3b;
-      padding: 15px;
-      margin: 90px 0 20px;
+      padding: 14px;
       border-radius: 10px;
       width: 100%;
-      max-width: 700px;
+      max-width: 680px;
+      margin-top: 90px;
       text-align: center;
       font-weight: 600;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 20px; }
+      input, select { font-size: 14px; padding: 10px; }
+      button { font-size: 15px; padding: 12px; }
+      .form-container { padding: 85px 15px 20px; }
     }
   </style>
 </head>
+
 <body>
+
   <div class="top-bar">
     <img src="/static/logo.png" alt="Logo">
   </div>
 
   {% if success %}
-  <div class="success">Cadastro enviado com sucesso!</div>
+    <div class="success">Cadastro enviado com sucesso!</div>
   {% endif %}
 
-  <form class="form-container" id="cadastroForm" method="post">
+  <form class="form-container" method="post">
     <h1>Cadastro de Professores</h1>
 
     <input type="text" name="nome_completo" placeholder="Nome completo" required>
     <input type="text" name="nome_mae" placeholder="Nome da mãe" required>
     <input type="text" name="nome_pai" placeholder="Nome do pai" required>
     <input type="text" name="bilhete" placeholder="Nº do bilhete de identidade" required>
+
     <input type="text" name="provincia" placeholder="Província" required>
     <input type="text" name="municipio" placeholder="Município" required>
     <input type="text" name="bairro" placeholder="Bairro" required>
     <input type="text" name="residencia" placeholder="Local de residência" required>
     <input type="text" name="ponto_referencia" placeholder="Ponto de referência" required>
-    <input type="text" name="localizacao" id="localizacao" placeholder="Captando localização..." readonly required>
+
     <input type="tel" name="telefone" placeholder="Nº de telefone" required>
     <input type="tel" name="telefone_alternativo" placeholder="Telefone alternativo">
     <input type="email" name="email" placeholder="Email" required>
@@ -134,12 +141,13 @@
       <option value="faculdade">Ensino Superior</option>
     </select>
 
-    <input type="text" name="ano_faculdade" id="ano_faculdade" placeholder="Qual ano está frequentando?" style="display: none;">
+    <input type="text" name="ano_faculdade" id="ano_faculdade"
+           placeholder="Ano que está frequentando" style="display:none;">
 
-    <input type="text" name="area_formacao" placeholder="Área de formação" required>
+    <input type="text" name="area_formacao" placeholder="insira a disciplina que irá ensinar..." required>
     <input type="password" name="senha" placeholder="Definir senha" required>
 
-    <button type="submit">Enviar</button>
+    <button type="submit">Registrar</button>
   </form>
 
   <script>
@@ -153,18 +161,8 @@
         ano.required = false;
       }
     });
-
-    // Captar localização GPS
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function (position) {
-        document.getElementById('localizacao').value =
-          position.coords.latitude + ',' + position.coords.longitude;
-      }, function () {
-        document.getElementById('localizacao').value = 'Localização não autorizada';
-      });
-    } else {
-      document.getElementById('localizacao').value = 'Geolocalização não suportada';
-    }
   </script>
+
 </body>
 </html>
+

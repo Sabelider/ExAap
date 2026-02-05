@@ -7,10 +7,14 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <style>
+ <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: "Segoe UI", sans-serif;
   background: #f4f4f4;
   color: #333;
   display: flex;
@@ -32,7 +36,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 .top-bar img {
@@ -42,14 +46,15 @@ body {
 /* ================= FORM ================= */
 .form-container {
   background: #ffffff;
-  padding: 85px 20px 22px;
+  padding: 85px 22px 22px;
   border-radius: 16px;
   width: 100%;
-  max-width: 680px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+  max-width: 640px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
   margin-top: 68px;
 }
 
+/* ================= TITULO ================= */
 h1 {
   text-align: center;
   margin-bottom: 18px;
@@ -59,11 +64,12 @@ h1 {
 }
 
 /* ================= INPUTS ================= */
-input,
-select {
-  width: 100%;
-  padding: 9px 11px;
-  margin-bottom: 10px;
+.form-container input,
+.form-container select {
+  display: block;
+  width: 92%;
+  margin: 0 auto 10px;
+  padding: 8px 10px;
   border-radius: 7px;
   border: 1px solid #ccc;
   font-size: 14px;
@@ -71,16 +77,19 @@ select {
   transition: 0.2s ease;
 }
 
-input:focus,
-select:focus {
+.form-container input:focus,
+.form-container select:focus {
   border-color: #00c9ff;
   outline: none;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(0,201,255,0.15);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 201, 255, 0.15);
 }
 
 /* ================= BUTTON ================= */
 button {
+  display: block;
+  width: 92%;
+  margin: 8px auto 0;
   padding: 12px;
   background: linear-gradient(135deg, #00c9ff, #92fe9d);
   border: none;
@@ -88,7 +97,6 @@ button {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  width: 100%;
   transition: 0.25s ease;
 }
 
@@ -104,7 +112,7 @@ button:hover {
   padding: 13px;
   border-radius: 9px;
   width: 100%;
-  max-width: 680px;
+  max-width: 640px;
   margin-top: 85px;
   text-align: center;
   font-weight: 600;
@@ -112,21 +120,18 @@ button:hover {
 
 /* ================= MOBILE ================= */
 @media (max-width: 480px) {
-  h1 { font-size: 19px; }
-
-  input,
-  select {
-    font-size: 13.5px;
-    padding: 8px 10px;
-  }
-
-  button {
-    font-size: 14.5px;
-    padding: 11px;
+  h1 {
+    font-size: 19px;
   }
 
   .form-container {
-    padding: 80px 14px 18px;
+    padding: 78px 14px 18px;
+  }
+
+  .form-container input,
+  .form-container select,
+  button {
+    width: 100%;
   }
 }
 </style>

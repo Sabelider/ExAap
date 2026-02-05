@@ -1884,7 +1884,7 @@ async def verificar_aluno(
 async def get_cadastro(request: Request):
     return templates.TemplateResponse("professores_online.html", {"request": request, "success": False})
 
-@app.post("/professores_online", response_class=HTMLResponse)
+app.post("/professores_online", response_class=HTMLResponse)
 async def post_cadastro(
     request: Request,
     nome_completo: str = Form(...),
@@ -1902,11 +1902,13 @@ async def post_cadastro(
     nivel_ensino: str = Form(...),
     ano_faculdade: str = Form(None),
     area_formacao: str = Form(...),
-    senha: str = Form(...)
+    senha: str = Form(...),
 ):
     try:
-        if not email.strip():
-            raise Exception("Email inválido")
+        email = email.strip().lower()
+
+        if not email:
+            raise ValueError("Email inválido")
 
         dados = {
             "nome_completo": nome_completo,
@@ -1926,26 +1928,35 @@ async def post_cadastro(
             "area_formacao": area_formacao,
             "senha": senha,
             "online": True,
-            "foto_perfil": "perfil.png"
+            "foto_perfil": "perfil.png",
         }
 
+        # grava
         db.collection("professores_online").add(dados)
         db.collection("professores_online2").document(email).set(dados)
 
-        return templates.TemplateResponse("sucesso.html", {
-            "request": request,
-            "mensagem": "Professor cadastrado com sucesso!",
-            "redirect_url": "/login_prof"
-        })
+        return templates.TemplateResponse(
+            "sucesso.html",
+            {
+                "request": request,
+                "success": True,
+                "mensagem": "Professor cadastrado com sucesso!",
+                "redirect_url": "/login_prof",
+            },
+        )
 
     except Exception as e:
-        print("❌ ERRO:", e)
-        return templates.TemplateResponse("erro.html", {
-            "request": request,
-            "mensagem": f"Erro ao cadastrar professor: {str(e)}"
-        })
+        print("❌ ERRO AO CADASTRAR PROFESSOR:", e)
 
-
+        return templates.TemplateResponse(
+            "erro.html",
+            {
+                "request": request,
+                "success": False,
+                "mensagem": f"Erro ao cadastrar professor: {str(e)}",
+            },
+        )
+        
 @app.get("/login_prof", response_class=HTMLResponse)
 async def login_prof_get(request: Request):
     return templates.TemplateResponse("login_prof.html", {"request": request, "erro": None})

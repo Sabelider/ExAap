@@ -191,13 +191,16 @@ window.addEventListener('load', async () => {
   }
 });
 
-// ▶️ Chamar aluno
+// ▶️ Chamar aluno (ATUALIZADO)
 chamarAlunoBtn.onclick = async () => {
+
   const aluno = alunoNome.value.trim();
   if (!aluno || !lastRoomData.prebuilt_links?.guest || !lastRoomData.prebuilt_links?.host)
     return alert('A sala ainda não foi criada corretamente.');
 
   try {
+
+    // 🔹 1️⃣ Envia link da aula (MANTIDO)
     const resp = await fetch('/enviar-id-aula', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -209,11 +212,30 @@ chamarAlunoBtn.onclick = async () => {
       })
     });
 
-    if (resp.ok) {
-      window.location.href = lastRoomData.prebuilt_links.host;
-    } else {
-      alert('❌ Falha ao enviar link.');
+    if (!resp.ok) {
+      return alert('❌ Falha ao enviar link.');
     }
+
+    // 🔥 2️⃣ NOVA FUNÇÃO → REGISTRAR AULA
+    fetch('/registrar-aula', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        aluno: aluno,
+        professor: "{{ email }}"
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log("📘 Aula enviada para registro:", data);
+    })
+    .catch(err => {
+      console.error("Erro ao registrar aula:", err);
+    });
+
+    // 🔹 3️⃣ Redireciona normalmente (MANTIDO)
+    window.location.href = lastRoomData.prebuilt_links.host;
+
   } catch (err) {
     alert('Erro ao chamar aluno.');
   }
@@ -222,4 +244,5 @@ chamarAlunoBtn.onclick = async () => {
 
 </body>
 </html>
+
 

@@ -324,6 +324,60 @@ def safe_template_response(template_name, context, request=None):
 # ROTA LOGIN
 # ===============================
 
+@app.post("/login")
+async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
+    try:
+        alunos_ref = db.collection("alunos")
+
+        nome_digitado = nome.strip().lower()
+        senha_digitada = senha.strip().lower()
+
+        alunos = alunos_ref.stream()
+
+        for aluno in alunos:
+            dados = aluno.to_dict() or {}
+
+            nome_banco = str(dados.get("nome", "")).strip().lower()
+            senha_banco = str(dados.get("senha", "")).strip().lower()
+
+            if nome_banco == nome_digitado and senha_banco == senha_digitada:
+
+                if hasattr(request, "session"):
+                    request.session["aluno_logado"] = True
+                    request.session["aluno_nome"] = nome_banco
+
+                try:
+                    aluno.reference.update({"online": True})
+                except Exception as e:
+                    print("Firebase erro:", e)
+
+                return RedirectResponse(
+                    url=f"/perfil/{dados.get('nome', '')}",
+                    status_code=303
+                )
+
+        # ❌ Login inválido
+        return render_template(
+            "login.html",
+            {
+                "request": request,
+                "erro": "Nome de usuário ou senha inválidos",
+                "sucesso": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO LOGIN:", e)
+
+        return render_template(
+            "login.html",
+            {
+                "request": request,
+                "erro": "Erro interno no servidor",
+                "sucesso": 0
+            }
+        )
+
 @app.get("/logini", response_class=HTMLResponse)
 def logini_get(request: Request):
 
@@ -1227,63 +1281,6 @@ async def exibir_login(request: Request, sucesso: int = 0):
             status_code=500
         )
         
-from fastapi import Form
-from fastapi.responses import RedirectResponse
-
-@app.post("/login")
-async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
-    try:
-        alunos_ref = db.collection("alunos")
-
-        nome_digitado = nome.strip().lower()
-        senha_digitada = senha.strip().lower()
-
-        alunos = alunos_ref.stream()
-
-        for aluno in alunos:
-            dados = aluno.to_dict() or {}
-
-            nome_banco = str(dados.get("nome", "")).strip().lower()
-            senha_banco = str(dados.get("senha", "")).strip().lower()
-
-            if nome_banco == nome_digitado and senha_banco == senha_digitada:
-
-                if hasattr(request, "session"):
-                    request.session["aluno_logado"] = True
-                    request.session["aluno_nome"] = nome_banco
-
-                try:
-                    aluno.reference.update({"online": True})
-                except Exception as e:
-                    print("Firebase erro:", e)
-
-                return RedirectResponse(
-                    url=f"/perfil/{dados.get('nome', '')}",
-                    status_code=303
-                )
-
-        # ❌ Login inválido
-        return safe_template_response(
-            "login.html",
-            {
-                "request": request,
-                "erro": "Nome de usuário ou senha inválidos",
-                "sucesso": 0
-            }
-        )
-
-    except Exception as e:
-        print("ERRO LOGIN:", e)
-
-        return safe_template_response(
-            "login.html",
-            {
-                "request": request,
-                "erro": "Erro interno no servidor",
-                "sucesso": 0
-            }
-        )
-
 
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):

@@ -337,11 +337,7 @@ def logout(request: Request):
         
 @app.get("/")
 async def read_root(request: Request):
-    context = {
-        "request": request,
-        "titulo": "Página Inicial"
-    }
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("index.html", {"request": request})
     
 
 class VinculoIn(BaseModel): 

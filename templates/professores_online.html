@@ -175,22 +175,8 @@ button:hover {
     <input type="text" name="ano_faculdade" id="ano_faculdade"
            placeholder="Ano que está frequentando" style="display:none;">
 
-    <input type="text" name="area_formacao" placeholder="Insira a disciplina que irá ensinar..." required>
-
-    <!-- Campo de senha com olho -->
-    <div style="position: relative;">
-      <input type="password" name="senha" id="senha" placeholder="Definir senha" required style="width: 100%; padding-right: 40px;">
-      
-      <span onclick="toggleSenha()" 
-            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">
-        👁️
-      </span>
-    </div>
-
-    <!-- Observação -->
-    <small style="display: block; margin-top: 5px; color: #555;">
-      Sensibilidade: O sistema diferencia Maiúsculas de Minúsculas. Se criares a senha como <b>Sabi2026</b> e tentares entrar com <b>sabi2026</b>, o acesso será negado.
-    </small>
+    <input type="text" name="area_formacao" placeholder="insira a disciplina que irá ensinar..." required>
+    <input type="password" name="senha" placeholder="Definir senha" required>
 
     <button type="submit">Registrar</button>
   </form>
@@ -206,17 +192,9 @@ button:hover {
         ano.required = false;
       }
     });
-
-    function toggleSenha() {
-      const senhaInput = document.getElementById("senha");
-      if (senhaInput.type === "password") {
-        senhaInput.type = "text";
-      } else {
-        senhaInput.type = "password";
-      }
-    }
   </script>
 
 </body>
 </html>
+
 

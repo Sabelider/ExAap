@@ -3915,7 +3915,6 @@ async def salarios(request: Request):
 
         email = email.strip().lower()
 
-        # Função para tratar valores "Undefined" e None
         def safe_value(val, default=""):
             if str(type(val)).endswith("Undefined'>"):
                 return default
@@ -3923,7 +3922,6 @@ async def salarios(request: Request):
                 return default
             return val
 
-        # Buscar no Firestore apenas o professor com o email informado
         prof_ref = db.collection("professores_online").where(
             filter=FieldFilter("email", "==", email)
         ).limit(1).stream()
@@ -3934,39 +3932,42 @@ async def salarios(request: Request):
 
         for doc in prof_ref:
             professor = doc.to_dict() or {}
-            nome_professor = safe_value(professor.get("nome_completo") or professor.get("nome"), "")
+            nome_professor = safe_value(
+                professor.get("nome_completo") or professor.get("nome"), ""
+            )
 
-            # Saldo atual
             salario_info = safe_value(professor.get("salario"), {}) or {}
             saldo_atual = int(safe_value(salario_info.get("saldo_atual"), 0))
 
-            # Pagamentos
             pagamentos_info = professor.get("pagamentos", {}) or {}
+
             if isinstance(pagamentos_info, dict):
                 for mes, pagamento in pagamentos_info.items():
                     if not isinstance(pagamento, dict):
                         pagamento = {}
+
                     pagamentos_list.append({
                         "mes": str(mes or ""),
                         "data_pagamento": str(pagamento.get("data_pagamento") or ""),
                         "valor_pago": float(pagamento.get("valor_pago") or 0),
                         "email_professor": str(pagamento.get("email_professor") or "")
                     })
-            break  # só deve haver 1 professor
+            break
 
-        # Renderiza o template passando saldo e histórico de pagamentos
-        return templates.TemplateResponse("salarios.html", {
-            "request": request,
-            "nome": nome_professor,
-            "saldo_atual": saldo_atual,
-            "pagamentos": pagamentos_list
-        })
+        return render_template(
+            "salarios.html",
+            {
+                "request": request,
+                "nome": nome_professor,
+                "saldo_atual": saldo_atual,
+                "pagamentos": pagamentos_list
+            }
+        )
 
     except Exception as e:
         print(f"❌ Erro ao carregar página de salário: {e}")
         return HTMLResponse(content=f"Erro: {str(e)}", status_code=500)
-
-
+        
 @app.get("/pagamentos", response_class=HTMLResponse)
 async def pagamentos(request: Request):
     campos_obrigatorios = {
@@ -3976,15 +3977,12 @@ async def pagamentos(request: Request):
         "valor_mensal": 0,
     }
 
-    # Campos de mensalidades de alunos (12 meses)
     for i in range(1, 13):
         campos_obrigatorios[f"mensalidade{i}"] = False
 
-    # Campos de mensalidades de professores (12 meses)
     for i in range(1, 13):
         campos_obrigatorios[f"mensapro{i}"] = False
 
-    # Atualizar todos os documentos na coleção
     alunos_ref = db.collection("alunos_professor").stream()
 
     for doc in alunos_ref:
@@ -4000,7 +3998,12 @@ async def pagamentos(request: Request):
         if atualizado:
             db.collection("alunos_professor").document(doc.id).update(novos_dados)
 
-    return templates.TemplateResponse("pagamentos.html", {"request": request})
+    return render_template(
+        "pagamentos.html",
+        {
+            "request": request
+        }
+    )
     
 
 ANGOLA_TZ = pytz.timezone("Africa/Luanda")

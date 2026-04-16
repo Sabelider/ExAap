@@ -80,7 +80,9 @@ def render_template(template_name: str, context: dict):
         return HTMLResponse(template.render(**context))
     except Exception as e:
         print("🔥 ERRO NO TEMPLATE:", e)
-        raise e
+        raise e 
+       
+templates = Jinja2Templates(directory="templates")
 print("DEBUG search path:", templates.env.loader.searchpath)
 print("TIPO search path:", type(templates.env.loader.searchpath))
 

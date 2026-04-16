@@ -65,9 +65,22 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 # --- FastAPI app ---
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-templates.env.cache = {}
+    
+from jinja2 import Environment, FileSystemLoader
+from fastapi.responses import HTMLResponse
 
+jinja_env = Environment(
+    loader=FileSystemLoader("templates"),
+    auto_reload=True
+)
+
+def render_template(template_name: str, context: dict):
+    try:
+        template = jinja_env.get_template(template_name)
+        return HTMLResponse(template.render(**context))
+    except Exception as e:
+        print("🔥 ERRO NO TEMPLATE:", e)
+        raise e
 print("DEBUG search path:", templates.env.loader.searchpath)
 print("TIPO search path:", type(templates.env.loader.searchpath))
 
@@ -379,7 +392,7 @@ def logout(request: Request):
         
 @app.get("/")
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return render_template("index.html", {"request": request})
     
 
 class VinculoIn(BaseModel): 

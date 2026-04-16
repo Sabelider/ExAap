@@ -324,6 +324,26 @@ def safe_template_response(template_name, context, request=None):
 # ROTA LOGIN
 # ===============================
 
+@app.get("/login")
+async def exibir_login(request: Request, sucesso: int = 0):
+    try:
+        return render_template(
+            "login.html",
+            {
+                "request": request,
+                "sucesso": sucesso,
+                "erro": None
+            }
+        )
+
+    except Exception as e:
+        print("ERRO AO CARREGAR LOGIN:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     try:

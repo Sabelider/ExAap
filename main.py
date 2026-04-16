@@ -263,6 +263,46 @@ templates = Jinja2Templates(directory="templates")
 ADMIN_USER = "admin"
 ADMIN_PASS = "1234"
 
+
+def safe_template_response(template_name, context, request=None):
+    print("\n====== DEBUG TEMPLATE ======")
+
+    # 🔎 Verifica template_name
+    print("template_name:", template_name)
+    print("type(template_name):", type(template_name))
+
+    if not isinstance(template_name, str):
+        raise TypeError(f"❌ template_name NÃO é string: {type(template_name)} -> {template_name}")
+
+    # 🔎 Verifica context
+    print("context type:", type(context))
+
+    if not isinstance(context, dict):
+        raise TypeError(f"❌ context NÃO é dict: {type(context)}")
+
+    # 🔎 Verifica chaves e valores do context
+    for k, v in context.items():
+        print(f"KEY: {k} ({type(k)}) | VALUE TYPE: {type(v)}")
+
+        # ⚠️ chave inválida
+        if not isinstance(k, str):
+            raise TypeError(f"❌ chave do context NÃO é string: {k} ({type(k)})")
+
+        # ⚠️ valor perigoso (dict dentro de dict como chave)
+        try:
+            hash(k)
+        except TypeError:
+            raise TypeError(f"❌ chave não é hashable: {k}")
+
+    # 🔎 Verifica request obrigatório
+    if "request" not in context:
+        print("⚠️ AVISO: 'request' não está no context")
+
+    print("====== FIM DEBUG ======\n")
+
+    return templates.TemplateResponse(template_name, context)
+
+
 # ===============================
 # ROTA LOGIN
 # ===============================

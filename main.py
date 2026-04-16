@@ -630,7 +630,19 @@ async def post_perfil_prof(
         url=f"/perfil_prof?email={email}",
         status_code=303
     )
-    
+
+
+@app.get("/professores_online", response_class=HTMLResponse)
+async def professores_online_get(request: Request, success: int = 0):
+    return render_template(
+        "professores_online.html",
+        {
+            "request": request,
+            "success": success
+        }
+    )
+
+
 @app.get('/alunos-disponiveis/{prof_email}')
 async def alunos_disponiveis(prof_email: str):
     prof_docs = db.collection('professores_online') \

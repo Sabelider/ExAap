@@ -133,7 +133,16 @@
       <input type="text" name="nome" id="nome" required>
 
       <label for="senha">Senha</label>
-      <input type="password" name="senha" id="senha" required>
+      
+      <div style="position: relative;">
+        <input type="password" name="senha" id="senha" required style="width: 100%; padding-right: 40px;">
+        
+        <!-- Ícone de olho -->
+        <span onclick="toggleSenha()" 
+              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">
+          👁️
+        </span>
+      </div>
 
       <div class="terms">
         <label>
@@ -145,5 +154,16 @@
       <button type="submit">Entrar</button>
     </form>
   </div>
+
+  <script>
+    function toggleSenha() {
+      const senhaInput = document.getElementById("senha");
+      if (senhaInput.type === "password") {
+        senhaInput.type = "text";
+      } else {
+        senhaInput.type = "password";
+      }
+    }
+  </script>
 </body>
 </html>

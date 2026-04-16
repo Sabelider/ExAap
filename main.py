@@ -64,8 +64,8 @@ app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-print("DEBUG templates directory:", templates.directory)
-print("TIPO directory:", type(templates.directory))
+print("DEBUG search path:", templates.env.loader.searchpath)
+print("TIPO search path:", type(templates.env.loader.searchpath))
 
 # --- CORS (opcional) ---
 app.add_middleware(

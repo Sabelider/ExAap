@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login de Professores</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-yI1D+/s0IV8I+0+Vgqgk19MrbEbQnZQkAIK5w1rZsU3u4XhG8yT1A4rFZ5cOa2kxkG7rA3+3kd4xQ5aK0d1ckA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <style>
     body {
       margin: 0;
@@ -65,12 +66,35 @@
       background-color: #fefefe;
       color: #000;
       box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+      box-sizing: border-box;
     }
 
     input:focus {
       outline: none;
       background-color: #ffffff;
       border: 1px solid #00c9ff;
+    }
+
+    /* CONTAINER DA SENHA */
+    .senha-container {
+      position: relative;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .senha-container input {
+      padding-right: 45px;
+      margin-bottom: 0;
+    }
+
+    .toggle-senha {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #555;
     }
 
     button {
@@ -107,6 +131,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="top-bar">
     <img src="/static/logo.png" alt="Logo">
@@ -120,9 +145,30 @@
     <h1>Login do Professor</h1>
 
     <input type="text" name="nome_completo" placeholder="Nome completo" required>
-    <input type="password" name="senha" placeholder="Senha" required>
+
+    <div class="senha-container">
+      <input type="password" name="senha" id="senha" placeholder="Senha" required>
+      <i class="fa-solid fa-eye toggle-senha" onclick="toggleSenha()"></i>
+    </div>
 
     <button type="submit">Entrar</button>
   </form>
+
+  <script>
+    function toggleSenha() {
+      const input = document.getElementById("senha");
+      const icon = document.querySelector(".toggle-senha");
+
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+  </script>
 </body>
 </html>

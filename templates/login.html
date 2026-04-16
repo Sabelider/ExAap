@@ -118,7 +118,26 @@
         font-size: 15px;
       }
     }
-  </style>
+</style>
+<style>
+  .senha-container {
+    position: relative;
+  }
+
+  .senha-container input {
+    width: 100%;
+    padding-right: 40px;
+  }
+
+  .toggle-senha {
+    position: absolute;
+    right: 10px;
+    top: 35px;
+    cursor: pointer;
+    font-size: 18px;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
   <div class="login-container">
@@ -133,7 +152,11 @@
       <input type="text" name="nome" id="nome" required>
 
       <label for="senha">Senha</label>
-      <input type="password" name="senha" id="senha" required>
+      
+      <div class="senha-container">
+        <input type="password" name="senha" id="senha" required>
+        <span class="toggle-senha" onclick="toggleSenha()">👁️</span>
+      </div>
 
       <div class="terms">
         <label>
@@ -145,5 +168,20 @@
       <button type="submit">Entrar</button>
     </form>
   </div>
+
+  <script>
+    function toggleSenha() {
+      const input = document.getElementById("senha");
+      const icon = document.querySelector(".toggle-senha");
+
+      if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "🙈";
+      } else {
+        input.type = "password";
+        icon.textContent = "👁️";
+      }
+    }
+  </script>
 </body>
 </html>

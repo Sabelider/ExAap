@@ -12,6 +12,7 @@ from fastapi import Body
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import unquote
+from jinja2 import Environment, FileSystemLoader
 
 import httpx
 from dotenv import load_dotenv
@@ -65,6 +66,7 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+templates.env.cache = {}
 
 print("DEBUG search path:", templates.env.loader.searchpath)
 print("TIPO search path:", type(templates.env.loader.searchpath))

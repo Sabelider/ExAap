@@ -2068,7 +2068,13 @@ async def post_cadastro(
         
 @app.get("/login_prof", response_class=HTMLResponse)
 async def login_prof_get(request: Request):
-    return templates.TemplateResponse("login_prof.html", {"request": request, "erro": None})
+    return render_template(
+        "login_prof.html",
+        {
+            "request": request,
+            "erro": None
+        }
+    )
 
 
 @app.post("/login_prof", response_class=HTMLResponse)
@@ -2077,52 +2083,73 @@ async def login_prof_post(
     nome_completo: str = Form(...),
     senha: str = Form(...)
 ):
-    professores_ref = db.collection("professores_online").where("nome_completo", "==", nome_completo).stream()
+    professores_ref = db.collection("professores_online") \
+        .where("nome_completo", "==", nome_completo) \
+        .stream()
 
     for prof in professores_ref:
         dados = prof.to_dict()
+
         if dados.get("senha") == senha:
             email = dados.get("email")
 
-            # Atualiza o campo 'online' para True
+            # 🟢 Atualiza status online
             db.collection("professores_online").document(prof.id).update({
                 "online": True
             })
 
-            return RedirectResponse(url=f"/perfil_prof?email={email}", status_code=303)
+            return RedirectResponse(
+                url=f"/perfil_prof?email={email}",
+                status_code=303
+            )
 
-    # ❌ Se não encontrou ou senha incorreta
-    return templates.TemplateResponse("login_prof.html", {
-        "request": request,
-        "erro": "Nome completo ou senha incorretos."
-    })
+    # ❌ Login inválido
+    return render_template(
+        "login_prof.html",
+        {
+            "request": request,
+            "erro": "Nome completo ou senha incorretos."
+        }
+    )
+    
 
 @app.post("/dados_professor", response_class=HTMLResponse)
 async def dados_professor(request: Request, email: str = Form(...)):
     try:
         email = email.strip().lower()
-        prof_query = db.collection("professores_online").where("email", "==", email).limit(1).stream()
+
+        prof_query = db.collection("professores_online") \
+            .where("email", "==", email) \
+            .limit(1) \
+            .stream()
+
         for prof_doc in prof_query:
             dados = prof_doc.to_dict()
 
-            # Pegar salários se já estiverem salvos
             salario_info = dados.get("salario", {})
             saldo_atual = salario_info.get("saldo_atual", 0)
             salario_mensal = salario_info.get("mensal_estimado", 0)
 
-            return templates.TemplateResponse("perfil_prof.html", {
-                "request": request,
-                "professor": dados,
-                "saldo_atual": saldo_atual,
-                "salario_mensal": salario_mensal,
-                "total_aulas": 0,  # ou pegue do Firestore se necessário
-                "valor_por_aula": 1250,
-                "total_a_receber": saldo_atual
-            })
+            return render_template(
+                "perfil_prof.html",
+                {
+                    "request": request,
+                    "professor": dados,
+                    "saldo_atual": saldo_atual,
+                    "salario_mensal": salario_mensal,
+                    "total_aulas": 0,
+                    "valor_por_aula": 1250,
+                    "total_a_receber": saldo_atual
+                }
+            )
 
         return HTMLResponse(content="Professor não encontrado.", status_code=404)
+
     except Exception as e:
-        return HTMLResponse(content=f"Erro interno: {str(e)}", status_code=500)
+        return HTMLResponse(
+            content=f"Erro interno: {str(e)}",
+            status_code=500
+        )
 
 
 @app.post("/logout_prof", response_class=HTMLResponse)
@@ -2133,9 +2160,9 @@ async def logout_prof(request: Request, email: str = Form(...)):
         db.collection("professores_online").document(prof.id).update({
             "online": False
         })
-        break  # só precisa atualizar um documento
+        break
 
-    return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/", status_code=303)
 
 @app.get("/meus-dados")
 async def meus_dados(email: str = Query(...)):
@@ -2149,7 +2176,6 @@ async def meus_dados(email: str = Query(...)):
 
 @app.get("/aulas-dia")
 async def aulas_dadas_no_dia(email: str = Query(...)):
-    # Em produção, puxar do Firebase a agenda desse professor
     return {
         "professor": email,
         "data": "2025-06-08",

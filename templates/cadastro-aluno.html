@@ -1,10 +1,9 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cadastro de Aluno</title>
-
 <style>
   * {
     box-sizing: border-box;
@@ -47,8 +46,7 @@
     font-size: 15px;
   }
 
-  input,
-  select {
+  input, select {
     width: 100%;
     padding: 12px;
     margin-top: 6px;
@@ -59,8 +57,7 @@
     transition: 0.3s;
   }
 
-  input:focus,
-  select:focus {
+  input:focus, select:focus {
     outline: none;
     background: #ffffff;
     border: 1px solid #00c9ff;
@@ -91,6 +88,7 @@
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.15));
   }
 
+  /* 📱 Tablets e celulares médios */
   @media (max-width: 768px) {
     .container {
       padding: 25px;
@@ -102,6 +100,7 @@
     }
   }
 
+  /* 📱 Celulares pequenos */
   @media (max-width: 480px) {
     body {
       padding: 8px;
@@ -121,8 +120,7 @@
       font-size: 14px;
     }
 
-    input,
-    select {
+    input, select {
       font-size: 14px;
       padding: 10px;
     }
@@ -138,6 +136,7 @@
     }
   }
 
+ 
   @media (max-width: 360px) {
     h2 {
       font-size: 16px;
@@ -152,52 +151,51 @@
 </head>
 
 <body>
-
   <div class="container">
     <img src="/static/logo.png" alt="Logo da Escola" class="logo">
     <h2>Cadastro de Aluno</h2>
 
     <form method="post" action="/cadastro-aluno">
 
-      <label>Nome Completo</label>
-      <input type="text" name="nome" placeholder="Digite o nome completo do aluno" required>
+      <label for="nome">Nome Completo</label>
+      <input type="text" name="nome" required>
 
-      <label>Nome da Mãe</label>
-      <input type="text" name="nome_mae" placeholder="Digite o nome completo da mãe" required>
+      <label for="nome_mae">Nome da Mãe</label>
+      <input type="text" name="nome_mae" required>
 
-      <label>Nome do Pai</label>
-      <input type="text" name="nome_pai" placeholder="Digite o nome completo do pai" required>
+      <label for="nome_pai">Nome do Pai</label>
+      <input type="text" name="nome_pai" required>
 
-      <label>Número do B.I</label>
-      <input type="text" name="bilhete" placeholder="Ex: 004578963LA032" required>
+      <label for="bilhete">Número do B.I</label>
+      <input type="text" name="bilhete" required>
 
-      <label>Senha</label>
-      <input type="password" name="senha" placeholder="Crie uma senha" required>
+      <label for="senha">Senha</label>
+      <input type="password" name="senha" required>
 
-      <label>Província</label>
-      <input type="text" name="provincia" placeholder="Ex: Luanda" required>
+      <label for="provincia">Província</label>
+      <input type="text" name="provincia" required>
 
-      <label>Município</label>
-      <input type="text" name="municipio" placeholder="Ex: Viana" required>
+      <label for="municipio">Município</label>
+      <input type="text" name="municipio" required>
 
-      <label>Bairro</label>
-      <input type="text" name="bairro" placeholder="Ex: Morro Bento" required>
+      <label for="bairro">Bairro</label>
+      <input type="text" name="bairro" required>
 
-      <label>Telefone</label>
-      <input type="tel" name="telefone" placeholder="Ex: 923 000 000" required>
 
-      <!-- DISCIPLINA ÚNICA -->
-      <label>Disciplina</label>
+      <label for="telefone">Telefone</label>
+      <input type="tel" name="telefone" required>
+
+      <label for="disciplina">Disciplina</label>
       <select name="disciplina" required>
         <option value="">Selecione</option>
-        <option value="Inglês">Inglês</option>
+        <option>Inglês</option>
       </select>
 
-      <label>Outra Disciplina (opcional)</label>
-      <input type="text" name="outra_disciplina" placeholder="Caso queira sugerir outra disciplina">
+      <label for="outra_disciplina">Outra Disciplina (opcional)</label>
+      <input type="text" name="outra_disciplina">
 
-      <!-- NÍVEL -->
-      <label>Nível de Inglês</label>
+      <!-- NÍVEL DE INGLÊS -->
+      <label for="nivel_ingles">Nível de Inglês</label>
       <select name="nivel_ingles" required>
         <option value="">Selecione o nível</option>
         <option value="Básico">Básico</option>
@@ -207,9 +205,9 @@
       </select>
 
       <button type="submit">Registrar</button>
-
     </form>
   </div>
-
 </body>
 </html>
+
+

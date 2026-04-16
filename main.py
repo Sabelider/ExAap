@@ -34,7 +34,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from fpdf import FPDF
 from pydantic import BaseModel
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # --- Load environment ---
 load_dotenv()

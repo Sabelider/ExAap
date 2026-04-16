@@ -560,33 +560,41 @@ async def vincular_aluno(item: VinculoIn):
 async def get_perfil_prof(request: Request, email: str):
     """
     Exibe o perfil do professor com base no email fornecido.
-    Esse email normalmente virá da sessão de login ou como query param após login.
     """
+
     professores_ref = db.collection("professores_online")
     query = professores_ref.where("email", "==", email).limit(1).stream()
     prof_doc = next(query, None)
 
     if not prof_doc:
-        return templates.TemplateResponse("erro.html", {"request": request, "mensagem": "Professor não encontrado"})
+        return render_template(
+            "erro.html",
+            {
+                "request": request,
+                "mensagem": "Professor não encontrado"
+            }
+        )
 
     prof_data = prof_doc.to_dict()
-    prof_data["id"] = prof_doc.id  # armazenar ID do documento para atualização posterior
+    prof_data["id"] = prof_doc.id
 
-    # Pega o saldo atual ou assume 0.0
     saldo = prof_data.get("saldo", 0.0)
+
     try:
         saldo_float = float(saldo)
     except (ValueError, TypeError):
         saldo_float = 0.0
 
-    # Formata o saldo como Kz 1.000,00
     saldo_formatado = f"{saldo_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-    return templates.TemplateResponse("perfil_prof.html", {
-        "request": request,
-        "professor": prof_data,
-        "saldo_atual": saldo_formatado
-    })
+    return render_template(
+        "perfil_prof.html",
+        {
+            "request": request,
+            "professor": prof_data,
+            "saldo_atual": saldo_formatado
+        }
+    )
 
 
 @app.post("/perfil_prof", response_class=HTMLResponse)
@@ -594,30 +602,34 @@ async def post_perfil_prof(
     request: Request,
     email: str = Form(...),
     descricao: str = Form(...),
-    foto_perfil: str = Form("perfil.png")  # 🔹 Novo campo opcional com valor padrão
+    foto_perfil: str = Form("perfil.png")
 ):
     """
-    Atualiza o campo 'descricao' e o campo 'foto_perfil' do professor.
+    Atualiza descrição e foto do professor.
     """
+
     professores_ref = db.collection("professores_online")
     query = professores_ref.where("email", "==", email).limit(1).stream()
     prof_doc = next(query, None)
 
     if not prof_doc:
-        return templates.TemplateResponse(
+        return render_template(
             "erro.html",
-            {"request": request, "mensagem": "Professor não encontrado para atualização."}
+            {
+                "request": request,
+                "mensagem": "Professor não encontrado para atualização."
+            }
         )
 
-    # Atualizar os campos no Firebase
     db.collection("professores_online").document(prof_doc.id).update({
         "descricao": descricao,
         "foto_perfil": foto_perfil
     })
 
-    # Redireciona para o perfil com dados atualizados
-    return RedirectResponse(url=f"/perfil_prof?email={email}", status_code=303)
-
+    return RedirectResponse(
+        url=f"/perfil_prof?email={email}",
+        status_code=303
+    )
     
 @app.get('/alunos-disponiveis/{prof_email}')
 async def alunos_disponiveis(prof_email: str):

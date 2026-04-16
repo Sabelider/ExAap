@@ -35,6 +35,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from fpdf import FPDF
 from pydantic import BaseModel
 
+
 # --- Load environment ---
 load_dotenv()
 
@@ -62,6 +63,9 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+print("DEBUG templates directory:", templates.directory)
+print("TIPO directory:", type(templates.directory))
 
 # --- CORS (opcional) ---
 app.add_middleware(
@@ -320,8 +324,21 @@ def logout(request: Request):
         
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-    
+    context = {"request": request}
+
+    print("DEBUG context:", context)
+    print("TIPO context:", type(context))
+
+    for k, v in context.items():
+        print(f"KEY: {k} | TYPE: {type(k)}")
+        print(f"VALUE TYPE: {type(v)}")
+
+    try:
+        return templates.TemplateResponse("index.html", context)
+    except Exception as e:
+        print("ERRO CAPTURADO:", e)
+        print("TIPO DO ERRO:", type(e))
+        return HTMLResponse(content=f"Erro: {e}", status_code=500)
 
 class VinculoIn(BaseModel): 
     professor_email: str

@@ -324,21 +324,8 @@ def logout(request: Request):
         
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    context = {"request": request}
-
-    print("DEBUG context:", context)
-    print("TIPO context:", type(context))
-
-    for k, v in context.items():
-        print(f"KEY: {k} | TYPE: {type(k)}")
-        print(f"VALUE TYPE: {type(v)}")
-
-    try:
-        return templates.TemplateResponse("index.html", context)
-    except Exception as e:
-        print("ERRO CAPTURADO:", e)
-        print("TIPO DO ERRO:", type(e))
-        return HTMLResponse(content=f"Erro: {e}", status_code=500)
+    return templates.TemplateResponse("index.html", {"request": request})
+    
 
 class VinculoIn(BaseModel): 
     professor_email: str

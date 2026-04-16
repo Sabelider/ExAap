@@ -1449,7 +1449,6 @@ async def get_sala_virtual_professor(
         email = email.strip().lower()
         aluno_normalizado = aluno.strip().lower() if aluno else None
 
-        # 🔍 Busca o documento do professor
         doc_ref = db.collection("professores_online2").document(email)
         doc = doc_ref.get()
 
@@ -1458,17 +1457,17 @@ async def get_sala_virtual_professor(
 
         professor = doc.to_dict()
 
-        # 🧪 Valida vínculo com o aluno, se fornecido
         if aluno:
-            # Buscar todos os documentos do professor na coleção alunos_professor
             docs = db.collection('alunos_professor') \
                 .where('professor', '==', email).stream()
 
             vinculo_encontrado = False
+
             for d in docs:
                 data = d.to_dict()
                 dados_aluno = data.get("dados_aluno", {})
                 nome_no_banco = dados_aluno.get("nome", "").strip().lower()
+
                 if nome_no_banco == aluno_normalizado:
                     vinculo_encontrado = True
                     break
@@ -1479,22 +1478,28 @@ async def get_sala_virtual_professor(
                     status_code=403
                 )
 
-        # 🔑 Gera ID da sala
         def slug(texto):
             return slugify(texto)
 
         sala_id = f"{slug(email)}-{slug(aluno_normalizado)}" if aluno else slug(email)
 
-        return templates.TemplateResponse("sala_virtual_professor.html", {
-            "request": request,
-            "email": email,
-            "aluno": aluno,
-            "professor": professor,
-            "sala_id": sala_id
-        })
+        return render_template(
+            "sala_virtual_professor.html",
+            {
+                "request": request,
+                "email": email,
+                "aluno": aluno,
+                "professor": professor,
+                "sala_id": sala_id
+            }
+        )
 
     except Exception as e:
-        return HTMLResponse(f"<h2 style='color:red'>Erro ao abrir sala do professor: {str(e)}</h2>", status_code=500)
+        return HTMLResponse(
+            f"<h2 style='color:red'>Erro ao abrir sala do professor: {str(e)}</h2>",
+            status_code=500
+        )
+        
 
 @app.get("/sala_virtual_aluno", response_class=HTMLResponse)
 async def get_sala_virtual_aluno(
@@ -1508,22 +1513,22 @@ async def get_sala_virtual_aluno(
     email_normalizado = email.strip().lower()
     aluno_normalizado = aluno.strip().lower()
 
-    # Verifica se o aluno está vinculado ao professor
     aluno_data = vinculo_existe(email_normalizado, aluno_normalizado)
     if not aluno_data:
         return HTMLResponse("<h2 style='color:red'>Aluno não encontrado ou não vinculado ao professor.</h2>", status_code=403)
 
-    # Verifica se o professor existe
     professor = buscar_professor_por_email(email_normalizado)
     if not professor:
         return HTMLResponse("<h2 style='color:red'>Professor não encontrado.</h2>", status_code=404)
 
-    return templates.TemplateResponse("sala_virtual_aluno.html", {
-        "request": request,
-        "aluno": aluno.strip(),  
-        "professor": email_normalizado
-    })
-
+    return render_template(
+        "sala_virtual_aluno.html",
+        {
+            "request": request,
+            "aluno": aluno.strip(),
+            "professor": email_normalizado
+        }
+    )
 
 import logging
 

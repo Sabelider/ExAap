@@ -335,10 +335,9 @@ def logout(request: Request):
     return RedirectResponse("/", status_code=302)
 
         
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def read_root(request: Request):
-    context = {"request": request}
-    return templates.TemplateResponse("index.html", context)
+    return {"ok": True}
     
 
 class VinculoIn(BaseModel): 

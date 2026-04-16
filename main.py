@@ -1760,9 +1760,14 @@ async def upload_comprovativo(
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)
 async def enviar_comprovativo(request: Request, aluno_nome: str):
     aluno_normalizado = aluno_nome.strip().lower()
-    return templates.TemplateResponse(
+
+    return render_template(
         "enviar_comprovativo.html",
-        {"request": request, "aluno_nome": aluno_nome, "aluno_normalizado": aluno_normalizado}
+        {
+            "request": request,
+            "aluno_nome": aluno_nome,
+            "aluno_normalizado": aluno_normalizado
+        }
     )
 
 

@@ -66,25 +66,50 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
     
-from jinja2 import Environment, FileSystemLoader
-from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
 
-jinja_env = Environment(
-    loader=FileSystemLoader("templates"),
-    auto_reload=True
-)
-
-def render_template(template_name: str, context: dict):
-    try:
-        template = jinja_env.get_template(template_name)
-        return HTMLResponse(template.render(**context))
-    except Exception as e:
-        print("🔥 ERRO NO TEMPLATE:", e)
-        raise e 
-       
+# ✔ ÚNICO motor de templates
 templates = Jinja2Templates(directory="templates")
-print("DEBUG search path:", templates.env.loader.searchpath)
-print("TIPO search path:", type(templates.env.loader.searchpath))
+
+
+def safe_template_response(template_name: str, context: dict, request: Request = None):
+    print("\n====== DEBUG TEMPLATE ======")
+
+    # garante dict válido
+    if context is None:
+        context = {}
+
+    if not isinstance(context, dict):
+        raise TypeError(f"context inválido: {type(context)}")
+
+    # garante request sempre presente (OBRIGATÓRIO no FastAPI templates)
+    if request and "request" not in context:
+        context["request"] = request
+
+    clean_context = {}
+
+    for k, v in context.items():
+        # valida chave
+        if not isinstance(k, str):
+            raise TypeError(f"Chave inválida no context: {k} ({type(k)})")
+
+        # evita estruturas perigosas / inconsistentes
+        if isinstance(v, dict):
+            clean_context[k] = dict(v)
+        elif isinstance(v, list):
+            clean_context[k] = list(v)
+        else:
+            clean_context[k] = v
+
+        print(f"KEY: {k} | TYPE: {type(v)}")
+
+    print("====== FIM DEBUG ======\n")
+
+    return templates.TemplateResponse(
+        template_name,
+        clean_context
+    )
 
 # --- CORS (opcional) ---
 app.add_middleware(
@@ -1207,16 +1232,16 @@ async def cadastrar_aluno(
     )
 
 
-@app.get("/login", response_class=HTMLResponse)
+@app.get("/login")
 async def exibir_login(request: Request, sucesso: int = 0):
     try:
-        return templates.TemplateResponse(
+        return safe_template_response(
             "login.html",
             {
-                "request": request,
                 "sucesso": sucesso,
                 "erro": None
-            }
+            },
+            request=request
         )
 
     except Exception as e:
@@ -1227,14 +1252,12 @@ async def exibir_login(request: Request, sucesso: int = 0):
             status_code=500
         )
 
-from fastapi import Form
 
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     try:
         alunos_ref = db.collection("alunos")
 
-        # 🔎 Normaliza os valores digitados
         nome_digitado = nome.strip().lower()
         senha_digitada = senha.strip().lower()
 
@@ -1246,46 +1269,45 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
             nome_banco = str(dados.get("nome", "")).strip().lower()
             senha_banco = str(dados.get("senha", "")).strip().lower()
 
-            if nome_banco == nome_digitado and senha_banco == senha_digitado:
+            if nome_banco == nome_digitado and senha_banco == senha_digitada:
 
-                # 🔐 Proteção contra erro de sessão
                 if hasattr(request, "session"):
                     request.session["aluno_logado"] = True
                     request.session["aluno_nome"] = nome_banco
 
-                # 🟢 Atualiza status (protegido)
                 try:
                     aluno.reference.update({"online": True})
-                except:
-                    pass  # evita crash se Firebase falhar
+                except Exception as e:
+                    print("Firebase update erro:", e)
 
                 return RedirectResponse(
                     url=f"/perfil/{dados.get('nome', '')}",
-                    status_code=HTTP_303_SEE_OTHER
+                    status_code=303
                 )
 
-        # ❌ Login inválido
-        return templates.TemplateResponse(
+        # ❌ login inválido
+        return safe_template_response(
             "login.html",
             {
-                "request": request,
                 "erro": "Nome de usuário ou senha inválidos",
                 "sucesso": 0
-            }
+            },
+            request=request
         )
 
     except Exception as e:
         print("ERRO LOGIN:", e)
 
-        return templates.TemplateResponse(
+        return safe_template_response(
             "login.html",
             {
-                "request": request,
                 "erro": "Erro interno no servidor",
                 "sucesso": 0
-            }
+            },
+            request=request
         )
-        
+
+
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:

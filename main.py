@@ -5286,3 +5286,12 @@ async def remover_aluno(payload: dict = Body(...)):
         "success": True,
         "message": "Aluno removido com sucesso"
     }
+    
+@app.get("/paginavendas", response_class=HTMLResponse)
+async def pagina_vendas(request: Request):
+    return render_template(
+        "paginavendas.html",
+        {
+            "request": request
+        }
+    )

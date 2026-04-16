@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SabApp - Curso de Inglês Online</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f8;
+      color: #333;
+    }
+
+    /* Cabeçalho */
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 30px;
+      background: linear-gradient(135deg, #00c9ff, #92fe9d);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-weight: 800;
+      color: #000;
+      margin: 0;
+      font-size: 26px;
+    }
+
+    /* Hero */
+    .hero {
+      background: url('/static/Professora-online.jpg') no-repeat center center;
+      background-size: cover;
+      color: #fff;
+      text-align: center;
+      padding: 120px 20px;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .hero h2 {
+      font-size: 38px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      max-width: 700px;
+      margin: auto;
+      margin-bottom: 25px;
+    }
+
+    .hero a {
+      background: #ffc107;
+      padding: 15px 35px;
+      color: #000;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      transition: 0.3s;
+    }
+
+    .hero a:hover {
+      background: #ffb000;
+    }
+
+    section {
+      padding: 60px 20px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    h2.section-title {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #004aad;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    /* Seção de Benefícios */
+    .benefits p {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 30px auto;
+    }
+
+    .benefits ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .benefits li {
+      background: #fdfdfd;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .benefits li i {
+      color: #00c9ff;
+      font-size: 20px;
+    }
+
+    /* Investimento / Calculadora */
+    .calculator {
+      background: #f4faff;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .calc-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .calc-controls button {
+      padding: 10px 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 6px;
+      background: #004aad;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .calc-controls button:hover {
+      background: #003c8c;
+    }
+
+    .calc-result {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+
+    /* Oferta Especial */
+    .offer {
+      background: #004aad;
+      color: #fff;
+      text-align: center;
+      padding: 50px 20px;
+      border-radius: 12px;
+    }
+
+    .offer a {
+      background: #ffc107;
+      padding: 15px 35px;
+      color: #000;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      transition: 0.3s;
+    }
+
+    .offer a:hover {
+      background: #ffb000;
+    }
+
+    /* Rodapé */
+    footer {
+      background: #222;
+      color: #ccc;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    footer a {
+      color: #ffc107;
+      margin: 0 10px;
+      text-decoration: none;
+      font-size: 22px;
+    }
+
+    footer p.note {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    @media (max-width: 768px) {
+      .hero h2 { font-size: 28px; }
+      .hero p { font-size: 16px; }
+      .calc-controls { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <header>
+    <h1>SabApp</h1>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h2>Aprenda Inglês e Transforme o Seu Futuro</h2>
+    <p>Do zero à conversação em até 96 dias</p>
+    <a href="https://sabapp.onrender.com/professores_online">Inscreva-se Agora</a>
+  </div>
+
+  <!-- Por que aprender inglês -->
+  <section class="benefits">
+    <h2 class="section-title">Por que aprender Inglês?</h2>
+    <p>Você já perdeu uma vaga de emprego por não falar inglês? O mundo fala inglês... e quem não fala, perde oportunidades!</p>
+  </section>
+
+  <!-- Estrutura do curso -->
+  <section class="benefits">
+    <h2 class="section-title">Estrutura do Curso</h2>
+    <ul>
+      <li><i class="fas fa-layer-group"></i> 4 Níveis: Iniciante, Elementar, Pré-Intermédio e Intermédio</li>
+      <li><i class="fas fa-book"></i> 12 Unidades com testes escritos e de Listening</li>
+      <li><i class="fas fa-clock"></i> 1 hora por dia, mínimo 3 aulas por semana (12 por mês)</li>
+    </ul>
+  </section>
+
+  <!-- Investimento -->
+  <section class="calculator">
+    <h2 class="section-title">Investimento</h2>
+    <p><strong>1.250 Kz por aula</strong> - Total mensal: <strong>15.000 Kz</strong></p>
+
+    <h3>Calcule seu Plano</h3>
+    <div class="calc-controls">
+      <button onclick="alterarMes(-1)">-</button>
+      <span id="mesesDisplay">1 Mês</span>
+      <button onclick="alterarMes(1)">+</button>
+    </div>
+    <div class="calc-result">
+      Total: <span id="totalDisplay">15.000 Kz</span>
+    </div>
+  </section>
+
+  <!-- Oferta Especial -->
+  <section class="offer">
+    <h2>Comece Agora e Mude o Seu Futuro!</h2>
+    <p>Garanta sua vaga e dê o primeiro passo rumo à fluência.</p>
+    <a href="https://sabapp.onrender.com/professores_online">Quero Começar Agora</a>
+  </section>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>SabApp © 2025 - Todos os direitos reservados</p>
+    <p>
+      <a href="#"><i class="fab fa-facebook"></i></a>
+      <a href="#"><i class="fab fa-instagram"></i></a>
+      <a href="https://wa.me/244928911299" target="_blank"><i class="fab fa-whatsapp"></i></a>
+      <a href="tel:+244928911299"><i class="fas fa-phone"></i></a>
+    </p>
+    <p class="note">Em caso de dúvidas, fale conosco pelo WhatsApp.</p>
+  </footer>
+
+  <script>
+    let meses = 1;
+    const mensalidade = 15000;
+
+    function alterarMes(valor) {
+      meses += valor;
+      if (meses < 1) meses = 1;
+      atualizarTotal();
+    }
+
+    function atualizarTotal() {
+      const desconto = (meses - 1) * 100;
+      const total = (mensalidade * meses) - desconto;
+      document.getElementById('mesesDisplay').innerText = meses + (meses > 1 ? ' Meses' : ' Mês');
+      document.getElementById('totalDisplay').innerText = total.toLocaleString('pt-PT') + ' Kz';
+    }
+  </script>
+</body>
+</html>

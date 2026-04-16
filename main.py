@@ -419,8 +419,11 @@ def logout(request: Request):
         
 @app.get("/")
 async def read_root(request: Request):
-    return render_template("index.html", {"request": request})
-    
+    return safe_template_response(
+        "index.html",
+        {},
+        request=request
+    )
 
 class VinculoIn(BaseModel): 
     professor_email: str

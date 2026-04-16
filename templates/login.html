@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login do Aluno</title>
+
+  <!-- FONT AWESOME -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <style>
     body {
       margin: 0;
@@ -44,7 +48,6 @@
       font-weight: 500;
     }
 
-    /* PADRONIZAÇÃO TOTAL DOS INPUTS */
     input[type="text"],
     input[type="password"] {
       width: 100%;
@@ -56,7 +59,7 @@
       background-color: #fff;
       color: #000;
       box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-      box-sizing: border-box; /* ESSENCIAL */
+      box-sizing: border-box;
     }
 
     input:focus {
@@ -108,7 +111,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
-    /* CONTAINER DA SENHA AJUSTADO */
+    /* SENHA */
     .senha-container {
       position: relative;
       width: 100%;
@@ -116,8 +119,8 @@
     }
 
     .senha-container input {
-      padding-right: 45px; /* espaço pro olho */
-      margin-bottom: 0; /* evita duplicar espaço */
+      padding-right: 45px;
+      margin-bottom: 0;
     }
 
     .toggle-senha {
@@ -127,7 +130,7 @@
       transform: translateY(-50%);
       cursor: pointer;
       font-size: 18px;
-      user-select: none;
+      color: #555;
     }
 
     @media (max-width: 480px) {
@@ -145,6 +148,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="login-container">
     <h2>Login do Aluno</h2>
@@ -161,7 +165,7 @@
       
       <div class="senha-container">
         <input type="password" name="senha" id="senha" required>
-        <span class="toggle-senha" onclick="toggleSenha()">👁️</span>
+        <i class="fa-solid fa-eye toggle-senha" onclick="toggleSenha()"></i>
       </div>
 
       <div class="terms">
@@ -182,10 +186,12 @@
 
       if (input.type === "password") {
         input.type = "text";
-        icon.textContent = "🙈";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
       } else {
         input.type = "password";
-        icon.textContent = "👁️";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
       }
     }
   </script>

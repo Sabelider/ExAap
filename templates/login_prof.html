@@ -120,9 +120,29 @@
     <h1>Login do Professor</h1>
 
     <input type="text" name="nome_completo" placeholder="Nome completo" required>
-    <input type="password" name="senha" placeholder="Senha" required>
+
+    <!-- Campo senha com olho -->
+    <div style="position: relative;">
+      <input type="password" name="senha" id="senha" placeholder="Senha" required style="width: 100%; padding-right: 40px;">
+      
+      <span onclick="toggleSenha()" 
+            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">
+        👁️
+      </span>
+    </div>
 
     <button type="submit">Entrar</button>
   </form>
+
+  <script>
+    function toggleSenha() {
+      const senhaInput = document.getElementById("senha");
+      if (senhaInput.type === "password") {
+        senhaInput.type = "text";
+      } else {
+        senhaInput.type = "password";
+      }
+    }
+  </script>
 </body>
 </html>

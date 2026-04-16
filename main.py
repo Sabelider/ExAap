@@ -8,7 +8,6 @@ import shutil
 import time
 import jwt
 import unicodedata
-from fastapi import Body
 from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from urllib.parse import unquote
@@ -34,9 +33,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from fpdf import FPDF
 from pydantic import BaseModel
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # --- Load environment ---
 load_dotenv()
@@ -65,9 +61,6 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
-print("DEBUG search path:", templates.env.loader.searchpath)
-print("TIPO search path:", type(templates.env.loader.searchpath))
 
 # --- CORS (opcional) ---
 app.add_middleware(
@@ -1053,21 +1046,18 @@ async def cadastrar_aluno(
     provincia: str = Form(...),
     municipio: str = Form(...),
     bairro: str = Form(...),
-
-    # 🔥 NÃO OBRIGATÓRIOS
-    latitude: Optional[str] = Form(None),
-    longitude: Optional[str] = Form(None),
-
+    latitude: str = Form(...),
+    longitude: str = Form(...),
     telefone: str = Form(...),
     disciplina: str = Form(...),
     bilhete: str = Form(...),
-    outra_disciplina: Optional[str] = Form(None),
+    outra_disciplina: str = Form(None),
     nivel_ingles: str = Form(...)
 ):
     alunos_ref = db.collection("alunos")
     nome_normalizado = nome.strip().lower()
 
-    # 🔎 Verifica se já existe aluno
+    # 🔎 Verifica se já existe aluno com esse nome normalizado
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
     if existente:
         return templates.TemplateResponse("cadastro-aluno.html", {
@@ -1075,17 +1065,18 @@ async def cadastrar_aluno(
             "erro": "Este nome já está cadastrado. Tente outro."
         })
 
-    # 🔄 Busca histórico de pagamentos
+    # 🔄 Busca histórico de pagamentos na coleção alunos_professor (com base no NOME, não no normalizado)
     paga_passado = []
     vinculo_query = db.collection("alunos_professor") \
         .where("aluno", "==", nome.strip().lower()) \
         .limit(1).stream()
     vinculo_doc = next(vinculo_query, None)
     if vinculo_doc:
-        paga_passado = vinculo_doc.to_dict().get("paga_passado", [])
+        vinculo_data = vinculo_doc.to_dict()
+        paga_passado = vinculo_data.get("paga_passado", [])
 
+    # ✅ Gera ID único para o aluno
     aluno_id = str(uuid.uuid4())
-
     dados = {
         "nome": nome,
         "nome_normalizado": nome_normalizado,
@@ -1095,6 +1086,10 @@ async def cadastrar_aluno(
         "provincia": provincia,
         "municipio": municipio,
         "bairro": bairro,
+        "localizacao": {
+            "latitude": latitude,
+            "longitude": longitude
+        },
         "telefone": telefone,
         "disciplina": disciplina,
         "outra_disciplina": outra_disciplina,
@@ -1105,38 +1100,28 @@ async def cadastrar_aluno(
         "notificacao": False,
         "vinculado": False,
         "horario": {},
-        "paga_passado": paga_passado
+        "paga_passado": paga_passado  # ✅ agora usa dados de alunos_professor se existir
     }
 
-    # ✅ Só adiciona localização se existir
-    if latitude or longitude:
-        dados["localizacao"] = {
-            "latitude": latitude,
-            "longitude": longitude
-        }
+    # Salva novo aluno
+    db.collection("alunos").document(aluno_id).set(dados)
 
-    # 💾 Salva aluno
-    alunos_ref.document(aluno_id).set(dados)
-
-    # 🔄 Atualiza alunos antigos sem paga_passado
-    for aluno in alunos_ref.stream():
+    # 🔄 Atualiza alunos antigos sem campo "paga_passado"
+    alunos_antigos = alunos_ref.stream()
+    for aluno in alunos_antigos:
         dados_aluno = aluno.to_dict()
         if "paga_passado" not in dados_aluno:
             paga_passado_antigo = []
+            # busca também pelo NOME do aluno em alunos_professor
             vinculo_query = db.collection("alunos_professor") \
                 .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
                 .limit(1).stream()
             vinculo_doc = next(vinculo_query, None)
             if vinculo_doc:
                 paga_passado_antigo = vinculo_doc.to_dict().get("paga_passado", [])
-            alunos_ref.document(aluno.id).update({
-                "paga_passado": paga_passado_antigo
-            })
+            alunos_ref.document(aluno.id).update({"paga_passado": paga_passado_antigo})
 
-    return RedirectResponse(
-        url="/login?sucesso=1",
-        status_code=HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse(url="/login?sucesso=1", status_code=HTTP_303_SEE_OTHER)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -1902,20 +1887,25 @@ async def post_cadastro(
     bairro: str = Form(...),
     residencia: str = Form(...),
     ponto_referencia: str = Form(...),
+    localizacao: str = Form(...),
     telefone: str = Form(...),
     telefone_alternativo: str = Form(None),
     email: str = Form(...),
     nivel_ensino: str = Form(...),
     ano_faculdade: str = Form(None),
     area_formacao: str = Form(...),
-    senha: str = Form(...),
+    senha: str = Form(...)
 ):
     try:
-        email = email.strip().lower()
+        # ============================
+        # VALIDAR EMAIL
+        # ============================
+        if not email or email.strip() == "":
+            raise Exception("Email inválido")
 
-        if not email:
-            raise ValueError("Email inválido")
-
+        # ============================
+        # DADOS DO PROFESSOR
+        # ============================
         dados = {
             "nome_completo": nome_completo,
             "nome_mae": nome_mae,
@@ -1926,6 +1916,7 @@ async def post_cadastro(
             "bairro": bairro,
             "residencia": residencia,
             "ponto_referencia": ponto_referencia,
+            "localizacao": localizacao,
             "telefone": telefone,
             "telefone_alternativo": telefone_alternativo,
             "email": email,
@@ -1934,35 +1925,44 @@ async def post_cadastro(
             "area_formacao": area_formacao,
             "senha": senha,
             "online": True,
-            "foto_perfil": "perfil.png",
+            "foto_perfil": "perfil.png"
         }
 
-        # grava
+        # ============================
+        # SALVAR NAS DUAS COLEÇÕES
+        # ============================
         db.collection("professores_online").add(dados)
         db.collection("professores_online2").document(email).set(dados)
 
-        return templates.TemplateResponse(
-            "sucesso.html",
-            {
-                "request": request,
-                "success": True,
-                "mensagem": "Professor cadastrado com sucesso!",
-                "redirect_url": "/login_prof",
-            },
-        )
+        # ============================
+        # FORÇAR FOTO EM PROFESSORES ANTIGOS
+        # ============================
+        try:
+            for doc in db.collection("professores_online").stream():
+                if "foto_perfil" not in doc.to_dict():
+                    db.collection("professores_online").document(doc.id).update({
+                        "foto_perfil": "perfil.png"
+                    })
+        except:
+            pass
+
+        # ============================
+        # RETORNO COM REDIRECIONAMENTO
+        # ============================
+        return templates.TemplateResponse("sucesso.html", {
+            "request": request,
+            "mensagem": "Professor cadastrado com sucesso!",
+            "redirect_url": "/login_prof"   # envia a rota para o HTML
+        })
 
     except Exception as e:
-        print("❌ ERRO AO CADASTRAR PROFESSOR:", e)
+        print("❌ ERRO:", e)
+        return templates.TemplateResponse("erro.html", {
+            "request": request,
+            "mensagem": f"Erro ao cadastrar professor: {str(e)}"
+        })
 
-        return templates.TemplateResponse(
-            "erro.html",
-            {
-                "request": request,
-                "success": False,
-                "mensagem": f"Erro ao cadastrar professor: {str(e)}",
-            },
-        )
-        
+
 @app.get("/login_prof", response_class=HTMLResponse)
 async def login_prof_get(request: Request):
     return templates.TemplateResponse("login_prof.html", {"request": request, "erro": None})
@@ -2645,38 +2645,34 @@ async def listar_alunos():
 
     for doc in alunos_ref:
         dados = doc.to_dict()
-
+        nome = dados.get("nome", "")
+        disciplina = dados.get("disciplina", "")
+        online = dados.get("online", False)
+        vinculado = dados.get("vinculado", False)
         alunos.append({
-            "nome": dados.get("nome", ""),
-            "disciplina": dados.get("disciplina", ""),
-            "telefone": dados.get("telefone", ""),
-            "online": dados.get("online", False),
-            "vinculado": dados.get("vinculado", False)
+            "nome": nome,
+            "disciplina": disciplina,
+            "online": online,
+            "vinculado": vinculado
         })
 
     return alunos
 
 @app.get("/listar-professores-online")
 async def listar_professores_online():
-
     professores = db.collection("professores_online").stream()
     lista = []
 
     for prof in professores:
         dados = prof.to_dict()
-
-        telefone = dados.get("telefone") or dados.get("telefone_alternativo")
-
         lista.append({
             "email": dados.get("email", ""),
             "nome": dados.get("nome_completo", ""),
-            "telefone": telefone,
             "online": dados.get("online", False),
-            "foto_perfil": dados.get("foto_perfil", "perfil.png")
+            "foto_perfil": dados.get("foto_perfil", "perfil.png")  # 🔹 Incluído
         })
 
     return lista
-
 
 
 @app.get("/listar-chamadas")
@@ -4695,7 +4691,12 @@ async def registrar_aula(data: dict = Body(...)):
         if not professor or not aluno:
             raise HTTPException(status_code=400, detail="Dados incompletos")
 
-        print(f"📘 Registrando aula de {aluno} com {professor}...")
+        # 🔹 Quando for chamada via /buscar-id-professor,
+        # inicia o cronômetro de 60 minutos antes de registrar.
+        print(f"⏳ Cronômetro iniciado para {aluno} - Professor: {professor} (60 minutos)")
+        await asyncio.sleep(60 * 60)  # Espera 60 minutos (3600 segundos)
+
+        print(f"🕒 Tempo concluído. Registrando aula de {aluno} com {professor}...")
 
         # 🔹 Busca vínculo aluno-professor
         query = db.collection("alunos_professor") \
@@ -4709,11 +4710,10 @@ async def registrar_aula(data: dict = Body(...)):
 
         doc_ref = db.collection("alunos_professor").document(doc.id)
         doc_data = doc.to_dict()
-
         aulas_anteriores = doc_data.get("aulas_dadas", 0)
         lista_aulas = doc_data.get("aulas", [])
-        aulas_passadas = doc_data.get("aulas_passadas", [])
-        valor_passado = doc_data.get("valor_passado", [])
+        aulas_passadas = doc_data.get("aulas_passadas", [])  
+        valor_passado = doc_data.get("valor_passado", [])    
 
         agora = datetime.now()
         nova_aula = {
@@ -4721,8 +4721,9 @@ async def registrar_aula(data: dict = Body(...)):
             "horario": agora.strftime("%H:%M")
         }
 
+        # Incrementa a aula
         novo_total = aulas_anteriores + 1
-        valor_mensal = novo_total * 1250
+        valor_mensal = novo_total * 1250  # 💰 cálculo do valor acumulado
 
         update_data = {
             "aulas_dadas": novo_total,
@@ -4730,6 +4731,10 @@ async def registrar_aula(data: dict = Body(...)):
             "valor_mensal": valor_mensal
         }
 
+        registro_passado = None
+        registro_valor = None
+
+        # 🔹 Quando completar 12 aulas -> transferir e zerar ciclo
         if novo_total >= 12:
             registro_passado = {
                 "data_transferencia": agora.strftime("%Y-%m-%d %H:%M"),
@@ -4747,17 +4752,19 @@ async def registrar_aula(data: dict = Body(...)):
             aulas_passadas.append(registro_passado)
             valor_passado.append(registro_valor)
 
+            # Resetar contadores
             update_data["aulas_dadas"] = 0
             update_data["valor_mensal"] = 0
             update_data["aulas_passadas"] = aulas_passadas
             update_data["valor_passado"] = valor_passado
 
+        # 🔹 Atualiza documento aluno-professor
         doc_ref.update(update_data)
 
-        # 🔹 Atualiza saldo do professor
-        prof_ref = db.collection("professores_online") \
-                     .where(filter=FieldFilter("email", "==", professor)) \
-                     .limit(1).stream()
+        # 🔹 Atualiza saldo_atual do professor na coleção "professores_online"
+        prof_ref = db.collection("professores_online").where(
+            filter=FieldFilter("email", "==", professor)
+        ).limit(1).stream()
 
         prof_doc = next(prof_ref, None)
         if prof_doc:
@@ -4765,22 +4772,23 @@ async def registrar_aula(data: dict = Body(...)):
             prof_data = prof_doc.to_dict() or {}
             salario_info = prof_data.get("salario", {})
 
-            saldo_atual = int(salario_info.get("saldo_atual", 0)) + valor_mensal
+            saldo_atual = int(salario_info.get("saldo_atual", 0)) + (valor_mensal if novo_total < 12 else 0)
+            if novo_total >= 12:
+                saldo_atual = int(salario_info.get("saldo_atual", 0)) + registro_valor["valor_pago"]
 
             prof_doc_ref.update({
                 "salario.saldo_atual": saldo_atual
             })
 
-        print(f"✅ Aula registrada com sucesso.")
+        print(f"✅ Aula de {aluno} registrada automaticamente após 60 minutos.")
         return {
-            "mensagem": "Aula registrada com sucesso.",
+            "mensagem": f"Aula registrada automaticamente após 60 minutos. Total atual: {update_data['aulas_dadas']}",
             "nova_aula": nova_aula,
         }
 
     except Exception as e:
         print("Erro ao registrar aula:", e)
         raise HTTPException(status_code=500, detail="Erro ao registrar aula")
-
 
 @app.get("/ajustar-professores-foto")
 async def ajustar_professores_foto():
@@ -5059,59 +5067,4 @@ def editar_equipa(
     })
     return RedirectResponse("/admin", status_code=302)
 
-
-@app.post("/remover-professor")
-async def remover_professor(payload: dict = Body(...)):
-
-    email = payload.get("email")
-
-    # Mesmo sem email, não gera erro visual
-    if not email:
-        return {
-            "success": True,
-            "message": "Nenhum professor para remover"
-        }
-
-    docs = list(
-        db.collection("professores_online")
-        .where("email", "==", email)
-        .stream()
-    )
-
-    for doc in docs:
-        doc.reference.delete()
-        print(f"🗑️ Removido de professores_online: {doc.id}")
-
-    # 🔥 SEMPRE sucesso
-    return {
-        "success": True,
-        "message": "Professor removido com sucesso"
-    }
-
-@app.post("/remover-aluno")
-async def remover_aluno(payload: dict = Body(...)):
-
-    nome = payload.get("nome")
-
-    # Nunca gera erro visual
-    if not nome:
-        return {
-            "success": True,
-            "message": "Nenhum aluno para remover"
-        }
-
-    docs = list(
-        db.collection("alunos")
-        .where("nome", "==", nome)
-        .stream()
-    )
-
-    for doc in docs:
-        doc.reference.delete()
-        print(f"🗑️ Removido de alunos: {doc.id}")
-
-    return {
-        "success": True,
-        "message": "Aluno removido com sucesso"
-    }
 

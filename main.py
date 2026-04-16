@@ -212,19 +212,30 @@ async def get_account_and_increment():
     ref = db.collection("CONTAS_100MS").document("contador")
     doc = ref.get()
 
-    data = doc.to_dict()
+    data = doc.to_dict() or {}
 
-    conta = data["conta_atual"]
-    usos = data["usos"]
+    conta = data.get("conta_atual", 0)
+    usos = data.get("usos", {})
+
+    # 🔥 garante que é dict
+    if not isinstance(usos, dict):
+        usos = {}
+
     conta_str = str(conta)
 
-    # ✅ SÓ TROCA DE CONTA SE ATINGIR 50
+    # inicializa se não existir
+    if conta_str not in usos:
+        usos[conta_str] = 0
+
+    # troca conta só se atingir limite
     if usos[conta_str] >= MAX_USOS:
         conta = (conta + 1) % len(CONTAS_100MS)
         conta_str = str(conta)
-        usos[conta_str] = 0
 
-    # ✅ INCREMENTA SEM TROCAR
+        if conta_str not in usos:
+            usos[conta_str] = 0
+
+    # incrementa uso
     usos[conta_str] += 1
 
     ref.update({

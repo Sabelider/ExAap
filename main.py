@@ -1215,6 +1215,8 @@ async def exibir_login(request: Request, sucesso: int = 0):
         "erro": None
     })
 
+from fastapi import Form
+
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     alunos_ref = db.collection("alunos")

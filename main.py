@@ -66,50 +66,25 @@ ALUNOS_JSON = os.path.join(BASE_DIR, "alunos.json")
 app = FastAPI(title="SabApp + 100ms")
 app.mount("/static", StaticFiles(directory="static"), name="static")
     
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
+from jinja2 import Environment, FileSystemLoader
+from fastapi.responses import HTMLResponse
 
-# ✔ ÚNICO motor de templates
+jinja_env = Environment(
+    loader=FileSystemLoader("templates"),
+    auto_reload=True
+)
+
+def render_template(template_name: str, context: dict):
+    try:
+        template = jinja_env.get_template(template_name)
+        return HTMLResponse(template.render(**context))
+    except Exception as e:
+        print("🔥 ERRO NO TEMPLATE:", e)
+        raise e 
+       
 templates = Jinja2Templates(directory="templates")
-
-
-def safe_template_response(template_name: str, context: dict, request: Request = None):
-    print("\n====== DEBUG TEMPLATE ======")
-
-    # garante dict válido
-    if context is None:
-        context = {}
-
-    if not isinstance(context, dict):
-        raise TypeError(f"context inválido: {type(context)}")
-
-    # garante request sempre presente (OBRIGATÓRIO no FastAPI templates)
-    if request and "request" not in context:
-        context["request"] = request
-
-    clean_context = {}
-
-    for k, v in context.items():
-        # valida chave
-        if not isinstance(k, str):
-            raise TypeError(f"Chave inválida no context: {k} ({type(k)})")
-
-        # evita estruturas perigosas / inconsistentes
-        if isinstance(v, dict):
-            clean_context[k] = dict(v)
-        elif isinstance(v, list):
-            clean_context[k] = list(v)
-        else:
-            clean_context[k] = v
-
-        print(f"KEY: {k} | TYPE: {type(v)}")
-
-    print("====== FIM DEBUG ======\n")
-
-    return templates.TemplateResponse(
-        template_name,
-        clean_context
-    )
+print("DEBUG search path:", templates.env.loader.searchpath)
+print("TIPO search path:", type(templates.env.loader.searchpath))
 
 # --- CORS (opcional) ---
 app.add_middleware(
@@ -306,34 +281,23 @@ ADMIN_USER = "admin"
 ADMIN_PASS = "1234"
 
 
-def safe_template_response(template_name: str, context: dict, request: Request = None):
+def safe_template_response(template_name, context, request=None):
     print("\n====== DEBUG TEMPLATE ======")
 
-    # 🔎 TEMPLATE
-    print("TEMPLATE:", template_name)
-    print("TYPE TEMPLATE:", type(template_name))
+    # 🔎 Verifica template_name
+    print("template_name:", template_name)
+    print("type(template_name):", type(template_name))
 
     if not isinstance(template_name, str):
-        raise TypeError(
-            f"❌ template_name NÃO é string: {template_name} ({type(template_name)})"
-        )
+        raise TypeError(f"❌ template_name NÃO é string: {type(template_name)} -> {template_name}")
 
-    # 🔎 CONTEXT
-    if context is None:
-        context = {}
-
-    print("CONTEXT TYPE:", type(context))
+    # 🔎 Verifica context
+    print("context type:", type(context))
 
     if not isinstance(context, dict):
         raise TypeError(f"❌ context NÃO é dict: {type(context)}")
 
-    # 🔎 GARANTE request (OBRIGATÓRIO no FastAPI)
-    if request and "request" not in context:
-        context["request"] = request
-
-    # 🔎 LIMPEZA + DEBUG
-    clean_context = {}
-
+    # 🔎 Verifica chaves e valores do context
     for k, v in context.items():
         print(f"KEY: {k} ({type(k)}) | VALUE TYPE: {type(v)}")
 
@@ -341,23 +305,20 @@ def safe_template_response(template_name: str, context: dict, request: Request =
         if not isinstance(k, str):
             raise TypeError(f"❌ chave do context NÃO é string: {k} ({type(k)})")
 
-        # ⚠️ chave não hashable
+        # ⚠️ valor perigoso (dict dentro de dict como chave)
         try:
             hash(k)
         except TypeError:
             raise TypeError(f"❌ chave não é hashable: {k}")
 
-        # 🧼 normalização de valores
-        if isinstance(v, dict):
-            clean_context[k] = dict(v)
-        elif isinstance(v, list):
-            clean_context[k] = list(v)
-        else:
-            clean_context[k] = v
+    # 🔎 Verifica request obrigatório
+    if "request" not in context:
+        print("⚠️ AVISO: 'request' não está no context")
 
     print("====== FIM DEBUG ======\n")
 
-    return templates.TemplateResponse(template_name, clean_context)
+    return templates.TemplateResponse(template_name, context)
+
 
 # ===============================
 # ROTA LOGIN
@@ -433,11 +394,8 @@ def logout(request: Request):
         
 @app.get("/")
 async def read_root(request: Request):
-    return safe_template_response(
-        "index.html",
-        {},
-        request=request
-    )
+    return render_template("index.html", {"request": request})
+    
 
 class VinculoIn(BaseModel): 
     professor_email: str
@@ -1249,16 +1207,16 @@ async def cadastrar_aluno(
     )
 
 
-@app.get("/login")
+@app.get("/login", response_class=HTMLResponse)
 async def exibir_login(request: Request, sucesso: int = 0):
     try:
-        return safe_template_response(
+        return templates.TemplateResponse(
             "login.html",
             {
+                "request": request,
                 "sucesso": sucesso,
                 "erro": None
-            },
-            request=request
+            }
         )
 
     except Exception as e:
@@ -1269,12 +1227,14 @@ async def exibir_login(request: Request, sucesso: int = 0):
             status_code=500
         )
 
+from fastapi import Form
 
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     try:
         alunos_ref = db.collection("alunos")
 
+        # 🔎 Normaliza os valores digitados
         nome_digitado = nome.strip().lower()
         senha_digitada = senha.strip().lower()
 
@@ -1286,45 +1246,46 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
             nome_banco = str(dados.get("nome", "")).strip().lower()
             senha_banco = str(dados.get("senha", "")).strip().lower()
 
-            if nome_banco == nome_digitado and senha_banco == senha_digitada:
+            if nome_banco == nome_digitado and senha_banco == senha_digitado:
 
+                # 🔐 Proteção contra erro de sessão
                 if hasattr(request, "session"):
                     request.session["aluno_logado"] = True
                     request.session["aluno_nome"] = nome_banco
 
+                # 🟢 Atualiza status (protegido)
                 try:
                     aluno.reference.update({"online": True})
-                except Exception as e:
-                    print("Firebase update erro:", e)
+                except:
+                    pass  # evita crash se Firebase falhar
 
                 return RedirectResponse(
                     url=f"/perfil/{dados.get('nome', '')}",
-                    status_code=303
+                    status_code=HTTP_303_SEE_OTHER
                 )
 
-        # ❌ login inválido
-        return safe_template_response(
+        # ❌ Login inválido
+        return templates.TemplateResponse(
             "login.html",
             {
+                "request": request,
                 "erro": "Nome de usuário ou senha inválidos",
                 "sucesso": 0
-            },
-            request=request
+            }
         )
 
     except Exception as e:
         print("ERRO LOGIN:", e)
 
-        return safe_template_response(
+        return templates.TemplateResponse(
             "login.html",
             {
+                "request": request,
                 "erro": "Erro interno no servidor",
                 "sucesso": 0
-            },
-            request=request
+            }
         )
-
-
+        
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:
@@ -5251,4 +5212,3 @@ async def remover_aluno(payload: dict = Body(...)):
         "success": True,
         "message": "Aluno removido com sucesso"
     }
-

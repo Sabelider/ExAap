@@ -1210,7 +1210,7 @@ async def cadastrar_aluno(
 @app.get("/login", response_class=HTMLResponse)
 async def exibir_login(request: Request, sucesso: int = 0):
     try:
-        return templates.TemplateResponse(
+        return safe_template_response(
             "login.html",
             {
                 "request": request,
@@ -1226,15 +1226,15 @@ async def exibir_login(request: Request, sucesso: int = 0):
             content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
             status_code=500
         )
-
+        
 from fastapi import Form
+from fastapi.responses import RedirectResponse
 
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
     try:
         alunos_ref = db.collection("alunos")
 
-        # 🔎 Normaliza os valores digitados
         nome_digitado = nome.strip().lower()
         senha_digitada = senha.strip().lower()
 
@@ -1246,26 +1246,24 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
             nome_banco = str(dados.get("nome", "")).strip().lower()
             senha_banco = str(dados.get("senha", "")).strip().lower()
 
-            if nome_banco == nome_digitado and senha_banco == senha_digitado:
+            if nome_banco == nome_digitado and senha_banco == senha_digitada:
 
-                # 🔐 Proteção contra erro de sessão
                 if hasattr(request, "session"):
                     request.session["aluno_logado"] = True
                     request.session["aluno_nome"] = nome_banco
 
-                # 🟢 Atualiza status (protegido)
                 try:
                     aluno.reference.update({"online": True})
-                except:
-                    pass  # evita crash se Firebase falhar
+                except Exception as e:
+                    print("Firebase erro:", e)
 
                 return RedirectResponse(
                     url=f"/perfil/{dados.get('nome', '')}",
-                    status_code=HTTP_303_SEE_OTHER
+                    status_code=303
                 )
 
         # ❌ Login inválido
-        return templates.TemplateResponse(
+        return safe_template_response(
             "login.html",
             {
                 "request": request,
@@ -1277,7 +1275,7 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
     except Exception as e:
         print("ERRO LOGIN:", e)
 
-        return templates.TemplateResponse(
+        return safe_template_response(
             "login.html",
             {
                 "request": request,
@@ -1285,7 +1283,8 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
                 "sucesso": 0
             }
         )
-        
+
+
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:

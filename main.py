@@ -2809,25 +2809,31 @@ async def listar_alunos():
 
 @app.get("/listar-professores-online")
 async def listar_professores_online():
+    try:
+        professores = db.collection("professores_online").stream()
+        lista = []
 
-    professores = db.collection("professores_online").stream()
-    lista = []
+        for prof in professores:
+            dados = prof.to_dict() or {}
 
-    for prof in professores:
-        dados = prof.to_dict()
+            telefone = dados.get("telefone") or dados.get("telefone_alternativo")
 
-        telefone = dados.get("telefone") or dados.get("telefone_alternativo")
+            lista.append({
+                "email": dados.get("email", ""),
+                "nome": dados.get("nome_completo", ""),
+                "telefone": telefone,
+                "online": bool(dados.get("online", False)),
+                "foto_perfil": dados.get("foto_perfil", "perfil.png")
+            })
 
-        lista.append({
-            "email": dados.get("email", ""),
-            "nome": dados.get("nome_completo", ""),
-            "telefone": telefone,
-            "online": dados.get("online", False),
-            "foto_perfil": dados.get("foto_perfil", "perfil.png")
-        })
+        return lista
 
-    return lista
-
+    except Exception as e:
+        print("ERRO listar professores online:", e)
+        return {
+            "erro": "Erro ao buscar professores online",
+            "detalhes": str(e)
+        }
 
 
 @app.get("/listar-chamadas")

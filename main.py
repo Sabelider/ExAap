@@ -1209,55 +1209,83 @@ async def cadastrar_aluno(
 
 @app.get("/login", response_class=HTMLResponse)
 async def exibir_login(request: Request, sucesso: int = 0):
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "sucesso": sucesso,
-        "erro": None
-    })
+    try:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sucesso": sucesso,
+                "erro": None
+            }
+        )
+
+    except Exception as e:
+        print("ERRO AO CARREGAR LOGIN:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
 
 from fastapi import Form
 
 @app.post("/login")
 async def login(request: Request, nome: str = Form(...), senha: str = Form(...)):
-    alunos_ref = db.collection("alunos")
+    try:
+        alunos_ref = db.collection("alunos")
 
-    # 🔎 Normaliza os valores digitados
-    nome_digitado = nome.strip().lower()
-    senha_digitada = senha.strip().lower()
+        # 🔎 Normaliza os valores digitados
+        nome_digitado = nome.strip().lower()
+        senha_digitada = senha.strip().lower()
 
-    # 🔍 Busca todos os alunos
-    alunos = alunos_ref.stream()
+        alunos = alunos_ref.stream()
 
-    for aluno in alunos:
-        dados = aluno.to_dict()
-        nome_banco = dados.get("nome", "").strip().lower()
-        senha_banco = dados.get("senha", "").strip().lower()
+        for aluno in alunos:
+            dados = aluno.to_dict() or {}
 
-        if nome_banco == nome_digitado and senha_banco == senha_digitada:
-            # 🔐 SALVA DADOS NA SESSÃO
-            request.session["aluno_logado"] = True
-            request.session["aluno_nome"] = nome_banco
+            nome_banco = str(dados.get("nome", "")).strip().lower()
+            senha_banco = str(dados.get("senha", "")).strip().lower()
 
-            # 🟢 Marca aluno como online
-            aluno.reference.update({
-                "online": True
-            })
+            if nome_banco == nome_digitado and senha_banco == senha_digitado:
 
-            return RedirectResponse(
-                url=f"/perfil/{dados.get('nome')}",
-                status_code=HTTP_303_SEE_OTHER
-            )
+                # 🔐 Proteção contra erro de sessão
+                if hasattr(request, "session"):
+                    request.session["aluno_logado"] = True
+                    request.session["aluno_nome"] = nome_banco
 
-    # ❌ Login inválido
-    return templates.TemplateResponse(
-        "login.html",
-        {
-            "request": request,
-            "erro": "Nome de usuário ou senha inválidos",
-            "sucesso": 0
-        }
-    )
+                # 🟢 Atualiza status (protegido)
+                try:
+                    aluno.reference.update({"online": True})
+                except:
+                    pass  # evita crash se Firebase falhar
 
+                return RedirectResponse(
+                    url=f"/perfil/{dados.get('nome', '')}",
+                    status_code=HTTP_303_SEE_OTHER
+                )
+
+        # ❌ Login inválido
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "erro": "Nome de usuário ou senha inválidos",
+                "sucesso": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO LOGIN:", e)
+
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "erro": "Erro interno no servidor",
+                "sucesso": 0
+            }
+        )
+        
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:

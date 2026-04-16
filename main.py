@@ -1183,7 +1183,13 @@ async def gerar_pdf():
 
 @app.get("/cadastro-aluno", response_class=HTMLResponse)
 async def exibir_formulario(request: Request):
-    return templates.TemplateResponse("cadastro-aluno.html", {"request": request, "erro": None})
+    return render_template(
+        "cadastro-aluno.html",
+        {
+            "request": request,
+            "erro": None
+        }
+    )
     
 @app.post("/cadastro-aluno")
 async def cadastrar_aluno(
@@ -1196,7 +1202,6 @@ async def cadastrar_aluno(
     municipio: str = Form(...),
     bairro: str = Form(...),
 
-    # 🔥 NÃO OBRIGATÓRIOS
     latitude: Optional[str] = Form(None),
     longitude: Optional[str] = Form(None),
 
@@ -1209,20 +1214,23 @@ async def cadastrar_aluno(
     alunos_ref = db.collection("alunos")
     nome_normalizado = nome.strip().lower()
 
-    # 🔎 Verifica se já existe aluno
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
     if existente:
-        return templates.TemplateResponse("cadastro-aluno.html", {
-            "request": request,
-            "erro": "Este nome já está cadastrado. Tente outro."
-        })
+        return render_template(
+            "cadastro-aluno.html",
+            {
+                "request": request,
+                "erro": "Este nome já está cadastrado. Tente outro."
+            }
+        )
 
-    # 🔄 Busca histórico de pagamentos
     paga_passado = []
     vinculo_query = db.collection("alunos_professor") \
         .where("aluno", "==", nome.strip().lower()) \
         .limit(1).stream()
+
     vinculo_doc = next(vinculo_query, None)
+
     if vinculo_doc:
         paga_passado = vinculo_doc.to_dict().get("paga_passado", [])
 
@@ -1250,17 +1258,14 @@ async def cadastrar_aluno(
         "paga_passado": paga_passado
     }
 
-    # ✅ Só adiciona localização se existir
     if latitude or longitude:
         dados["localizacao"] = {
             "latitude": latitude,
             "longitude": longitude
         }
 
-    # 💾 Salva aluno
     alunos_ref.document(aluno_id).set(dados)
 
-    # 🔄 Atualiza alunos antigos sem paga_passado
     for aluno in alunos_ref.stream():
         dados_aluno = aluno.to_dict()
         if "paga_passado" not in dados_aluno:
@@ -1268,47 +1273,28 @@ async def cadastrar_aluno(
             vinculo_query = db.collection("alunos_professor") \
                 .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
                 .limit(1).stream()
+
             vinculo_doc = next(vinculo_query, None)
+
             if vinculo_doc:
                 paga_passado_antigo = vinculo_doc.to_dict().get("paga_passado", [])
+
             alunos_ref.document(aluno.id).update({
                 "paga_passado": paga_passado_antigo
             })
 
     return RedirectResponse(
         url="/login?sucesso=1",
-        status_code=HTTP_303_SEE_OTHER
+        status_code=303
     )
-
-
-@app.get("/login", response_class=HTMLResponse)
-async def exibir_login(request: Request, sucesso: int = 0):
-    try:
-        return safe_template_response(
-            "login.html",
-            {
-                "request": request,
-                "sucesso": sucesso,
-                "erro": None
-            }
-        )
-
-    except Exception as e:
-        print("ERRO AO CARREGAR LOGIN:", e)
-
-        return HTMLResponse(
-            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
-            status_code=500
-        )
+    
         
-
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:
         nome_normalizado = nome.strip().lower()
         print(f"🔍 Buscando dados do aluno: {nome_normalizado}")
 
-        # Buscar aluno na coleção "alunos" pelo nome_normalizado
         query = db.collection("alunos") \
             .where("nome_normalizado", "==", nome_normalizado) \
             .limit(1) \
@@ -1320,7 +1306,7 @@ async def profil(request: Request, nome: str):
         for doc in query:
             dados = doc.to_dict()
             aluno = {
-                "nome": dados.get("nome", nome),  # nome real do aluno
+                "nome": dados.get("nome", nome),
                 "bilhete": dados.get("bilhete", "Não informado"),
                 "nivel_ingles": dados.get("nivel_ingles", "N/A"),
                 "telefone": dados.get("telefone", "N/A"),
@@ -1330,20 +1316,17 @@ async def profil(request: Request, nome: str):
             break
 
         if not aluno or not doc_id:
-            return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
+            return RedirectResponse(url="/login", status_code=303)
 
-        # Atualizar status online
         db.collection("alunos").document(doc_id).update({
             "online": True,
             "ultimo_ping": datetime.utcnow().isoformat()
         })
 
-
         total_gasto = 0
         aulas_dadas = 0
         vinculo_id = None
 
-        # 1) Buscar o vínculo em alunos_professor pelo nome_normalizado
         alunos_prof_ref = db.collection("alunos_professor") \
             .where("aluno", "==", nome_normalizado) \
             .limit(1) \
@@ -1358,10 +1341,11 @@ async def profil(request: Request, nome: str):
             vinculo_id = vinculo_doc.id
             break
 
-        # 2) Buscar valor_total em comprovativos_pagamento/{nome_com_underscore}
         valor_total = 0
         doc_id_comprovativo = nome_normalizado.replace(" ", "_")
+
         comp_doc = db.collection("comprovativos_pagamento").document(doc_id_comprovativo).get()
+
         if comp_doc.exists:
             comp_data = comp_doc.to_dict() or {}
             mensalidade = comp_data.get("mensalidade") or {}
@@ -1375,29 +1359,34 @@ async def profil(request: Request, nome: str):
                 except Exception:
                     valor_total = 0
 
-        # 3) Calcular saldo
         total_gasto = valor_total - (aulas_dadas * 1250)
+
         if total_gasto < 0:
             total_gasto = 0
 
-        # 4) Atualizar campo auxiliar no vínculo (se existir)
         if vinculo_id:
             db.collection("alunos_professor").document(vinculo_id).update({
                 "valor_mensal_aluno": total_gasto
             })
 
-
-        return templates.TemplateResponse("perfil.html", {
-            "request": request,
-            "aluno": aluno,
-            "total_gasto": total_gasto
-        })
+        # ✅ AQUI ESTÁ A CORREÇÃO
+        return render_template(
+            "perfil.html",
+            {
+                "request": request,
+                "aluno": aluno,
+                "total_gasto": total_gasto
+            }
+        )
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return HTMLResponse(content=f"Erro ao carregar perfil: {str(e)}", status_code=500)
-
+        return HTMLResponse(
+            content=f"Erro ao carregar perfil: {str(e)}",
+            status_code=500
+        )
+        
         
 from slugify import slugify
 

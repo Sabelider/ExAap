@@ -399,39 +399,74 @@ async def login(request: Request, nome: str = Form(...), senha: str = Form(...))
         )
 
 @app.get("/logini", response_class=HTMLResponse)
-def logini_get(request: Request):
+async def logini_get(request: Request, sucesso: int = 0):
+    try:
+        # 🔁 Se já estiver logado, redireciona
+        if request.session.get("logged_in"):
+            return RedirectResponse("/admin", status_code=302)
 
-    # 🔁 Se já estiver logado, não mostra login
-    if request.session.get("logged_in"):
-        return RedirectResponse("/admin", status_code=302)
+        return templates.TemplateResponse(
+            "logini.html",
+            {
+                "request": request,
+                "erro": None,
+                "sucesso": sucesso
+            }
+        )
 
-    return templates.TemplateResponse(
-        "logini.html",
-        {"request": request}
-    )
+    except Exception as e:
+        print("ERRO AO CARREGAR LOGIN ADMIN:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
 
 @app.post("/logini")
-def logini(
+async def logini(
     request: Request,
     username: str = Form(...),
     password: str = Form(...)
 ):
-    # 🧹 Garante sessão limpa
-    request.session.clear()
+    try:
+        # 🧹 Limpa sessão
+        request.session.clear()
 
-    # 🔐 Validação simples (editável)
-    if username == ADMIN_USER and password == ADMIN_PASS:
-        request.session["logged_in"] = True
-        return RedirectResponse(url="/admin", status_code=302)
+        user_digitado = username.strip()
+        pass_digitada = password.strip()
 
-    # ❌ Login inválido
-    return templates.TemplateResponse(
-        "logini.html",
-        {
-            "request": request,
-            "error": "Usuário ou senha inválidos"
-        }
-    )
+        # 🔐 Validação
+        if user_digitado == ADMIN_USER and pass_digitada == ADMIN_PASS:
+            request.session["logged_in"] = True
+
+            return RedirectResponse(
+                url="/admin",
+                status_code=303
+            )
+
+        # ❌ Login inválido
+        return templates.TemplateResponse(
+            "logini.html",
+            {
+                "request": request,
+                "erro": "Usuário ou senha inválidos",
+                "sucesso": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO LOGIN ADMIN:", e)
+
+        return templates.TemplateResponse(
+            "logini.html",
+            {
+                "request": request,
+                "erro": "Erro interno no servidor",
+                "sucesso": 0
+            }
+        )
+        
 
 @app.get("/admin", response_class=HTMLResponse)
 async def painel_admin(request: Request):

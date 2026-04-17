@@ -5330,10 +5330,91 @@ async def pagina_vendas(request: Request):
         }
     )
 
+@app.get("/recuperar-senha", response_class=HTMLResponse)
+async def recuperar_senha_get(request: Request, success: int = 0):
+    try:
+        return render_template(
+            "recuperar-senha.html",
+            {
+                "request": request,
+                "erro": None,
+                "success": success
+            }
+        )
+
+    except Exception as e:
+        print("ERRO AO CARREGAR RECUPERAÇÃO DE SENHA:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
+@app.post("/recuperar-senha")
+async def recuperar_senha_post(
+    request: Request,
+    email: str = Form(...)
+):
+    try:
+        alunos_ref = db.collection("alunos")
+
+        email_digitado = email.strip().lower()
+
+        alunos = alunos_ref.stream()
+
+        for aluno in alunos:
+            dados = aluno.to_dict() or {}
+
+            email_banco = str(dados.get("email", "")).strip().lower()
+
+            if email_banco == email_digitado:
+
+                # 🔐 token simples (mesmo padrão do teu login)
+                token = aluno.id
+
+                try:
+                    aluno.reference.update({
+                        "reset_token": token
+                    })
+                except Exception as e:
+                    print("Firebase erro:", e)
+
+                print(f"LINK DE RESET: /resetar-senha?token={token}")
+
+                return render_template(
+                    "recuperar-senha.html",
+                    {
+                        "request": request,
+                        "success": 1,
+                        "erro": None
+                    }
+                )
+
+        # ❌ Email não encontrado
+        return render_template(
+            "recuperar-senha.html",
+            {
+                "request": request,
+                "erro": "Email não encontrado",
+                "success": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO RECUPERAR SENHA:", e)
+
+        return render_template(
+            "recuperar-senha.html",
+            {
+                "request": request,
+                "erro": "Erro interno no servidor",
+                "success": 0
+            }
+        )
+
 @app.get("/resetar-senha", response_class=HTMLResponse)
 async def resetar_senha_get(request: Request, token: str = None):
     try:
-        # Se não tiver token, bloqueia acesso
         if not token:
             return render_template(
                 "login.html",
@@ -5362,7 +5443,6 @@ async def resetar_senha_get(request: Request, token: str = None):
             status_code=500
         )
 
-
 @app.post("/resetar-senha")
 async def resetar_senha_post(
     request: Request,
@@ -5370,21 +5450,24 @@ async def resetar_senha_post(
     nova_senha: str = Form(...)
 ):
     try:
+        alunos_ref = db.collection("alunos")
+
         nova_senha = nova_senha.strip()
 
-        # 🔥 Aqui depois vais validar token no Firebase (ou DB)
-        # Por enquanto exemplo simples:
+        alunos = alunos_ref.stream()
 
-        alunos_ref = db.collection("alunos").stream()
-
-        for aluno in alunos_ref:
-            dados = aluno.to_dict()
+        for aluno in alunos:
+            dados = aluno.to_dict() or {}
 
             if dados.get("reset_token") == token:
-                aluno.reference.update({
-                    "senha": nova_senha,
-                    "reset_token": None
-                })
+
+                try:
+                    aluno.reference.update({
+                        "senha": nova_senha,
+                        "reset_token": None
+                    })
+                except Exception as e:
+                    print("Firebase erro:", e)
 
                 return render_template(
                     "login.html",
@@ -5415,83 +5498,5 @@ async def resetar_senha_post(
                 "token": token,
                 "erro": "Erro interno no servidor",
                 "sucesso": 0
-            }
-        )
-
-@app.get("/recuperar-senha", response_class=HTMLResponse)
-async def recuperar_senha_get(request: Request, success: int = 0):
-    try:
-        return render_template(
-            "recuperar-senha.html",
-            {
-                "request": request,
-                "erro": None,
-                "success": success
-            }
-        )
-
-    except Exception as e:
-        print("ERRO AO CARREGAR RECUPERAÇÃO DE SENHA:", e)
-
-        return HTMLResponse(
-            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
-            status_code=500
-        )
-
-@app.post("/recuperar-senha")
-async def recuperar_senha_post(
-    request: Request,
-    email: str = Form(...)
-):
-    try:
-        email = email.strip().lower()
-
-        alunos_ref = db.collection("alunos").stream()
-
-        for aluno in alunos_ref:
-            dados = aluno.to_dict() or {}
-
-            email_banco = str(dados.get("email", "")).strip().lower()
-
-            if email_banco == email:
-
-                # 🔐 gerar token simples (depois podes melhorar com uuid)
-                token = aluno.id
-
-                # guardar token no Firebase
-                aluno.reference.update({
-                    "reset_token": token
-                })
-
-                # 🔥 aqui depois vais enviar email real com SendGrid
-                print(f"LINK DE RESET: /resetar-senha?token={token}")
-
-                return render_template(
-                    "recuperar-senha.html",
-                    {
-                        "request": request,
-                        "success": 1,
-                        "erro": None
-                    }
-                )
-
-        return render_template(
-            "recuperar-senha.html",
-            {
-                "request": request,
-                "erro": "Email não encontrado",
-                "success": 0
-            }
-        )
-
-    except Exception as e:
-        print("ERRO RECUPERAR SENHA:", e)
-
-        return render_template(
-            "recuperar-senha.html",
-            {
-                "request": request,
-                "erro": "Erro interno no servidor",
-                "success": 0
             }
         )

@@ -434,7 +434,7 @@ def logini(
     )
 
 @app.get("/admin", response_class=HTMLResponse)
-def painel_admin(request: Request):
+async def painel_admin(request: Request):
 
     # 🔐 Proteção de sessão
     if not request.session.get("logged_in"):
@@ -458,7 +458,7 @@ def painel_admin(request: Request):
             "equipa": equipa
         }
     )
-
+    
 
 @app.get("/logout")
 def logout(request: Request):

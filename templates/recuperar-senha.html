@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recuperar Senha</title>
+  <title>Recuperar Senha do Aluno</title>
 
   <!-- FONT AWESOME -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -136,7 +136,7 @@
 <body>
 
   <div class="container">
-    <h2>Recuperar Senha</h2>
+    <h2>Recuperar Senha do Aluno</h2>
 
     <p>Digite o seu email para receber o link de redefinição de senha.</p>
 
@@ -149,7 +149,7 @@
     {% endif %}
 
     <form method="post" action="/recuperar-senha">
-      <label for="email">Email do Professor</label>
+      <label for="email">Email do Aluno</label>
       <input type="email" name="email" id="email" placeholder="exemplo@gmail.com" required>
 
       <button type="submit">Enviar link</button>

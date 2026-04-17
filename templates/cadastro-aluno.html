@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cadastro de Aluno</title>
+
 <style>
   * {
     box-sizing: border-box;
@@ -73,7 +74,6 @@
     color: #000;
     font-weight: 700;
     font-size: 16px;
-    transition: all 0.3s ease;
     cursor: pointer;
   }
 
@@ -85,66 +85,6 @@
     display: block;
     margin: 0 auto 20px;
     max-width: 120px;
-    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.15));
-  }
-
-  /* 📱 Tablets e celulares médios */
-  @media (max-width: 768px) {
-    .container {
-      padding: 25px;
-      border-radius: 16px;
-    }
-
-    h2 {
-      font-size: 20px;
-    }
-  }
-
-  /* 📱 Celulares pequenos */
-  @media (max-width: 480px) {
-    body {
-      padding: 8px;
-    }
-
-    .container {
-      padding: 20px;
-      margin: 0;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin-bottom: 18px;
-    }
-
-    label {
-      font-size: 14px;
-    }
-
-    input, select {
-      font-size: 14px;
-      padding: 10px;
-    }
-
-    button {
-      font-size: 15px;
-      padding: 12px;
-    }
-
-    .logo {
-      max-width: 95px;
-      margin-bottom: 15px;
-    }
-  }
-
- 
-  @media (max-width: 360px) {
-    h2 {
-      font-size: 16px;
-    }
-
-    button {
-      font-size: 14px;
-    }
   }
 </style>
 
@@ -157,45 +97,47 @@
 
     <form method="post" action="/cadastro-aluno">
 
-      <label for="nome">Nome Completo</label>
+      <label>Nome Completo</label>
       <input type="text" name="nome" required>
 
-      <label for="nome_mae">Nome da Mãe</label>
+      <label>Nome da Mãe</label>
       <input type="text" name="nome_mae" required>
 
-      <label for="nome_pai">Nome do Pai</label>
+      <label>Nome do Pai</label>
       <input type="text" name="nome_pai" required>
 
-      <label for="bilhete">Número do B.I</label>
+      <label>Número do B.I</label>
       <input type="text" name="bilhete" required>
 
-      <label for="senha">Senha</label>
+      <!-- 🔥 NOVO CAMPO EMAIL -->
+      <label>Email</label>
+      <input type="email" name="email" placeholder="exemplo@gmail.com" required>
+
+      <label>Senha</label>
       <input type="password" name="senha" required>
 
-      <label for="provincia">Província</label>
+      <label>Província</label>
       <input type="text" name="provincia" required>
 
-      <label for="municipio">Município</label>
+      <label>Município</label>
       <input type="text" name="municipio" required>
 
-      <label for="bairro">Bairro</label>
+      <label>Bairro</label>
       <input type="text" name="bairro" required>
 
-
-      <label for="telefone">Telefone</label>
+      <label>Telefone</label>
       <input type="tel" name="telefone" required>
 
-      <label for="disciplina">Disciplina</label>
+      <label>Disciplina</label>
       <select name="disciplina" required>
         <option value="">Selecione</option>
         <option>Inglês</option>
       </select>
 
-      <label for="outra_disciplina">Outra Disciplina (opcional)</label>
+      <label>Outra Disciplina (opcional)</label>
       <input type="text" name="outra_disciplina">
 
-      <!-- NÍVEL DE INGLÊS -->
-      <label for="nivel_ingles">Nível de Inglês</label>
+      <label>Nível de Inglês</label>
       <select name="nivel_ingles" required>
         <option value="">Selecione o nível</option>
         <option value="Básico">Básico</option>
@@ -209,5 +151,4 @@
   </div>
 </body>
 </html>
-
 

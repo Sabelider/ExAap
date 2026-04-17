@@ -1256,7 +1256,7 @@ async def exibir_formulario(request: Request):
             "erro": None
         }
     )
-    
+
 @app.post("/cadastro-aluno")
 async def cadastrar_aluno(
     request: Request,
@@ -1264,6 +1264,7 @@ async def cadastrar_aluno(
     nome_mae: str = Form(...),
     nome_pai: str = Form(...),
     senha: str = Form(...),
+    email: str = Form(...),  
     provincia: str = Form(...),
     municipio: str = Form(...),
     bairro: str = Form(...),
@@ -1278,21 +1279,26 @@ async def cadastrar_aluno(
     nivel_ingles: str = Form(...)
 ):
     alunos_ref = db.collection("alunos")
-    nome_normalizado = nome.strip().lower()
 
+    nome_normalizado = nome.strip().lower()
+    email_normalizado = email.strip().lower()
+
+    # 🔐 verificar duplicado por nome OU email
     existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
-    if existente:
+    existente_email = alunos_ref.where("email", "==", email_normalizado).get()
+
+    if existente or existente_email:
         return render_template(
             "cadastro-aluno.html",
             {
                 "request": request,
-                "erro": "Este nome já está cadastrado. Tente outro."
+                "erro": "Nome ou email já está cadastrado."
             }
         )
 
     paga_passado = []
     vinculo_query = db.collection("alunos_professor") \
-        .where("aluno", "==", nome.strip().lower()) \
+        .where("aluno", "==", nome_normalizado) \
         .limit(1).stream()
 
     vinculo_doc = next(vinculo_query, None)
@@ -1305,6 +1311,7 @@ async def cadastrar_aluno(
     dados = {
         "nome": nome,
         "nome_normalizado": nome_normalizado,
+        "email": email_normalizado,  
         "nome_mae": nome_mae,
         "nome_pai": nome_pai,
         "senha": senha,
@@ -1332,10 +1339,13 @@ async def cadastrar_aluno(
 
     alunos_ref.document(aluno_id).set(dados)
 
+    # 🔁 garantir consistência de dados antigos
     for aluno in alunos_ref.stream():
-        dados_aluno = aluno.to_dict()
+        dados_aluno = aluno.to_dict() or {}
+
         if "paga_passado" not in dados_aluno:
             paga_passado_antigo = []
+
             vinculo_query = db.collection("alunos_professor") \
                 .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
                 .limit(1).stream()

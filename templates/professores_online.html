@@ -65,6 +65,7 @@
       font-size: 16px;
       background-color: #f9f9f9;
       transition: border-color 0.3s ease;
+      box-sizing: border-box; /* 🔥 ESSENCIAL */
     }
 
     input:focus, select:focus {
@@ -112,8 +113,14 @@
     }
 
     .senha-container input {
+      width: 100%;
+      padding: 12px;
       padding-right: 45px;
-      margin-bottom: 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      box-sizing: border-box;
+      margin: 0; /* 🔥 REMOVE desalinhamento */
     }
 
     .toggle-senha {
@@ -164,7 +171,7 @@
 
     <input type="text" name="area_formacao" placeholder="Área de formação" required>
 
-    <!-- SENHA COM OLHO -->
+    <!-- SENHA ALINHADA -->
     <div class="senha-container">
       <input type="password" name="senha" id="senha" placeholder="Definir senha" required>
       <i class="fa-solid fa-eye toggle-senha"></i>

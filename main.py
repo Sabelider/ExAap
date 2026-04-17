@@ -5329,3 +5329,91 @@ async def pagina_vendas(request: Request):
             "request": request
         }
     )
+
+@app.get("/resetar-senha", response_class=HTMLResponse)
+async def resetar_senha_get(request: Request, token: str = None):
+    try:
+        # Se não tiver token, bloqueia acesso
+        if not token:
+            return render_template(
+                "login.html",
+                {
+                    "request": request,
+                    "erro": "Link inválido ou expirado",
+                    "sucesso": 0
+                }
+            )
+
+        return render_template(
+            "resetar-senha.html",
+            {
+                "request": request,
+                "token": token,
+                "erro": None,
+                "sucesso": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO RESET SENHA:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
+
+@app.post("/resetar-senha")
+async def resetar_senha_post(
+    request: Request,
+    token: str = Form(...),
+    nova_senha: str = Form(...)
+):
+    try:
+        nova_senha = nova_senha.strip()
+
+        # 🔥 Aqui depois vais validar token no Firebase (ou DB)
+        # Por enquanto exemplo simples:
+
+        alunos_ref = db.collection("alunos").stream()
+
+        for aluno in alunos_ref:
+            dados = aluno.to_dict()
+
+            if dados.get("reset_token") == token:
+                aluno.reference.update({
+                    "senha": nova_senha,
+                    "reset_token": None
+                })
+
+                return render_template(
+                    "login.html",
+                    {
+                        "request": request,
+                        "sucesso": 1,
+                        "erro": None
+                    }
+                )
+
+        return render_template(
+            "resetar-senha.html",
+            {
+                "request": request,
+                "token": token,
+                "erro": "Token inválido ou expirado",
+                "sucesso": 0
+            }
+        )
+
+    except Exception as e:
+        print("ERRO AO RESETAR SENHA:", e)
+
+        return render_template(
+            "resetar-senha.html",
+            {
+                "request": request,
+                "token": token,
+                "erro": "Erro interno no servidor",
+                "sucesso": 0
+            }
+        )

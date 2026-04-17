@@ -4969,14 +4969,6 @@ async def ajustar_professores_foto():
 
     return {"status": "ok", "atualizados": count}
 
-
-
-
-@app.get("/paginavendas", response_class=HTMLResponse)
-async def paginavendas(request: Request):
-    return templates.TemplateResponse("paginavendas.html", {"request": request})
-
-
 @app.get("/sucesso", response_class=HTMLResponse)
 async def pagina_sucesso(request: Request, mensagem: str = "Operação concluída com sucesso!"):
     return templates.TemplateResponse("sucesso.html", {

@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cadastro de Professores</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-yI1D+/s0IV8I+0+Vgqgk19MrbEbQnZQkAIK5w1rZsU3u4XhG8yT1A4rFZ5cOa2kxkG7rA3+3kd4xQ5aK0d1ckA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- FONT AWESOME -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <style>
     body {
       margin: 0;
@@ -100,9 +103,32 @@
       font-weight: 600;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
+
+    /* SENHA */
+    .senha-container {
+      position: relative;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .senha-container input {
+      padding-right: 45px;
+      margin-bottom: 0;
+    }
+
+    .toggle-senha {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
+
   <div class="top-bar">
     <img src="/static/logo.png" alt="Logo">
   </div>
@@ -137,12 +163,34 @@
     <input type="text" name="ano_faculdade" id="ano_faculdade" placeholder="Qual ano está frequentando?" style="display: none;">
 
     <input type="text" name="area_formacao" placeholder="Área de formação" required>
-    <input type="password" name="senha" placeholder="Definir senha" required>
+
+    <!-- SENHA COM OLHO -->
+    <div class="senha-container">
+      <input type="password" name="senha" id="senha" placeholder="Definir senha" required>
+      <i class="fa-solid fa-eye toggle-senha"></i>
+    </div>
 
     <button type="submit">Enviar</button>
   </form>
 
   <script>
+    // Mostrar/ocultar senha
+    document.querySelector(".toggle-senha").addEventListener("click", function () {
+      const input = document.getElementById("senha");
+      const icon = this;
+
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    });
+
+    // Mostrar campo de ano se for faculdade
     document.getElementById('nivel_ensino').addEventListener('change', function () {
       const ano = document.getElementById('ano_faculdade');
       if (this.value === 'faculdade') {
@@ -166,6 +214,6 @@
       document.getElementById('localizacao').value = 'Geolocalização não suportada';
     }
   </script>
+
 </body>
 </html>
-

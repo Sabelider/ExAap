@@ -405,7 +405,7 @@ async def logini_get(request: Request, sucesso: int = 0):
         if request.session.get("logged_in"):
             return RedirectResponse("/admin", status_code=302)
 
-        return templates.TemplateResponse(
+        return render_template(
             "logini.html",
             {
                 "request": request,
@@ -446,7 +446,7 @@ async def logini(
             )
 
         # ❌ Login inválido
-        return templates.TemplateResponse(
+        return render_template(
             "logini.html",
             {
                 "request": request,
@@ -458,7 +458,7 @@ async def logini(
     except Exception as e:
         print("ERRO LOGIN ADMIN:", e)
 
-        return templates.TemplateResponse(
+        return render_template(
             "logini.html",
             {
                 "request": request,

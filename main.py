@@ -470,30 +470,37 @@ async def logini(
 
 @app.get("/admin", response_class=HTMLResponse)
 async def painel_admin(request: Request):
+    try:
+        # 🔐 Proteção de sessão
+        if not request.session.get("logged_in"):
+            return RedirectResponse("/logini", status_code=302)
 
-    # 🔐 Proteção de sessão
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/logini", status_code=302)
+        # 🔥 Buscar equipa administrativa no Firebase
+        docs = db.collection("equipa_administrativa").stream()
+        equipa = []
 
-    # 🔥 Buscar equipa administrativa no Firebase
-    docs = db.collection("equipa_administrativa").stream()
-    equipa = []
+        for doc in docs:
+            data = doc.to_dict()
+            if data:
+                data["id"] = doc.id
+                equipa.append(data)
 
-    for doc in docs:
-        data = doc.to_dict()
-        if data:
-            data["id"] = doc.id
-            equipa.append(data)
+        # 📄 Renderiza o dashboard
+        return render_template(
+            "admin_dashboard.html",
+            {
+                "request": request,
+                "equipa": equipa
+            }
+        )
 
-    # 📄 Renderiza o dashboard com os dados
-    return templates.TemplateResponse(
-        "admin_dashboard.html",
-        {
-            "request": request,
-            "equipa": equipa
-        }
-    )
-    
+    except Exception as e:
+        print("ERRO NO PAINEL ADMIN:", e)
+
+        return HTMLResponse(
+            content=f"<h1>Erro interno</h1><p>{str(e)}</p>",
+            status_code=500
+        )
 
 @app.get("/logout")
 def logout(request: Request):

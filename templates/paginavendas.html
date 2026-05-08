@@ -4,124 +4,314 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SabApp - Curso de Inglês Online</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
     body {
       font-family: 'Nunito', sans-serif;
-      margin: 0;
-      padding: 0;
       background-color: #f4f4f8;
       color: #333;
+      line-height: 1.6;
+    }
+
+    html{
+      scroll-behavior:smooth;
     }
 
     /* Cabeçalho */
     header {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      padding: 20px 30px;
+      padding: 18px 40px;
       background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 999;
     }
 
     header h1 {
       font-weight: 800;
       color: #000;
-      margin: 0;
-      font-size: 26px;
+      font-size: 28px;
+    }
+
+    .menu a{
+      text-decoration:none;
+      color:#003366;
+      font-weight:700;
+      margin-left:20px;
+      transition:0.3s;
+    }
+
+    .menu a:hover{
+      color:#000;
     }
 
     /* Hero */
     .hero {
-      background: url('/static/Professora-online.jpg') no-repeat center center;
+      background:
+      linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+      url('/static/Professora-online.jpg') no-repeat center center;
+
       background-size: cover;
       color: #fff;
       text-align: center;
-      padding: 120px 20px;
-      text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+      padding: 130px 20px;
     }
 
     .hero h2 {
-      font-size: 38px;
+      font-size: 52px;
       font-weight: 800;
       margin-bottom: 20px;
     }
 
     .hero p {
-      font-size: 18px;
-      max-width: 700px;
+      font-size: 20px;
+      max-width: 800px;
       margin: auto;
-      margin-bottom: 25px;
+      margin-bottom: 35px;
     }
 
-    .hero a {
+    .hero-buttons{
+      display:flex;
+      justify-content:center;
+      gap:15px;
+      flex-wrap:wrap;
+    }
+
+    .btn-primary{
       background: #ffc107;
       padding: 15px 35px;
       color: #000;
       font-weight: bold;
-      border-radius: 8px;
+      border-radius: 10px;
       text-decoration: none;
       font-size: 18px;
       transition: 0.3s;
+      display:inline-block;
     }
 
-    .hero a:hover {
+    .btn-primary:hover {
       background: #ffb000;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary{
+      background: transparent;
+      border:2px solid #fff;
+      color:#fff;
+      padding:15px 35px;
+      border-radius:10px;
+      text-decoration:none;
+      font-weight:700;
+      transition:0.3s;
+    }
+
+    .btn-secondary:hover{
+      background:#fff;
+      color:#000;
     }
 
     section {
-      padding: 60px 20px;
-      max-width: 1100px;
+      padding: 80px 20px;
+      max-width: 1200px;
       margin: auto;
     }
 
     h2.section-title {
-      font-size: 28px;
+      font-size: 36px;
       margin-bottom: 20px;
       color: #004aad;
       text-align: center;
       font-weight: 800;
     }
 
-    /* Seção de Benefícios */
-    .benefits p {
-      text-align: center;
-      max-width: 700px;
-      margin: 0 auto 30px auto;
+    .section-subtitle{
+      text-align:center;
+      max-width:800px;
+      margin:0 auto 50px auto;
+      color:#666;
+      font-size:18px;
     }
 
-    .benefits ul {
-      list-style: none;
-      padding: 0;
+    /* Benefícios */
+    .benefits-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 25px;
     }
 
-    .benefits li {
-      background: #fdfdfd;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .benefit-card {
+      background: #fff;
+      padding: 30px 25px;
+      border-radius: 18px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      transition:0.3s;
     }
 
-    .benefits li i {
+    .benefit-card:hover{
+      transform:translateY(-5px);
+    }
+
+    .benefit-card i {
+      font-size: 35px;
       color: #00c9ff;
-      font-size: 20px;
+      margin-bottom: 15px;
     }
 
-    /* Investimento / Calculadora */
+    .benefit-card h3{
+      margin-bottom:10px;
+      color:#004aad;
+    }
+
+    /* Professores */
+    .teachers{
+      background:#fff;
+      border-radius:25px;
+      padding:60px 30px;
+      box-shadow:0 5px 20px rgba(0,0,0,0.05);
+    }
+
+    .teacher-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:30px;
+      margin-top:40px;
+    }
+
+    .teacher-card{
+      background:#f9fbff;
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+      transition:0.3s;
+    }
+
+    .teacher-card:hover{
+      transform:translateY(-5px);
+    }
+
+    .teacher-card img{
+      width:100%;
+      height:360px;
+      object-fit:cover;
+    }
+
+    .teacher-content{
+      padding:25px;
+    }
+
+    .teacher-content h3{
+      color:#004aad;
+      margin-bottom:10px;
+      font-size:24px;
+    }
+
+    .teacher-content p{
+      margin-bottom:12px;
+      color:#555;
+    }
+
+    .badge{
+      display:inline-block;
+      background:#004aad;
+      color:#fff;
+      padding:8px 15px;
+      border-radius:30px;
+      font-size:14px;
+      font-weight:700;
+      margin-top:10px;
+    }
+
+    /* Planos */
+    .plans{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:30px;
+      margin-top:50px;
+    }
+
+    .plan-card{
+      background:#fff;
+      border-radius:20px;
+      padding:35px 30px;
+      text-align:center;
+      box-shadow:0 5px 20px rgba(0,0,0,0.08);
+      position:relative;
+      transition:0.3s;
+    }
+
+    .plan-card:hover{
+      transform:translateY(-5px);
+    }
+
+    .popular{
+      border:3px solid #00c9ff;
+    }
+
+    .popular-label{
+      position:absolute;
+      top:-12px;
+      left:50%;
+      transform:translateX(-50%);
+      background:#00c9ff;
+      color:#fff;
+      padding:8px 18px;
+      border-radius:30px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .plan-card h3{
+      color:#004aad;
+      font-size:28px;
+      margin-bottom:15px;
+    }
+
+    .price{
+      font-size:42px;
+      font-weight:800;
+      color:#111;
+      margin-bottom:20px;
+    }
+
+    .price span{
+      font-size:16px;
+      color:#666;
+    }
+
+    .plan-card ul{
+      list-style:none;
+      margin-bottom:30px;
+    }
+
+    .plan-card ul li{
+      margin-bottom:12px;
+      color:#555;
+    }
+
+    .plan-card ul li i{
+      color:#00c9ff;
+      margin-right:8px;
+    }
+
+    /* Calculadora */
     .calculator {
-      background: #f4faff;
-      padding: 40px;
-      border-radius: 12px;
+      background: linear-gradient(135deg, #f4faff, #ffffff);
+      padding: 50px 30px;
+      border-radius: 20px;
       text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
     }
 
     .calc-controls {
@@ -130,68 +320,87 @@
       align-items: center;
       gap: 30px;
       flex-wrap: wrap;
-      margin-top: 20px;
+      margin-top: 25px;
     }
 
     .calc-controls button {
-      padding: 10px 20px;
-      font-size: 20px;
-      border: none;
-      border-radius: 6px;
-      background: #004aad;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
+      width:55px;
+      height:55px;
+      border:none;
+      border-radius:50%;
+      background:#004aad;
+      color:#fff;
+      font-size:22px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:0.3s;
     }
 
-    .calc-controls button:hover {
-      background: #003c8c;
+    .calc-controls button:hover{
+      background:#00337a;
     }
 
-    .calc-result {
-      font-size: 18px;
-      font-weight: 700;
-      margin-top: 20px;
+    #mesesDisplay{
+      font-size:24px;
+      font-weight:800;
+      color:#004aad;
     }
 
-    /* Oferta Especial */
+    .calc-result{
+      margin-top:25px;
+      font-size:30px;
+      font-weight:800;
+      color:#111;
+    }
+
+    /* Oferta */
     .offer {
-      background: #004aad;
+      background: linear-gradient(135deg, #004aad, #0066dd);
       color: #fff;
       text-align: center;
-      padding: 50px 20px;
-      border-radius: 12px;
+      padding: 70px 30px;
+      border-radius: 25px;
+      margin-top:60px;
     }
 
-    .offer a {
-      background: #ffc107;
-      padding: 15px 35px;
-      color: #000;
-      font-weight: bold;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 18px;
-      transition: 0.3s;
+    .offer h2{
+      font-size:40px;
+      margin-bottom:20px;
     }
 
-    .offer a:hover {
-      background: #ffb000;
+    .offer p{
+      font-size:18px;
+      margin-bottom:35px;
     }
 
     /* Rodapé */
     footer {
-      background: #222;
+      background: #111827;
       color: #ccc;
-      padding: 40px 20px;
+      padding: 50px 20px;
       text-align: center;
+      margin-top:80px;
+    }
+
+    footer h3{
+      color:#fff;
+      margin-bottom:15px;
+    }
+
+    footer .socials{
+      margin:25px 0;
     }
 
     footer a {
       color: #ffc107;
-      margin: 0 10px;
+      margin: 0 12px;
       text-decoration: none;
-      font-size: 22px;
+      font-size: 24px;
+      transition:0.3s;
+    }
+
+    footer a:hover{
+      color:#fff;
     }
 
     footer p.note {
@@ -201,93 +410,424 @@
     }
 
     @media (max-width: 768px) {
-      .hero h2 { font-size: 28px; }
-      .hero p { font-size: 16px; }
-      .calc-controls { flex-direction: column; gap: 10px; }
+
+      header{
+        flex-direction:column;
+        gap:15px;
+      }
+
+      .menu{
+        display:flex;
+        flex-wrap:wrap;
+        justify-content:center;
+      }
+
+      .hero{
+        padding:100px 20px;
+      }
+
+      .hero h2 {
+        font-size: 34px;
+      }
+
+      .hero p {
+        font-size: 17px;
+      }
+
+      h2.section-title{
+        font-size:30px;
+      }
+
+      .offer h2{
+        font-size:30px;
+      }
+
+      .calc-controls{
+        gap:15px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Cabeçalho -->
   <header>
     <h1>SabApp</h1>
+
+    <nav class="menu">
+      <a href="#beneficios">Benefícios</a>
+      <a href="#professores">Professores</a>
+      <a href="#planos">Planos</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
   </header>
 
   <!-- Hero -->
-  <div class="hero">
-    <h2>Aprenda Inglês e Transforme o Seu Futuro</h2>
-    <p>Do zero à conversação em até 96 dias</p>
-    <a href="https://sabapp.onrender.com/professores_online">Inscreva-se Agora</a>
-  </div>
+  <section class="hero">
 
-  <!-- Por que aprender inglês -->
-  <section class="benefits">
+    <h2>Aprenda Inglês Online e Transforme o Seu Futuro</h2>
+
+    <p>
+      Domine o inglês profissional com professores qualificados internacionalmente.
+      Aulas online, metodologia moderna e suporte personalizado para você evoluir
+      do básico à conversação com confiança.
+    </p>
+
+    <div class="hero-buttons">
+      <a class="btn-primary" href="https://sabapp.onrender.com/cadastro-aluno">
+        Quero Começar Agora
+      </a>
+
+      <a class="btn-secondary" href="#planos">
+        Ver Planos
+      </a>
+    </div>
+
+  </section>
+
+  <!-- Benefícios -->
+  <section id="beneficios">
+
     <h2 class="section-title">Por que aprender Inglês?</h2>
-    <p>Você já perdeu uma vaga de emprego por não falar inglês? O mundo fala inglês... e quem não fala, perde oportunidades!</p>
+
+    <p class="section-subtitle">
+      O inglês abre portas no mercado internacional, aumenta oportunidades de emprego,
+      melhora a comunicação profissional e permite acesso ao conhecimento global.
+    </p>
+
+    <div class="benefits-grid">
+
+      <div class="benefit-card">
+        <i class="fas fa-briefcase"></i>
+        <h3>Mais Oportunidades</h3>
+        <p>Tenha vantagem competitiva no mercado de trabalho nacional e internacional.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-comments"></i>
+        <h3>Conversação Real</h3>
+        <p>Aprenda a falar inglês com confiança em reuniões, entrevistas e viagens.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-globe"></i>
+        <h3>Conexão Global</h3>
+        <p>Comunique-se com pessoas do mundo inteiro e amplie suas possibilidades.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-laptop"></i>
+        <h3>Aulas Online</h3>
+        <p>Estude de qualquer lugar com flexibilidade e acompanhamento profissional.</p>
+      </div>
+
+    </div>
   </section>
 
-  <!-- Estrutura do curso -->
-  <section class="benefits">
+  <!-- Estrutura -->
+  <section>
+
     <h2 class="section-title">Estrutura do Curso</h2>
-    <ul>
-      <li><i class="fas fa-layer-group"></i> 4 Níveis: Iniciante, Elementar, Pré-Intermédio e Intermédio</li>
-      <li><i class="fas fa-book"></i> 12 Unidades com testes escritos e de Listening</li>
-      <li><i class="fas fa-clock"></i> 1 hora por dia, mínimo 3 aulas por semana (12 por mês)</li>
-    </ul>
+
+    <p class="section-subtitle">
+      Curso estruturado para desenvolver escrita, leitura, listening e conversação.
+    </p>
+
+    <div class="benefits-grid">
+
+      <div class="benefit-card">
+        <i class="fas fa-layer-group"></i>
+        <h3>4 Níveis de Aprendizagem</h3>
+        <p>Beginner, Elementar, Intermédio e Avançado.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-book"></i>
+        <h3>Material Completo</h3>
+        <p>12 unidades com testes escritos, speaking e listening.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-clock"></i>
+        <h3>Horários Flexíveis</h3>
+        <p>1 hora por aula, mínimo de 3 aulas por semana.</p>
+      </div>
+
+      <div class="benefit-card">
+        <i class="fas fa-certificate"></i>
+        <h3>Metodologia Internacional</h3>
+        <p>Professores certificados com formação em vários países africanos.</p>
+      </div>
+
+    </div>
+
   </section>
 
-  <!-- Investimento -->
+  <!-- Professores -->
+  <section id="professores" class="teachers">
+
+    <h2 class="section-title">Equipe Académica</h2>
+
+    <p class="section-subtitle">
+      Aprenda com profissionais altamente qualificados e preparados para acelerar
+      a sua evolução no inglês.
+    </p>
+
+    <div class="teacher-grid">
+
+      <!-- Maria Clara -->
+      <div class="teacher-card">
+
+        <img src="/static/Mariav.jpeg" alt="Maria Clara Eduardo">
+
+        <div class="teacher-content">
+
+          <h3>Maria Clara Eduardo</h3>
+
+          <p>
+            Diretora Geral da Sabi-Líder 🇦🇴
+          </p>
+
+          <p>
+            Formação internacional em países como Zâmbia, Malawi, Zimbabwe e África do Sul,
+            com ampla experiência em desenvolvimento académico e inglês profissional.
+          </p>
+
+          <p>
+            Especialista em comunicação fluente, metodologia moderna de ensino e preparação
+            de alunos para oportunidades internacionais.
+          </p>
+
+          <span class="badge">English Level: Native C1</span>
+
+        </div>
+      </div>
+
+      <!-- Nadia -->
+      <div class="teacher-card">
+
+        <img src="/static/Maria2.jpeg" alt="Professora Nádia Poba">
+
+        <div class="teacher-content">
+
+          <h3>Nádia Poba</h3>
+
+          <p>
+            Professora especializada em ensino internacional de inglês e formação de professores.
+          </p>
+
+          <p>
+            Certificada em TEFL pela InLingua e formada em Teacher Training School of Reformation
+            através da YWAM South Africa.
+          </p>
+
+          <p>
+            Experiência focada em fluência, pronúncia, listening e desenvolvimento de comunicação
+            natural em inglês.
+          </p>
+
+          <span class="badge">English Level: Native C2</span>
+
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- Planos -->
+  <section id="planos">
+
+    <h2 class="section-title">Escolha o Seu Nível</h2>
+
+    <p class="section-subtitle">
+      Invista no seu crescimento profissional com planos acessíveis e ensino de qualidade.
+    </p>
+
+    <div class="plans">
+
+      <!-- Beginner -->
+      <div class="plan-card">
+
+        <h3>Beginner</h3>
+
+        <div class="price">
+          7.500 Kz
+          <span>/mês</span>
+        </div>
+
+        <ul>
+          <li><i class="fas fa-check-circle"></i> Ideal para iniciantes</li>
+          <li><i class="fas fa-check-circle"></i> Inglês básico e comunicação inicial</li>
+          <li><i class="fas fa-check-circle"></i> Conversação prática</li>
+          <li><i class="fas fa-check-circle"></i> Aulas online ao vivo</li>
+        </ul>
+
+        <a class="btn-primary" href="https://sabapp.onrender.com/cadastro-aluno">
+          Inscrever-se
+        </a>
+
+      </div>
+
+      <!-- Intermedio -->
+      <div class="plan-card popular">
+
+        <div class="popular-label">Mais Procurado</div>
+
+        <h3>Intermédio</h3>
+
+        <div class="price">
+          14.900 Kz
+          <span>/mês</span>
+        </div>
+
+        <ul>
+          <li><i class="fas fa-check-circle"></i> Inglês profissional</li>
+          <li><i class="fas fa-check-circle"></i> Speaking e Listening avançado</li>
+          <li><i class="fas fa-check-circle"></i> Preparação para entrevistas</li>
+          <li><i class="fas fa-check-circle"></i> Desenvolvimento de fluência</li>
+        </ul>
+
+        <a class="btn-primary" href="https://sabapp.onrender.com/cadastro-aluno">
+          Inscrever-se
+        </a>
+
+      </div>
+
+      <!-- Avançado -->
+      <div class="plan-card">
+
+        <h3>Avançado</h3>
+
+        <div class="price">
+          17.900 Kz
+          <span>/mês</span>
+        </div>
+
+        <ul>
+          <li><i class="fas fa-check-circle"></i> Fluência avançada</li>
+          <li><i class="fas fa-check-circle"></i> Inglês corporativo</li>
+          <li><i class="fas fa-check-circle"></i> Comunicação internacional</li>
+          <li><i class="fas fa-check-circle"></i> Expressão profissional</li>
+        </ul>
+
+        <a class="btn-primary" href="https://sabapp.onrender.com/cadastro-aluno">
+          Inscrever-se
+        </a>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- Calculadora -->
   <section class="calculator">
-    <h2 class="section-title">Investimento</h2>
-    <p><strong>1.250 Kz por aula</strong> - Total mensal: <strong>15.000 Kz</strong></p>
 
-    <h3>Calcule seu Plano</h3>
+    <h2 class="section-title">Calcule o Seu Investimento</h2>
+
+    <p>
+      Quanto mais tempo estudar, maior será sua evolução no inglês.
+    </p>
+
     <div class="calc-controls">
+
       <button onclick="alterarMes(-1)">-</button>
+
       <span id="mesesDisplay">1 Mês</span>
+
       <button onclick="alterarMes(1)">+</button>
+
     </div>
+
     <div class="calc-result">
-      Total: <span id="totalDisplay">15.000 Kz</span>
+      Total: <span id="totalDisplay">7.500 Kz</span>
     </div>
+
   </section>
 
-  <!-- Oferta Especial -->
+  <!-- Oferta -->
   <section class="offer">
-    <h2>Comece Agora e Mude o Seu Futuro!</h2>
-    <p>Garanta sua vaga e dê o primeiro passo rumo à fluência.</p>
-    <a href="https://sabapp.onrender.com/professores_online">Quero Começar Agora</a>
+
+    <h2>
+      Invista no seu Inglês profissional pelo preço de um almoço
+    </h2>
+
+    <p>
+      Comece hoje mesmo a sua jornada rumo à fluência por apenas
+      <strong>7.500 Kz</strong>.
+    </p>
+
+    <a class="btn-primary" href="https://sabapp.onrender.com/cadastro-aluno">
+      Garantir Minha Vaga
+    </a>
+
   </section>
 
   <!-- Rodapé -->
-  <footer>
-    <p>SabApp © 2026 - Todos os direitos reservados</p>
+  <footer id="contacto">
+
+    <h3>SabApp - Inglês Online</h3>
+
     <p>
-      <a href="#"><i class="fab fa-facebook"></i></a>
-      <a href="#"><i class="fab fa-instagram"></i></a>
-      <a href="https://wa.me/244928911299" target="_blank"><i class="fab fa-whatsapp"></i></a>
-      <a href="tel:+244928911299"><i class="fas fa-phone"></i></a>
+      Formação moderna para alunos que desejam crescer academicamente e profissionalmente.
     </p>
-    <p class="note">Em caso de dúvidas, fale conosco pelo WhatsApp.</p>
+
+    <div class="socials">
+
+      <a href="#">
+        <i class="fab fa-facebook"></i>
+      </a>
+
+      <a href="#">
+        <i class="fab fa-instagram"></i>
+      </a>
+
+      <a href="https://wa.me/244928911299" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+      </a>
+
+      <a href="tel:+244928911299">
+        <i class="fas fa-phone"></i>
+      </a>
+
+    </div>
+
+    <p class="note">
+      © 2026 SabApp - Todos os direitos reservados.
+    </p>
+
   </footer>
 
   <script>
+
     let meses = 1;
-    const mensalidade = 15000;
+    const mensalidade = 7500;
 
     function alterarMes(valor) {
+
       meses += valor;
-      if (meses < 1) meses = 1;
+
+      if (meses < 1) {
+        meses = 1;
+      }
+
       atualizarTotal();
     }
 
     function atualizarTotal() {
-      const desconto = (meses - 1) * 100;
-      const total = (mensalidade * meses) - desconto;
-      document.getElementById('mesesDisplay').innerText = meses + (meses > 1 ? ' Meses' : ' Mês');
-      document.getElementById('totalDisplay').innerText = total.toLocaleString('pt-PT') + ' Kz';
+
+      const total = mensalidade * meses;
+
+      document.getElementById('mesesDisplay').innerText =
+        meses + (meses > 1 ? ' Meses' : ' Mês');
+
+      document.getElementById('totalDisplay').innerText =
+        total.toLocaleString('pt-PT') + ' Kz';
     }
+
   </script>
+
 </body>
 </html>

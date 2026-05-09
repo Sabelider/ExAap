@@ -1682,7 +1682,7 @@ async def upload_comprovativo(
         banco_norm = banco.strip().lower()
 
         # Limites de tamanho
-        limites = {"bai": 32, "bni": 32, "bpc": 31, "multicaixa express": 33}
+        limites = {"bai": 70, "bni": 70, "bpc": 70, "multicaixa express": 70}
         if banco_norm not in limites:
             raise HTTPException(status_code=400, detail="Banco inválido.")
 
@@ -1694,7 +1694,7 @@ async def upload_comprovativo(
         tamanho_kb = len(conteudo) / 1024
 
         if banco_norm == "multicaixa express":
-            if tamanho_kb < 24 or tamanho_kb > 33:
+            if tamanho_kb < 24 or tamanho_kb > 70:
                 raise HTTPException(status_code=400, detail="Comprovativo inválido para Multicaixa Express.")
         elif tamanho_kb > limites[banco_norm]:
             raise HTTPException(status_code=400, detail=f"O comprovativo excede o limite para {banco.upper()}.")

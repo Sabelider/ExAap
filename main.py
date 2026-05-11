@@ -5050,12 +5050,18 @@ async def pagina_sucesso(
     )
     
 @app.get("/erro", response_class=HTMLResponse)
-async def pagina_erro(request: Request, mensagem: str = "Ocorreu um erro inesperado."):
-    return templates.TemplateResponse("erro.html", {
-        "request": request,
-        "mensagem": mensagem
-    })
-
+async def pagina_erro(
+    request: Request,
+    mensagem: str = "Ocorreu um erro inesperado."
+):
+    return templates.TemplateResponse(
+        "erro.html",
+        {
+            "request": request,
+            "mensagem": mensagem
+        }
+    )
+    
 @app.get("/professores-disponiveis")
 async def professores_disponiveis():
     try:

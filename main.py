@@ -1257,6 +1257,7 @@ async def exibir_formulario(request: Request):
         }
     )
 
+
 @app.post("/cadastro-aluno")
 async def cadastrar_aluno(
     request: Request,
@@ -1264,30 +1265,37 @@ async def cadastrar_aluno(
     nome_mae: str = Form(...),
     nome_pai: str = Form(...),
     senha: str = Form(...),
-    email: str = Form(...),  
+    email: str = Form(...),
     provincia: str = Form(...),
     municipio: str = Form(...),
     bairro: str = Form(...),
-
-    latitude: Optional[str] = Form(None),
-    longitude: Optional[str] = Form(None),
-
     telefone: str = Form(...),
     disciplina: str = Form(...),
     bilhete: str = Form(...),
     outra_disciplina: Optional[str] = Form(None),
     nivel_ingles: str = Form(...)
 ):
+
     alunos_ref = db.collection("alunos")
 
     nome_normalizado = nome.strip().lower()
     email_normalizado = email.strip().lower()
 
     # 🔐 verificar duplicado por nome OU email
-    existente = alunos_ref.where("nome_normalizado", "==", nome_normalizado).get()
-    existente_email = alunos_ref.where("email", "==", email_normalizado).get()
+    existente = alunos_ref.where(
+        "nome_normalizado",
+        "==",
+        nome_normalizado
+    ).get()
+
+    existente_email = alunos_ref.where(
+        "email",
+        "==",
+        email_normalizado
+    ).get()
 
     if existente or existente_email:
+
         return render_template(
             "cadastro-aluno.html",
             {
@@ -1297,6 +1305,7 @@ async def cadastrar_aluno(
         )
 
     paga_passado = []
+
     vinculo_query = db.collection("alunos_professor") \
         .where("aluno", "==", nome_normalizado) \
         .limit(1).stream()
@@ -1304,14 +1313,17 @@ async def cadastrar_aluno(
     vinculo_doc = next(vinculo_query, None)
 
     if vinculo_doc:
-        paga_passado = vinculo_doc.to_dict().get("paga_passado", [])
+        paga_passado = vinculo_doc.to_dict().get(
+            "paga_passado",
+            []
+        )
 
     aluno_id = str(uuid.uuid4())
 
     dados = {
         "nome": nome,
         "nome_normalizado": nome_normalizado,
-        "email": email_normalizado,  
+        "email": email_normalizado,
         "nome_mae": nome_mae,
         "nome_pai": nome_pai,
         "senha": senha,
@@ -1331,29 +1343,32 @@ async def cadastrar_aluno(
         "paga_passado": paga_passado
     }
 
-    if latitude or longitude:
-        dados["localizacao"] = {
-            "latitude": latitude,
-            "longitude": longitude
-        }
-
     alunos_ref.document(aluno_id).set(dados)
 
     # 🔁 garantir consistência de dados antigos
     for aluno in alunos_ref.stream():
+
         dados_aluno = aluno.to_dict() or {}
 
         if "paga_passado" not in dados_aluno:
+
             paga_passado_antigo = []
 
             vinculo_query = db.collection("alunos_professor") \
-                .where("aluno", "==", dados_aluno.get("nome", "").strip().lower()) \
+                .where(
+                    "aluno",
+                    "==",
+                    dados_aluno.get("nome", "").strip().lower()
+                ) \
                 .limit(1).stream()
 
             vinculo_doc = next(vinculo_query, None)
 
             if vinculo_doc:
-                paga_passado_antigo = vinculo_doc.to_dict().get("paga_passado", [])
+                paga_passado_antigo = vinculo_doc.to_dict().get(
+                    "paga_passado",
+                    []
+                )
 
             alunos_ref.document(aluno.id).update({
                 "paga_passado": paga_passado_antigo
@@ -1363,8 +1378,8 @@ async def cadastrar_aluno(
         url="/login?sucesso=1",
         status_code=303
     )
-    
-        
+
+
 @app.get("/perfil/{nome}", response_class=HTMLResponse)
 async def profil(request: Request, nome: str):
     try:

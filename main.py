@@ -2603,9 +2603,7 @@ async def ativar_notificacao(data: NotificacaoRequest):
         )
 
 
-from pydantic import BaseModel
-from fastapi import Request
-from flask import render_template  # Certifique-se de importar o render_template
+from google.cloud.firestore import SERVER_TIMESTAMP
 
 
 class AlunoInfo(BaseModel):
@@ -2613,7 +2611,7 @@ class AlunoInfo(BaseModel):
 
 
 @app.post("/desativar-notificacao")
-async def desativar_notificacao(info: AlunoInfo):
+async def desativar_notificacao(request: Request, info: AlunoInfo):
     try:
         aluno = info.aluno.strip().lower()
 
@@ -2629,25 +2627,35 @@ async def desativar_notificacao(info: AlunoInfo):
         if not doc:
             return render_template(
                 "erro.html",
-                status="erro",
-                mensagem="Aluno não encontrado"
-            ), 404
+                {
+                    "request": request,
+                    "erro": "Aluno não encontrado",
+                    "sucesso": 0
+                }
+            )
 
         # Atualiza o campo notificacao para False
         doc.reference.update({"notificacao": False})
 
         return render_template(
             "desativar_notificacao.html",
-            status="ok",
-            mensagem="Notificação desativada com sucesso"
+            {
+                "request": request,
+                "mensagem": "Notificação desativada com sucesso",
+                "status": "ok",
+                "sucesso": 1
+            }
         )
 
     except Exception as e:
         return render_template(
             "erro.html",
-            status="erro",
-            mensagem=f"Erro ao desativar notificação: {str(e)}"
-        ), 500
+            {
+                "request": request,
+                "erro": f"Erro ao desativar notificação: {str(e)}",
+                "sucesso": 0
+            }
+        )
 
 
 @app.post("/verificar-notificacao")
@@ -2659,8 +2667,12 @@ async def verificar_notificacao(request: Request):
         if not nome_aluno:
             return render_template(
                 "erro.html",
-                erro="Nome do aluno não fornecido"
-            ), 400
+                {
+                    "request": request,
+                    "erro": "Nome do aluno não fornecido",
+                    "sucesso": 0
+                }
+            )
 
         query = (
             db.collection("alunos_professor")
@@ -2674,28 +2686,38 @@ async def verificar_notificacao(request: Request):
         if not doc:
             return render_template(
                 "verificar_notificacao.html",
-                notificacao=False,
-                mensagem="Aluno não encontrado",
-                professor_email=""
-            ), 404
+                {
+                    "request": request,
+                    "notificacao": False,
+                    "mensagem": "Aluno não encontrado",
+                    "professor_email": "",
+                    "sucesso": 0
+                }
+            )
 
-        dados_aluno = doc.to_dict()
+        dados_aluno = doc.to_dict() or {}
         notificacao = dados_aluno.get("notificacao", False)
         professor_email = dados_aluno.get("professor", "")
 
         return render_template(
             "verificar_notificacao.html",
-            notificacao=notificacao,
-            professor_email=professor_email
+            {
+                "request": request,
+                "notificacao": notificacao,
+                "professor_email": professor_email,
+                "sucesso": 1
+            }
         )
 
     except Exception as e:
         return render_template(
             "erro.html",
-            erro=str(e)
-        ), 500
-        
-from google.cloud.firestore import SERVER_TIMESTAMP
+            {
+                "request": request,
+                "erro": str(e),
+                "sucesso": 0
+            }
+        )
 
 
 @app.post("/registrar-chamada")
@@ -2709,8 +2731,12 @@ async def registrar_chamada(request: Request):
         if not aluno or not professor:
             return render_template(
                 "erro.html",
-                erro="Dados incompletos"
-            ), 400
+                {
+                    "request": request,
+                    "erro": "Dados incompletos",
+                    "sucesso": 0
+                }
+            )
 
         # ===============================
         # NORMALIZAÇÃO
@@ -2719,7 +2745,6 @@ async def registrar_chamada(request: Request):
         aluno_slug = aluno_nome.replace(" ", "-")
 
         professor_email = professor.strip().lower()
-
         sala = f"{professor_email}-{aluno_slug}"
 
         # ===============================
@@ -2727,21 +2752,25 @@ async def registrar_chamada(request: Request):
         # ===============================
         vinculo_query = (
             db.collection("alunos_professor")
-              .where("professor", "==", professor_email)
-              .where("aluno", "==", aluno_nome)
-              .stream()
+            .where("professor", "==", professor_email)
+            .where("aluno", "==", aluno_nome)
+            .stream()
         )
 
         if not any(vinculo_query):
             return render_template(
                 "erro.html",
-                erro="Vínculo entre professor e aluno não encontrado."
-            ), 403
+                {
+                    "request": request,
+                    "erro": "Vínculo entre professor e aluno não encontrado.",
+                    "sucesso": 0
+                }
+            )
 
         # ===============================
         # DOCUMENTO ÚNICO POR DIA
         # ===============================
-        hoje = date.today().isoformat()  # Ex.: 2026-05-12
+        hoje = date.today().isoformat()
         doc_id = f"{aluno_slug}_{hoje}"
 
         doc_ref = db.collection("chamadas_ao_vivo").document(doc_id)
@@ -2761,22 +2790,30 @@ async def registrar_chamada(request: Request):
 
             return render_template(
                 "registrar_chamada.html",
-                mensagem="Chamada registrada com sucesso.",
-                status="pendente",
-                sala=sala
+                {
+                    "request": request,
+                    "mensagem": "Chamada registrada com sucesso.",
+                    "status": "pendente",
+                    "sala": sala,
+                    "sucesso": 1
+                }
             )
 
         # ===============================
         # SE JÁ EXISTE → NÃO DUPLICA
         # ===============================
-        dados_existentes = doc.to_dict()
+        dados_existentes = doc.to_dict() or {}
         status_atual = dados_existentes.get("status", "pendente")
 
         return render_template(
             "registrar_chamada.html",
-            mensagem="Chamada já registrada hoje.",
-            status=status_atual,
-            sala=sala
+            {
+                "request": request,
+                "mensagem": "Chamada já registrada hoje.",
+                "status": status_atual,
+                "sala": sala,
+                "sucesso": 1
+            }
         )
 
     except Exception as e:
@@ -2784,9 +2821,12 @@ async def registrar_chamada(request: Request):
 
         return render_template(
             "erro.html",
-            erro="Erro interno ao registrar chamada."
-        ), 500
-
+            {
+                "request": request,
+                "erro": "Erro interno ao registrar chamada.",
+                "sucesso": 0
+            }
+        )
 
 app.add_middleware(
     CORSMiddleware,

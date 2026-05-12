@@ -2696,6 +2696,7 @@ async def ativar_notificacao(data: NotificacaoRequest):
         docs = db.collection("alunos_professor") \
                  .where("aluno", "==", aluno_nome) \
                  .limit(1).stream()
+
         doc = next(docs, None)
 
         if not doc:
@@ -2704,15 +2705,21 @@ async def ativar_notificacao(data: NotificacaoRequest):
                 status_code=404
             )
 
-        db.collection("alunos_professor").document(doc.id).update({"notificacao": True})
-        return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
+        db.collection("alunos_professor").document(doc.id).update({
+            "notificacao": True,
+            "notificacao_todos": True
+        })
+
+        return {
+            "msg": f"Notificação ativada para o aluno '{aluno_nome}'."
+        }
 
     except Exception as e:
         return JSONResponse(
             content={"msg": f"Erro ao ativar notificação: {str(e)}"},
             status_code=500
         )
-
+        
 from google.cloud.firestore import SERVER_TIMESTAMP
 
 

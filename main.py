@@ -2775,7 +2775,10 @@ async def verificar_notificacao(request: Request):
         nome_aluno = str(dados.get("aluno", "")).strip().lower()
 
         if not nome_aluno:
-            return JSONResponse(content={"erro": "Nome do aluno não fornecido"}, status_code=400)
+            return JSONResponse(
+                content={"erro": "Nome do aluno não fornecido"},
+                status_code=400
+            )
 
         query = db.collection("alunos_professor") \
                   .where("aluno", "==", nome_aluno) \
@@ -2785,7 +2788,11 @@ async def verificar_notificacao(request: Request):
 
         if not doc:
             return JSONResponse(
-                content={"notificacao": False, "mensagem": "Aluno não encontrado"},
+                content={
+                    "notificacao": False,
+                    "notificacao_todos": False,
+                    "mensagem": "Aluno não encontrado"
+                },
                 status_code=404
             )
 
@@ -2795,11 +2802,16 @@ async def verificar_notificacao(request: Request):
 
         return JSONResponse(content={
             "notificacao": notificacao,
+            "notificacao_todos": notificacao,
             "professor_email": professor_email
         })
 
     except Exception as e:
-        return JSONResponse(content={"erro": str(e)}, status_code=500)
+        return JSONResponse(
+            content={"erro": str(e)},
+            status_code=500
+        )
+        
 
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):

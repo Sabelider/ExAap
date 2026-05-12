@@ -2775,61 +2775,31 @@ async def verificar_notificacao(request: Request):
         nome_aluno = str(dados.get("aluno", "")).strip().lower()
 
         if not nome_aluno:
-            return render_template(
-                "erro.html",
-                {
-                    "request": request,
-                    "erro": "Nome do aluno não fornecido",
-                    "sucesso": 0
-                }
-            )
+            return JSONResponse(content={"erro": "Nome do aluno não fornecido"}, status_code=400)
 
-        query = (
-            db.collection("alunos_professor")
-            .where("aluno", "==", nome_aluno)
-            .limit(1)
-            .stream()
-        )
+        query = db.collection("alunos_professor") \
+                  .where("aluno", "==", nome_aluno) \
+                  .limit(1).stream()
 
         doc = next(query, None)
 
         if not doc:
-            return render_template(
-                "verificar_notificacao.html",
-                {
-                    "request": request,
-                    "notificacao": False,
-                    "notificacao_todos": False,
-                    "mensagem": "Aluno não encontrado",
-                    "professor_email": "",
-                    "sucesso": 0
-                }
+            return JSONResponse(
+                content={"notificacao": False, "mensagem": "Aluno não encontrado"},
+                status_code=404
             )
 
-        dados_aluno = doc.to_dict() or {}
+        dados_aluno = doc.to_dict()
         notificacao = dados_aluno.get("notificacao", False)
         professor_email = dados_aluno.get("professor", "")
 
-        return render_template(
-            "verificar_notificacao.html",
-            {
-                "request": request,
-                "notificacao": notificacao,
-                "notificacao_todos": notificacao,
-                "professor_email": professor_email,
-                "sucesso": 1
-            }
-        )
+        return JSONResponse(content={
+            "notificacao": notificacao,
+            "professor_email": professor_email
+        })
 
     except Exception as e:
-        return render_template(
-            "erro.html",
-            {
-                "request": request,
-                "erro": str(e),
-                "sucesso": 0
-            }
-        )
+        return JSONResponse(content={"erro": str(e)}, status_code=500)
 
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):

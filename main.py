@@ -2799,6 +2799,7 @@ async def verificar_notificacao(request: Request):
                 {
                     "request": request,
                     "notificacao": False,
+                    "notificacao_todos": False,
                     "mensagem": "Aluno não encontrado",
                     "professor_email": "",
                     "sucesso": 0
@@ -2814,6 +2815,7 @@ async def verificar_notificacao(request: Request):
             {
                 "request": request,
                 "notificacao": notificacao,
+                "notificacao_todos": notificacao,
                 "professor_email": professor_email,
                 "sucesso": 1
             }
@@ -2828,7 +2830,6 @@ async def verificar_notificacao(request: Request):
                 "sucesso": 0
             }
         )
-
 
 @app.post("/registrar-chamada")
 async def registrar_chamada(request: Request):

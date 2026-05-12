@@ -2687,54 +2687,30 @@ async def verificar_aluno_vinculo(request: Request, data: VerificarAlunoInput):
 class NotificacaoRequest(BaseModel):
     aluno: str
 
-
 @app.post("/ativar-notificacao")
-async def ativar_notificacao(request: Request, data: NotificacaoRequest):
+async def ativar_notificacao(data: NotificacaoRequest):
     try:
         aluno_nome = data.aluno.strip().lower()
 
         # Buscar o documento do aluno na coleção alunos_professor
-        docs = (
-            db.collection("alunos_professor")
-            .where("aluno", "==", aluno_nome)
-            .limit(1)
-            .stream()
-        )
-
+        docs = db.collection("alunos_professor") \
+                 .where("aluno", "==", aluno_nome) \
+                 .limit(1).stream()
         doc = next(docs, None)
 
         if not doc:
-            return render_template(
-                "erro.html",
-                {
-                    "request": request,
-                    "erro": f"Aluno '{aluno_nome}' não encontrado.",
-                    "sucesso": 0
-                }
+            return JSONResponse(
+                content={"msg": f"Aluno '{aluno_nome}' não encontrado."},
+                status_code=404
             )
 
-        # Atualiza o campo notificacao para True
-        db.collection("alunos_professor").document(doc.id).update({
-            "notificacao": True
-        })
-
-        return render_template(
-            "ativar_notificacao.html",
-            {
-                "request": request,
-                "mensagem": f"Notificação ativada para o aluno '{aluno_nome}'.",
-                "sucesso": 1
-            }
-        )
+        db.collection("alunos_professor").document(doc.id).update({"notificacao": True})
+        return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
 
     except Exception as e:
-        return render_template(
-            "erro.html",
-            {
-                "request": request,
-                "erro": f"Erro ao ativar notificação: {str(e)}",
-                "sucesso": 0
-            }
+        return JSONResponse(
+            content={"msg": f"Erro ao ativar notificação: {str(e)}"},
+            status_code=500
         )
 
 from google.cloud.firestore import SERVER_TIMESTAMP

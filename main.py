@@ -2480,128 +2480,262 @@ async def iniciar_aula(payload: dict):
     return {"mensagem": "Chamada enviada ao aluno"}
 
 # 🔸 Verificar vínculo do aluno com o professor
-@app.post('/verificar-vinculo')
-async def verificar_vinculo(dados: dict):
-    prof_email = dados.get('professor_email', '').strip().lower()
-    aluno_nome = dados.get('aluno_nome', '').strip().lower()
-    senha = dados.get('senha', '').strip()
+@app.post("/verificar-vinculo")
+async def verificar_vinculo(request: Request, dados: dict):
+    prof_email = dados.get("professor_email", "").strip().lower()
+    aluno_nome = dados.get("aluno_nome", "").strip().lower()
+    senha = dados.get("senha", "").strip()
 
     try:
-        docs = db.collection('alunos_professor') \
-                 .where('professor', '==', prof_email).stream()
+        # ===============================
+        # VERIFICAR VÍNCULO PROFESSOR-ALUNO
+        # ===============================
+        docs = (
+            db.collection("alunos_professor")
+            .where("professor", "==", prof_email)
+            .stream()
+        )
 
         aluno_encontrado = False
+
         for doc in docs:
-            data = doc.to_dict()
-            dados_aluno = data.get('dados_aluno', {})
-            nome_salvo = dados_aluno.get('nome', '').strip().lower()
+            data = doc.to_dict() or {}
+            dados_aluno = data.get("dados_aluno", {})
+            nome_salvo = str(dados_aluno.get("nome", "")).strip().lower()
+
             if nome_salvo == aluno_nome:
                 aluno_encontrado = True
                 break
 
         if not aluno_encontrado:
-            raise HTTPException(status_code=404, detail="Vínculo com este aluno não encontrado.")
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": "Vínculo com este aluno não encontrado.",
+                    "sucesso": 0
+                }
+            )
 
-        aluno_docs = db.collection('alunos') \
-                       .where('nome', '==', aluno_nome) \
-                       .where('senha', '==', senha) \
-                       .limit(1).stream()
+        # ===============================
+        # VALIDAR NOME E SENHA DO ALUNO
+        # ===============================
+        aluno_docs = (
+            db.collection("alunos")
+            .where("nome", "==", aluno_nome)
+            .where("senha", "==", senha)
+            .limit(1)
+            .stream()
+        )
+
         aluno_doc = next(aluno_docs, None)
+
         if not aluno_doc:
-            raise HTTPException(status_code=403, detail="Senha incorreta.")
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": "Senha incorreta.",
+                    "sucesso": 0
+                }
+            )
 
-        return {"message": "Aluno autorizado."}
+        # ===============================
+        # ALUNO AUTORIZADO
+        # ===============================
+        return render_template(
+            "verificar_vinculo.html",
+            {
+                "request": request,
+                "message": "Aluno autorizado.",
+                "professor_email": prof_email,
+                "aluno_nome": aluno_nome,
+                "sucesso": 1
+            }
+        )
 
-    except HTTPException:
-        raise
     except Exception as e:
         print("Erro ao verificar vínculo:", e)
-        raise HTTPException(status_code=500, detail="Erro interno.")
 
+        return render_template(
+            "erro.html",
+            {
+                "request": request,
+                "erro": "Erro interno.",
+                "sucesso": 0
+            }
+        )
+        
 # 🔸 Verificar vínculo e professor do aluno
 class VerificarAlunoInput(BaseModel):
     aluno_nome: str
     senha: str
 
+
 @app.post("/verificar-aluno-vinculo")
-async def verificar_aluno_vinculo(data: VerificarAlunoInput):
+async def verificar_aluno_vinculo(request: Request, data: VerificarAlunoInput):
     try:
         aluno_nome = data.aluno_nome.strip().lower()
         senha = data.senha.strip()
 
-        aluno_docs = db.collection('alunos') \
-            .where('nome', '==', aluno_nome) \
-            .limit(1).stream()
-
-        aluno_doc = next(aluno_docs, None)
-        if not aluno_doc:
-            raise HTTPException(status_code=404, detail="Aluno não encontrado.")
-
-        aluno_data = aluno_doc.to_dict()
-        if aluno_data.get("senha") != senha:
-            raise HTTPException(status_code=401, detail="Senha incorreta.")
-
-        vinculo_docs = db.collection('alunos_professor') \
-            .where('aluno', '==', aluno_nome) \
-            .limit(1).stream()
-
-        vinculo_doc = next(vinculo_docs, None)
-        if not vinculo_doc:
-            raise HTTPException(status_code=404, detail="Nenhum vínculo encontrado com professor.")
-
-        vinculo_data = vinculo_doc.to_dict()
-        professor_email = vinculo_data.get("professor", "").strip().lower()
-
-        prof_docs = db.collection('professores_online') \
-            .where('email', '==', professor_email) \
-            .limit(1).stream()
-
-        prof_doc = next(prof_docs, None)
-        professor_nome = prof_doc.to_dict().get("nome_completo", "Professor") if prof_doc else "Professor"
-
-        return {
-            "professor_email": professor_email,
-            "professor_nome": professor_nome
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("Erro interno:", e)
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Erro interno ao verificar vínculo do aluno."}
+        # ===============================
+        # VERIFICAR SE O ALUNO EXISTE
+        # ===============================
+        aluno_docs = (
+            db.collection("alunos")
+            .where("nome", "==", aluno_nome)
+            .limit(1)
+            .stream()
         )
 
+        aluno_doc = next(aluno_docs, None)
+
+        if not aluno_doc:
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": "Aluno não encontrado.",
+                    "sucesso": 0
+                }
+            )
+
+        aluno_data = aluno_doc.to_dict() or {}
+
+        # ===============================
+        # VALIDAR SENHA
+        # ===============================
+        if aluno_data.get("senha") != senha:
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": "Senha incorreta.",
+                    "sucesso": 0
+                }
+            )
+
+        # ===============================
+        # BUSCAR VÍNCULO COM PROFESSOR
+        # ===============================
+        vinculo_docs = (
+            db.collection("alunos_professor")
+            .where("aluno", "==", aluno_nome)
+            .limit(1)
+            .stream()
+        )
+
+        vinculo_doc = next(vinculo_docs, None)
+
+        if not vinculo_doc:
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": "Nenhum vínculo encontrado com professor.",
+                    "sucesso": 0
+                }
+            )
+
+        vinculo_data = vinculo_doc.to_dict() or {}
+        professor_email = vinculo_data.get("professor", "").strip().lower()
+
+        # ===============================
+        # BUSCAR NOME DO PROFESSOR
+        # ===============================
+        prof_docs = (
+            db.collection("professores_online")
+            .where("email", "==", professor_email)
+            .limit(1)
+            .stream()
+        )
+
+        prof_doc = next(prof_docs, None)
+
+        if prof_doc:
+            professor_nome = (
+                prof_doc.to_dict() or {}
+            ).get("nome_completo", "Professor")
+        else:
+            professor_nome = "Professor"
+
+        # ===============================
+        # RETORNAR TEMPLATE
+        # ===============================
+        return render_template(
+            "verificar_aluno_vinculo.html",
+            {
+                "request": request,
+                "professor_email": professor_email,
+                "professor_nome": professor_nome,
+                "sucesso": 1
+            }
+        )
+
+    except Exception as e:
+        print("Erro interno:", e)
+
+        return render_template(
+            "erro.html",
+            {
+                "request": request,
+                "erro": "Erro interno ao verificar vínculo do aluno.",
+                "sucesso": 0
+            }
+        )
+        
 class NotificacaoRequest(BaseModel):
     aluno: str
 
+
 @app.post("/ativar-notificacao")
-async def ativar_notificacao(data: NotificacaoRequest):
+async def ativar_notificacao(request: Request, data: NotificacaoRequest):
     try:
         aluno_nome = data.aluno.strip().lower()
 
         # Buscar o documento do aluno na coleção alunos_professor
-        docs = db.collection("alunos_professor") \
-                 .where("aluno", "==", aluno_nome) \
-                 .limit(1).stream()
+        docs = (
+            db.collection("alunos_professor")
+            .where("aluno", "==", aluno_nome)
+            .limit(1)
+            .stream()
+        )
+
         doc = next(docs, None)
 
         if not doc:
-            return JSONResponse(
-                content={"msg": f"Aluno '{aluno_nome}' não encontrado."},
-                status_code=404
+            return render_template(
+                "erro.html",
+                {
+                    "request": request,
+                    "erro": f"Aluno '{aluno_nome}' não encontrado.",
+                    "sucesso": 0
+                }
             )
 
-        db.collection("alunos_professor").document(doc.id).update({"notificacao": True})
-        return {"msg": f"Notificação ativada para o aluno '{aluno_nome}'."}
+        # Atualiza o campo notificacao para True
+        db.collection("alunos_professor").document(doc.id).update({
+            "notificacao": True
+        })
 
-    except Exception as e:
-        return JSONResponse(
-            content={"msg": f"Erro ao ativar notificação: {str(e)}"},
-            status_code=500
+        return render_template(
+            "ativar_notificacao.html",
+            {
+                "request": request,
+                "mensagem": f"Notificação ativada para o aluno '{aluno_nome}'.",
+                "sucesso": 1
+            }
         )
 
+    except Exception as e:
+        return render_template(
+            "erro.html",
+            {
+                "request": request,
+                "erro": f"Erro ao ativar notificação: {str(e)}",
+                "sucesso": 0
+            }
+        )
 
 from google.cloud.firestore import SERVER_TIMESTAMP
 

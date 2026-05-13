@@ -2787,11 +2787,15 @@ async def verificar_notificacao(request: Request):
                 status_code=400
             )
 
-        query = db.collection("alunos_professor") \
-                  .where("aluno", "==", nome_aluno) \
-                  .limit(1).stream()
+        # Buscar aluno na coleção alunos_professor
+        docs = (
+            db.collection("alunos_professor")
+            .where("aluno", "==", nome_aluno)
+            .limit(1)
+            .stream()
+        )
 
-        doc = next(query, None)
+        doc = next(docs, None)
 
         if not doc:
             return JSONResponse(
@@ -2803,17 +2807,26 @@ async def verificar_notificacao(request: Request):
                 status_code=404
             )
 
-        dados_aluno = doc.to_dict()
-        notificacao = dados_aluno.get("notificacao", False)
-        professor_email = dados_aluno.get("professor", "")
+        dados_aluno = doc.to_dict() or {}
+
+        # ✅ Ler a coluna correcta
+        notificacao_todos = bool(
+            dados_aluno.get("notificacao_todos", False)
+        )
+
+        professor_email = str(
+            dados_aluno.get("professor", "")
+        ).strip()
 
         return JSONResponse(content={
-            "notificacao": notificacao,
-            "notificacao_todos": notificacao,
+            "notificacao": False,
+            "notificacao_todos": notificacao_todos,
             "professor_email": professor_email
         })
 
     except Exception as e:
+        print("ERRO verificar_notificacao:", e)
+
         return JSONResponse(
             content={"erro": str(e)},
             status_code=500

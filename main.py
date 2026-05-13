@@ -2779,23 +2779,27 @@ async def desativar_notificacao(request: Request, info: AlunoInfo):
 async def verificar_notificacao(request: Request):
     try:
         dados = await request.json()
-        nome_aluno = str(dados.get("aluno", "")).strip().lower()
+        nome_aluno = str(
+            dados.get("aluno", "")
+        ).strip().lower()
 
         if not nome_aluno:
             return JSONResponse(
-                content={"erro": "Nome do aluno não fornecido"},
+                content={
+                    "erro": "Nome do aluno não fornecido"
+                },
                 status_code=400
             )
 
-        # Buscar aluno na coleção alunos_professor
-        docs = (
+        # Buscar aluno
+        query = (
             db.collection("alunos_professor")
             .where("aluno", "==", nome_aluno)
             .limit(1)
             .stream()
         )
 
-        doc = next(docs, None)
+        doc = next(query, None)
 
         if not doc:
             return JSONResponse(
@@ -2809,9 +2813,16 @@ async def verificar_notificacao(request: Request):
 
         dados_aluno = doc.to_dict() or {}
 
-        # ✅ Ler a coluna correcta
-        notificacao_todos = bool(
-            dados_aluno.get("notificacao_todos", False)
+        # ✅ Mantém funcionalidade antiga
+        notificacao = dados_aluno.get(
+            "notificacao",
+            False
+        )
+
+        # ✅ Nova leitura da coluna notificacao_todos
+        notificacao_todos = dados_aluno.get(
+            "notificacao_todos",
+            False
         )
 
         professor_email = str(
@@ -2819,13 +2830,16 @@ async def verificar_notificacao(request: Request):
         ).strip()
 
         return JSONResponse(content={
-            "notificacao": False,
-            "notificacao_todos": notificacao_todos,
+            "notificacao": bool(notificacao),
+            "notificacao_todos": bool(notificacao_todos),
             "professor_email": professor_email
         })
 
     except Exception as e:
-        print("ERRO verificar_notificacao:", e)
+        print(
+            "ERRO verificar_notificacao:",
+            str(e)
+        )
 
         return JSONResponse(
             content={"erro": str(e)},

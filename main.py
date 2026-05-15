@@ -1681,6 +1681,20 @@ def registrar_pagamento_mensal(aluno_nome: str):
 import logging
 from datetime import datetime
 
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image
+)
+
 MAX_TENTATIVAS = 3
 
 
@@ -1695,7 +1709,12 @@ async def upload_comprovativo(
 ):
     try:
 
-        aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
+        aluno_normalizado = (
+            aluno_nome.strip()
+            .lower()
+            .replace(" ", "_")
+        )
+
         banco_norm = banco.strip().lower()
 
         # =====================================
@@ -1757,7 +1776,7 @@ async def upload_comprovativo(
         )
 
         # =====================================
-        # REGISTRAR NO FIREBASE
+        # REGISTRAR FIREBASE
         # =====================================
 
         doc_ref = db.collection(
@@ -1819,7 +1838,7 @@ async def upload_comprovativo(
         )
 
         # =====================================
-        # GUARDAR DADOS DA MENSALIDADE
+        # DATA / HORA
         # =====================================
 
         data_atual = datetime.now()
@@ -1832,6 +1851,15 @@ async def upload_comprovativo(
             "%H:%M:%S"
         )
 
+        numero_recibo = (
+            f"REC-"
+            f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
+
+        # =====================================
+        # GUARDAR FIREBASE
+        # =====================================
+
         doc_ref.update({
             "mensalidade": {
                 "meses": meses,
@@ -1839,183 +1867,433 @@ async def upload_comprovativo(
                 "valor_mensal": valor_mensal,
                 "desconto_total": desconto_total,
                 "data_pagamento": data_formatada,
-                "hora_pagamento": hora_formatada
+                "hora_pagamento": hora_formatada,
+                "numero_recibo": numero_recibo
             }
         })
 
         # =====================================
-        # GERAR PDF PROFISSIONAL
+        # GERAR PDF ESTILO BANCÁRIO
         # =====================================
 
-        pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
+        pdf_path = (
+            f"static/recibo_{aluno_normalizado}.pdf"
+        )
 
         doc = SimpleDocTemplate(
             pdf_path,
             pagesize=A4,
-            rightMargin=40,
-            leftMargin=40,
-            topMargin=40,
-            bottomMargin=30
+            topMargin=18,
+            bottomMargin=18,
+            leftMargin=18,
+            rightMargin=18
         )
-
-        styles = getSampleStyleSheet()
 
         elementos = []
 
         # =====================================
-        # TÍTULO PRINCIPAL
+        # ESTILOS
         # =====================================
 
-        titulo = Paragraph(
-            """
-            <para align='center'>
-                <font size='22'>
-                    <b>SABI LIDER</b>
-                </font>
-                <br/>
-                <font size='11'>
-                    N.I.F nº 5002232529
-                </font>
-            </para>
-            """,
-            styles["Title"]
+        estilo_centralizado = ParagraphStyle(
+            "centralizado",
+            alignment=TA_CENTER,
+            fontName="Helvetica",
+            fontSize=10,
+            leading=15
         )
 
-        elementos.append(titulo)
+        estilo_titulo = ParagraphStyle(
+            "titulo",
+            alignment=TA_CENTER,
+            fontName="Helvetica-Bold",
+            fontSize=16,
+            leading=20,
+            textColor=colors.HexColor("#0b2c5f")
+        )
+
+        estilo_subtitulo = ParagraphStyle(
+            "subtitulo",
+            alignment=TA_CENTER,
+            fontName="Helvetica",
+            fontSize=9,
+            textColor=colors.grey
+        )
+
+        # =====================================
+        # LOGOTIPO
+        # =====================================
+
+        try:
+
+            logo = Image(
+                "static/Logo Sabapp Facturas.png",
+                width=130,
+                height=55
+            )
+
+            logo.hAlign = "CENTER"
+
+            elementos.append(logo)
+
+        except Exception as e:
+
+            print("Erro ao carregar logotipo:", e)
+
+        elementos.append(
+            Spacer(1, 8)
+        )
+
+        # =====================================
+        # EMPRESA
+        # =====================================
+
+        empresa = Paragraph(
+            """
+            <b>SABI LÍDER - COMÉRCIO E PRESTAÇÃO
+            DE SERVIÇOS (SU) LDA</b>
+            <br/>
+            NIF: 5002232529
+            """,
+            estilo_titulo
+        )
+
+        elementos.append(empresa)
+
+        elementos.append(
+            Spacer(1, 10)
+        )
+
+        recibo_titulo = Paragraph(
+            """
+            <b>RECIBO DE PAGAMENTO</b>
+            """,
+            estilo_centralizado
+        )
+
+        elementos.append(recibo_titulo)
 
         elementos.append(
             Spacer(1, 18)
         )
 
-        subtitulo = Paragraph(
-            """
-            <para align='center'>
-                <font size='16'>
-                    <b>RECIBO DE PAGAMENTO</b>
-                </font>
-            </para>
-            """,
-            styles["Heading2"]
+        # =====================================
+        # CABEÇALHO ESTILO BANCÁRIO
+        # =====================================
+
+        cabecalho = Table(
+            [
+                [
+                    "Número do Recibo:",
+                    numero_recibo
+                ],
+                [
+                    "Data:",
+                    data_formatada
+                ],
+                [
+                    "Hora:",
+                    hora_formatada
+                ]
+            ],
+            colWidths=[160, 320]
         )
 
-        elementos.append(subtitulo)
+        cabecalho.setStyle(TableStyle([
+
+            ("BACKGROUND",
+             (0, 0),
+             (-1, -1),
+             colors.HexColor("#f2f2f2")),
+
+            ("GRID",
+             (0, 0),
+             (-1, -1),
+             0.5,
+             colors.lightgrey),
+
+            ("FONTNAME",
+             (0, 0),
+             (0, -1),
+             "Helvetica-Bold"),
+
+            ("FONTNAME",
+             (1, 0),
+             (1, -1),
+             "Helvetica"),
+
+            ("FONTSIZE",
+             (0, 0),
+             (-1, -1),
+             9),
+
+            ("BOTTOMPADDING",
+             (0, 0),
+             (-1, -1),
+             8),
+
+            ("TOPPADDING",
+             (0, 0),
+             (-1, -1),
+             8),
+
+        ]))
+
+        elementos.append(cabecalho)
+
+        elementos.append(
+            Spacer(1, 18)
+        )
+
+        # =====================================
+        # DADOS DO BENEFICIÁRIO
+        # =====================================
+
+        titulo_beneficiario = Table(
+            [["DADOS DO BENEFICIÁRIO"]],
+            colWidths=[480]
+        )
+
+        titulo_beneficiario.setStyle(TableStyle([
+
+            ("BACKGROUND",
+             (0, 0),
+             (-1, -1),
+             colors.HexColor("#0b2c5f")),
+
+            ("TEXTCOLOR",
+             (0, 0),
+             (-1, -1),
+             colors.white),
+
+            ("FONTNAME",
+             (0, 0),
+             (-1, -1),
+             "Helvetica-Bold"),
+
+            ("FONTSIZE",
+             (0, 0),
+             (-1, -1),
+             9),
+
+            ("BOTTOMPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+
+            ("TOPPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+        ]))
+
+        elementos.append(titulo_beneficiario)
+
+        dados_empresa = [
+
+            ["Nome:",
+             "SABI LÍDER COMÉRCIO PREST SERVIÇO SU LDA"],
+
+            ["Conta / IBAN:",
+             "AO060004000008230978610166"],
+
+            ["Banco:",
+             "Banco Angolano de Investimentos"],
+
+            ["NIF:",
+             "5002232529"]
+        ]
+
+        tabela_empresa = Table(
+            dados_empresa,
+            colWidths=[150, 330]
+        )
+
+        tabela_empresa.setStyle(TableStyle([
+
+            ("BACKGROUND",
+             (0, 0),
+             (-1, -1),
+             colors.HexColor("#f7f7f7")),
+
+            ("GRID",
+             (0, 0),
+             (-1, -1),
+             0.4,
+             colors.lightgrey),
+
+            ("FONTNAME",
+             (0, 0),
+             (0, -1),
+             "Helvetica-Bold"),
+
+            ("FONTNAME",
+             (1, 0),
+             (1, -1),
+             "Helvetica"),
+
+            ("FONTSIZE",
+             (0, 0),
+             (-1, -1),
+             8.5),
+
+            ("BOTTOMPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+
+            ("TOPPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+        ]))
+
+        elementos.append(tabela_empresa)
+
+        elementos.append(
+            Spacer(1, 18)
+        )
+
+        # =====================================
+        # DADOS DA TRANSFERÊNCIA
+        # =====================================
+
+        titulo_transferencia = Table(
+            [["DADOS DA TRANSFERÊNCIA"]],
+            colWidths=[480]
+        )
+
+        titulo_transferencia.setStyle(TableStyle([
+
+            ("BACKGROUND",
+             (0, 0),
+             (-1, -1),
+             colors.HexColor("#0b2c5f")),
+
+            ("TEXTCOLOR",
+             (0, 0),
+             (-1, -1),
+             colors.white),
+
+            ("FONTNAME",
+             (0, 0),
+             (-1, -1),
+             "Helvetica-Bold"),
+
+            ("FONTSIZE",
+             (0, 0),
+             (-1, -1),
+             9),
+
+            ("BOTTOMPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+
+            ("TOPPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+        ]))
+
+        elementos.append(titulo_transferencia)
+
+        dados_transferencia = [
+
+            ["Aluno:",
+             aluno_nome.title()],
+
+            ["Banco Utilizado:",
+             banco.upper()],
+
+            ["Número de Meses:",
+             str(meses)],
+
+            ["Valor Mensal:",
+             f"{valor_mensal:,.2f} Kz"],
+
+            ["Desconto:",
+             f"{desconto_total:,.2f} Kz"],
+
+            ["Montante Total:",
+             f"{valor_total:,.2f} Kz"],
+
+            ["Comprovativo:",
+             nome_comprovativo],
+
+            ["Estado:",
+             "SUCESSO"],
+
+            ["Canal:",
+             "Portal SabApp"]
+        ]
+
+        tabela_transferencia = Table(
+            dados_transferencia,
+            colWidths=[150, 330]
+        )
+
+        tabela_transferencia.setStyle(TableStyle([
+
+            ("BACKGROUND",
+             (0, 0),
+             (-1, -1),
+             colors.HexColor("#f7f7f7")),
+
+            ("GRID",
+             (0, 0),
+             (-1, -1),
+             0.4,
+             colors.lightgrey),
+
+            ("FONTNAME",
+             (0, 0),
+             (0, -1),
+             "Helvetica-Bold"),
+
+            ("FONTNAME",
+             (1, 0),
+             (1, -1),
+             "Helvetica"),
+
+            ("FONTSIZE",
+             (0, 0),
+             (-1, -1),
+             8.5),
+
+            ("BOTTOMPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+
+            ("TOPPADDING",
+             (0, 0),
+             (-1, -1),
+             6),
+        ]))
+
+        elementos.append(tabela_transferencia)
 
         elementos.append(
             Spacer(1, 25)
         )
 
         # =====================================
-        # INFORMAÇÕES DO RECIBO
+        # RODAPÉ
         # =====================================
 
-        numero_recibo = f"REC-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-        dados = [
-
-            ["Número do Recibo", numero_recibo],
-
-            ["Aluno", aluno_nome.title()],
-
-            ["Banco Utilizado", banco.upper()],
-
-            ["Quantidade de Meses", str(meses)],
-
-            ["Valor Mensal",
-             f"{valor_mensal:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
-
-            ["Desconto Aplicado",
-             f"{desconto_total:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
-
-            ["Valor Total Pago",
-             f"{valor_total:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
-
-            ["Comprovativo",
-             nome_comprovativo],
-
-            ["Data do Pagamento",
-             data_formatada],
-
-            ["Hora do Pagamento",
-             hora_formatada]
-        ]
-
-        tabela = Table(
-            dados,
-            colWidths=[190, 290],
-            hAlign="CENTER"
-        )
-
-        tabela.setStyle(TableStyle([
-
-            ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
-
-            ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
-
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-
-            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-
-            ("FONTSIZE", (0, 0), (-1, -1), 11),
-
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
-
-            ("TOPPADDING", (0, 0), (-1, -1), 12),
-
-            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#00c9ff")),
-
-            ("TEXTCOLOR", (0, 0), (0, -1), colors.white),
-
-            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-
-            ("BOX", (0, 0), (-1, -1), 1.2, colors.black)
-
-        ]))
-
-        elementos.append(tabela)
-
-        elementos.append(
-            Spacer(1, 35)
-        )
-
-        # =====================================
-        # TEXTO FINAL
-        # =====================================
-
-        observacao = Paragraph(
+        rodape = Paragraph(
             """
-            <para align='center'>
-                <font size='11'>
-                    Este documento confirma o recebimento do pagamento.
-                    <br/><br/>
-                    Obrigado por utilizar os serviços da
-                    <b>Sabi Lider</b>.
-                </font>
-            </para>
+            Documento processado automaticamente pelo
+            <b>SabApp</b>.
+            <br/><br/>
+            Este recibo serve como confirmação oficial
+            do pagamento efectuado.
             """,
-            styles["BodyText"]
+            estilo_subtitulo
         )
 
-        elementos.append(observacao)
-
-        elementos.append(
-            Spacer(1, 40)
-        )
-
-        assinatura = Paragraph(
-            """
-            <para align='center'>
-                ___________________________________<br/>
-                <b>Assinatura / Administração</b>
-            </para>
-            """,
-            styles["BodyText"]
-        )
-
-        elementos.append(assinatura)
+        elementos.append(rodape)
 
         # =====================================
         # GERAR PDF
@@ -2024,7 +2302,7 @@ async def upload_comprovativo(
         doc.build(elementos)
 
         # =====================================
-        # HTML DE RETORNO
+        # HTML RETORNO
         # =====================================
 
         html_content = f"""
@@ -2041,85 +2319,96 @@ async def upload_comprovativo(
                 body {{
 
                     font-family: Arial, sans-serif;
-                    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+                    background:
+                    linear-gradient(
+                        135deg,
+                        #00c9ff,
+                        #92fe9d
+                    );
+
                     min-height: 100vh;
+
                     display: flex;
+
                     align-items: center;
+
                     justify-content: center;
+
                     margin: 0;
+
                     padding: 20px;
                 }}
 
                 .container {{
 
                     background: white;
+
                     width: 100%;
+
                     max-width: 500px;
+
                     border-radius: 20px;
+
                     padding: 35px;
+
                     text-align: center;
-                    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+
+                    box-shadow:
+                    0 8px 30px rgba(0,0,0,0.15);
+                }}
+
+                .logo {{
+
+                    width: 160px;
+
+                    margin-bottom: 10px;
                 }}
 
                 h2 {{
 
                     color: #1f2937;
-                    margin-bottom: 15px;
                 }}
 
                 p {{
 
                     color: #555;
-                    margin-bottom: 25px;
                 }}
 
                 .btn {{
 
                     display: block;
+
                     width: 100%;
+
                     padding: 14px;
+
                     margin-top: 15px;
+
                     border-radius: 12px;
+
                     text-decoration: none;
+
                     font-weight: bold;
+
                     font-size: 15px;
+
                     transition: 0.3s;
+
                     box-sizing: border-box;
                 }}
 
                 .download {{
 
                     background: #16a34a;
+
                     color: white;
-                }}
-
-                .download:hover {{
-
-                    background: #15803d;
                 }}
 
                 .perfil {{
 
                     background: #2563eb;
+
                     color: white;
-                }}
-
-                .perfil:hover {{
-
-                    background: #1d4ed8;
-                }}
-
-                @media(max-width:600px) {{
-
-                    .container {{
-
-                        padding: 25px 18px;
-                    }}
-
-                    .btn {{
-
-                        font-size: 14px;
-                    }}
                 }}
 
             </style>
@@ -2130,11 +2419,18 @@ async def upload_comprovativo(
 
             <div class="container">
 
-                <h2>✅ Recibo Gerado com Sucesso!</h2>
+                <img
+                    src="/static/Logo Sabapp Facturas.png"
+                    class="logo"
+                >
+
+                <h2>
+                    ✅ Recibo Gerado com Sucesso!
+                </h2>
 
                 <p>
-                    O seu pagamento foi processado e o recibo
-                    profissional já está disponível.
+                    O recibo profissional foi gerado
+                    com sucesso.
                 </p>
 
                 <a
@@ -2159,17 +2455,23 @@ async def upload_comprovativo(
         </html>
         """
 
-        return HTMLResponse(content=html_content)
+        return HTMLResponse(
+            content=html_content
+        )
 
     except Exception as e:
 
-        logging.error(f"Erro inesperado: {e}")
+        logging.error(
+            f"Erro inesperado: {e}"
+        )
 
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao processar comprovativo: {str(e)}"
+            detail=(
+                "Erro ao processar comprovativo: "
+                f"{str(e)}"
+            )
         )
-        
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)

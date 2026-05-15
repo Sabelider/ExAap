@@ -1679,6 +1679,7 @@ def registrar_pagamento_mensal(aluno_nome: str):
 
 
 import logging
+from datetime import datetime
 
 MAX_TENTATIVAS = 3
 
@@ -1697,33 +1698,52 @@ async def upload_comprovativo(
         aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
         banco_norm = banco.strip().lower()
 
-        # ✅ Validar banco
-        bancos_validos = ["bai", "bni", "bpc", "multicaixa express"]
+        # =====================================
+        # VALIDAR BANCO
+        # =====================================
+
+        bancos_validos = [
+            "bai",
+            "bni",
+            "bpc",
+            "multicaixa express"
+        ]
 
         if banco_norm not in bancos_validos:
+
             raise HTTPException(
                 status_code=400,
                 detail="Banco inválido."
             )
 
-        # ✅ Validar apenas PDF
+        # =====================================
+        # VALIDAR PDF
+        # =====================================
+
         if comprovativo.content_type != "application/pdf":
 
             return HTMLResponse(
-                "<h3>Apenas PDFs são aceites.</h3>",
+                """
+                <h3 style='font-family:Arial;text-align:center;color:red;'>
+                    Apenas PDFs são aceites.
+                </h3>
+                """,
                 status_code=400
             )
 
-        # ✅ Ler conteúdo sem validar tamanho
+        # =====================================
+        # LER PDF
+        # =====================================
+
         conteudo = await comprovativo.read()
 
         await comprovativo.close()
 
         nome_comprovativo = comprovativo.filename
 
-        # ============================
+        # =====================================
         # CÁLCULO FINANCEIRO
-        # ============================
+        # =====================================
 
         valor_mensal = 15000
 
@@ -1736,9 +1756,9 @@ async def upload_comprovativo(
             - desconto_total
         )
 
-        # ============================
+        # =====================================
         # REGISTRAR NO FIREBASE
-        # ============================
+        # =====================================
 
         doc_ref = db.collection(
             "comprovativos_pagamento"
@@ -1765,12 +1785,22 @@ async def upload_comprovativo(
                 )
 
                 return HTMLResponse(
-                    "<h3>Comprovativo já existe. Conta desativada.</h3>",
+                    """
+                    <h3 style='font-family:Arial;text-align:center;color:red;'>
+                        Comprovativo já existe. Conta desativada.
+                    </h3>
+                    """,
                     status_code=403
                 )
 
             return HTMLResponse(
-                f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>",
+                f"""
+                <h3 style='font-family:Arial;text-align:center;color:#ff6600;'>
+                    Comprovativo já existe.<br>
+                    Tentativas restantes:
+                    {MAX_TENTATIVAS - tentativas}
+                </h3>
+                """,
                 status_code=400
             )
 
@@ -1788,125 +1818,306 @@ async def upload_comprovativo(
             "Ativada"
         )
 
+        # =====================================
+        # GUARDAR DADOS DA MENSALIDADE
+        # =====================================
+
+        data_atual = datetime.now()
+
+        data_formatada = data_atual.strftime(
+            "%d/%m/%Y"
+        )
+
+        hora_formatada = data_atual.strftime(
+            "%H:%M:%S"
+        )
+
         doc_ref.update({
             "mensalidade": {
                 "meses": meses,
                 "valor_total": valor_total,
                 "valor_mensal": valor_mensal,
-                "desconto_total": desconto_total
+                "desconto_total": desconto_total,
+                "data_pagamento": data_formatada,
+                "hora_pagamento": hora_formatada
             }
         })
 
-        # ============================
-        # GERAR PDF
-        # ============================
+        # =====================================
+        # GERAR PDF PROFISSIONAL
+        # =====================================
 
         pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
 
         doc = SimpleDocTemplate(
             pdf_path,
-            pagesize=A4
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=30
         )
 
         styles = getSampleStyleSheet()
 
         elementos = []
 
-        elementos.append(
-            Paragraph(
-                "<b>Sabi Lider</b> - N.I.F nº 5002232529",
-                styles["Title"]
-            )
+        # =====================================
+        # TÍTULO PRINCIPAL
+        # =====================================
+
+        titulo = Paragraph(
+            """
+            <para align='center'>
+                <font size='22'>
+                    <b>SABI LIDER</b>
+                </font>
+                <br/>
+                <font size='11'>
+                    N.I.F nº 5002232529
+                </font>
+            </para>
+            """,
+            styles["Title"]
         )
 
-        elementos.append(
-            Spacer(1, 12)
-        )
+        elementos.append(titulo)
 
         elementos.append(
-            Paragraph(
-                "<b>Recibo de Pagamento</b>",
-                styles["Heading2"]
-            )
+            Spacer(1, 18)
         )
 
-        elementos.append(
-            Spacer(1, 20)
+        subtitulo = Paragraph(
+            """
+            <para align='center'>
+                <font size='16'>
+                    <b>RECIBO DE PAGAMENTO</b>
+                </font>
+            </para>
+            """,
+            styles["Heading2"]
         )
+
+        elementos.append(subtitulo)
+
+        elementos.append(
+            Spacer(1, 25)
+        )
+
+        # =====================================
+        # INFORMAÇÕES DO RECIBO
+        # =====================================
+
+        numero_recibo = f"REC-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         dados = [
-            ["Aluno", aluno_nome],
-            ["Banco", banco.upper()],
-            ["Meses", str(meses)],
-            ["Mensalidade", f"{valor_mensal:,.0f} Kz"],
-            ["Desconto", f"{desconto_total:,.0f} Kz"],
-            ["Valor Total", f"{valor_total:,.0f} Kz"],
-            ["Comprovativo", nome_comprovativo],
+
+            ["Número do Recibo", numero_recibo],
+
+            ["Aluno", aluno_nome.title()],
+
+            ["Banco Utilizado", banco.upper()],
+
+            ["Quantidade de Meses", str(meses)],
+
+            ["Valor Mensal",
+             f"{valor_mensal:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
+
+            ["Desconto Aplicado",
+             f"{desconto_total:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
+
+            ["Valor Total Pago",
+             f"{valor_total:,.2f} Kz".replace(",", "X").replace(".", ",").replace("X", ".")],
+
+            ["Comprovativo",
+             nome_comprovativo],
+
+            ["Data do Pagamento",
+             data_formatada],
+
+            ["Hora do Pagamento",
+             hora_formatada]
         ]
 
         tabela = Table(
             dados,
-            hAlign="LEFT"
+            colWidths=[190, 290],
+            hAlign="CENTER"
         )
 
         tabela.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.grey),
-            ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
-            ("ALIGN", (0,0), (-1,-1), "LEFT"),
-            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-            ("BACKGROUND", (0,1), (-1,-1), colors.beige),
+
+            ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
+
+            ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+
+            ("FONTSIZE", (0, 0), (-1, -1), 11),
+
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+
+            ("TOPPADDING", (0, 0), (-1, -1), 12),
+
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#00c9ff")),
+
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.white),
+
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+
+            ("BOX", (0, 0), (-1, -1), 1.2, colors.black)
+
         ]))
 
         elementos.append(tabela)
 
+        elementos.append(
+            Spacer(1, 35)
+        )
+
+        # =====================================
+        # TEXTO FINAL
+        # =====================================
+
+        observacao = Paragraph(
+            """
+            <para align='center'>
+                <font size='11'>
+                    Este documento confirma o recebimento do pagamento.
+                    <br/><br/>
+                    Obrigado por utilizar os serviços da
+                    <b>Sabi Lider</b>.
+                </font>
+            </para>
+            """,
+            styles["BodyText"]
+        )
+
+        elementos.append(observacao)
+
+        elementos.append(
+            Spacer(1, 40)
+        )
+
+        assinatura = Paragraph(
+            """
+            <para align='center'>
+                ___________________________________<br/>
+                <b>Assinatura / Administração</b>
+            </para>
+            """,
+            styles["BodyText"]
+        )
+
+        elementos.append(assinatura)
+
+        # =====================================
+        # GERAR PDF
+        # =====================================
+
         doc.build(elementos)
 
-        # ============================
+        # =====================================
         # HTML DE RETORNO
-        # ============================
+        # =====================================
 
         html_content = f"""
         <html>
+
         <head>
+
             <meta charset="UTF-8">
+
             <title>Recibo Gerado</title>
 
             <style>
 
                 body {{
+
                     font-family: Arial, sans-serif;
-                    background: #f4f4f8;
+                    background: linear-gradient(135deg, #00c9ff, #92fe9d);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0;
                     padding: 20px;
+                }}
+
+                .container {{
+
+                    background: white;
+                    width: 100%;
+                    max-width: 500px;
+                    border-radius: 20px;
+                    padding: 35px;
                     text-align: center;
+                    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+                }}
+
+                h2 {{
+
+                    color: #1f2937;
+                    margin-bottom: 15px;
+                }}
+
+                p {{
+
+                    color: #555;
+                    margin-bottom: 25px;
                 }}
 
                 .btn {{
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    font-size: 16px;
+
+                    display: block;
+                    width: 100%;
+                    padding: 14px;
+                    margin-top: 15px;
+                    border-radius: 12px;
                     text-decoration: none;
-                    margin: 10px;
-                    display: inline-block;
+                    font-weight: bold;
+                    font-size: 15px;
+                    transition: 0.3s;
+                    box-sizing: border-box;
                 }}
 
                 .download {{
-                    background: #28a745;
+
+                    background: #16a34a;
                     color: white;
                 }}
 
+                .download:hover {{
+
+                    background: #15803d;
+                }}
+
                 .perfil {{
-                    background: #007bff;
+
+                    background: #2563eb;
                     color: white;
+                }}
+
+                .perfil:hover {{
+
+                    background: #1d4ed8;
                 }}
 
                 @media(max-width:600px) {{
 
-                    body {{
-                        padding: 10px;
+                    .container {{
+
+                        padding: 25px 18px;
                     }}
 
                     .btn {{
-                        width: 100%;
+
                         font-size: 14px;
                     }}
                 }}
@@ -1917,24 +2128,34 @@ async def upload_comprovativo(
 
         <body>
 
-            <h2>✅ Recibo Gerado com Sucesso!</h2>
+            <div class="container">
 
-            <a 
-                href="/static/recibo_{aluno_normalizado}.pdf"
-                class="btn download"
-                download
-            >
-                📄 Baixar Recibo PDF
-            </a>
+                <h2>✅ Recibo Gerado com Sucesso!</h2>
 
-            <a
-                href="/perfil/{aluno_normalizado}"
-                class="btn perfil"
-            >
-                🔙 Voltar ao Perfil
-            </a>
+                <p>
+                    O seu pagamento foi processado e o recibo
+                    profissional já está disponível.
+                </p>
+
+                <a
+                    href="/static/recibo_{aluno_normalizado}.pdf"
+                    class="btn download"
+                    download
+                >
+                    📄 Baixar Recibo PDF
+                </a>
+
+                <a
+                    href="/perfil/{aluno_normalizado}"
+                    class="btn perfil"
+                >
+                    🔙 Voltar ao Perfil
+                </a>
+
+            </div>
 
         </body>
+
         </html>
         """
 

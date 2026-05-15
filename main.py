@@ -1693,51 +1693,100 @@ async def upload_comprovativo(
     tentativas: int = Form(default=0)
 ):
     try:
+
         aluno_normalizado = aluno_nome.strip().lower().replace(" ", "_")
         banco_norm = banco.strip().lower()
 
-        # Limites de tamanho
-        limites = {"bai": 70, "bni": 70, "bpc": 70, "multicaixa express": 70}
-        if banco_norm not in limites:
-            raise HTTPException(status_code=400, detail="Banco inválido.")
+        # ✅ Validar banco
+        bancos_validos = ["bai", "bni", "bpc", "multicaixa express"]
 
-        # Validar tipo PDF
+        if banco_norm not in bancos_validos:
+            raise HTTPException(
+                status_code=400,
+                detail="Banco inválido."
+            )
+
+        # ✅ Validar apenas PDF
         if comprovativo.content_type != "application/pdf":
-            return HTMLResponse("<h3>Apenas PDFs são aceites.</h3>", status_code=400)
 
+            return HTMLResponse(
+                "<h3>Apenas PDFs são aceites.</h3>",
+                status_code=400
+            )
+
+        # ✅ Ler conteúdo sem validar tamanho
         conteudo = await comprovativo.read()
-        tamanho_kb = len(conteudo) / 1024
-
-        if banco_norm == "multicaixa express":
-            if tamanho_kb < 24 or tamanho_kb > 70:
-                raise HTTPException(status_code=400, detail="Comprovativo inválido para Multicaixa Express.")
-        elif tamanho_kb > limites[banco_norm]:
-            raise HTTPException(status_code=400, detail=f"O comprovativo excede o limite para {banco.upper()}.")
 
         await comprovativo.close()
+
         nome_comprovativo = comprovativo.filename
 
-        # Cálculo financeiro
+        # ============================
+        # CÁLCULO FINANCEIRO
+        # ============================
+
         valor_mensal = 15000
+
         desconto_por_mes = 100
+
         desconto_total = meses * desconto_por_mes
-        valor_total = (meses * valor_mensal) - desconto_total
 
-        # Registrar no Firebase (mantive tua lógica)
-        doc_ref = db.collection("comprovativos_pagamento").document(aluno_normalizado)
+        valor_total = (
+            (meses * valor_mensal)
+            - desconto_total
+        )
+
+        # ============================
+        # REGISTRAR NO FIREBASE
+        # ============================
+
+        doc_ref = db.collection(
+            "comprovativos_pagamento"
+        ).document(aluno_normalizado)
+
         if not doc_ref.get().exists:
-            doc_ref.set({"comprovativos": []})
 
-        if verificar_pagamento_existente(nome_comprovativo, aluno_normalizado):
+            doc_ref.set({
+                "comprovativos": []
+            })
+
+        if verificar_pagamento_existente(
+            nome_comprovativo,
+            aluno_normalizado
+        ):
+
             tentativas += 1
-            if tentativas >= MAX_TENTATIVAS:
-                atualizar_status_conta(aluno_normalizado, "Desativada")
-                return HTMLResponse("<h3>Comprovativo já existe. Conta desativada.</h3>", status_code=403)
-            return HTMLResponse(f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>", status_code=400)
 
-        registrar_comprovativo_pagamento(nome_comprovativo, aluno_normalizado)
-        registrar_pagamento_mensal(aluno_normalizado)
-        atualizar_status_conta(aluno_normalizado, "Ativada")
+            if tentativas >= MAX_TENTATIVAS:
+
+                atualizar_status_conta(
+                    aluno_normalizado,
+                    "Desativada"
+                )
+
+                return HTMLResponse(
+                    "<h3>Comprovativo já existe. Conta desativada.</h3>",
+                    status_code=403
+                )
+
+            return HTMLResponse(
+                f"<h3>Comprovativo já existe. Tentativas restantes: {MAX_TENTATIVAS - tentativas}</h3>",
+                status_code=400
+            )
+
+        registrar_comprovativo_pagamento(
+            nome_comprovativo,
+            aluno_normalizado
+        )
+
+        registrar_pagamento_mensal(
+            aluno_normalizado
+        )
+
+        atualizar_status_conta(
+            aluno_normalizado,
+            "Ativada"
+        )
 
         doc_ref.update({
             "mensalidade": {
@@ -1748,16 +1797,42 @@ async def upload_comprovativo(
             }
         })
 
-        # Criar PDF no servidor
+        # ============================
+        # GERAR PDF
+        # ============================
+
         pdf_path = f"static/recibo_{aluno_normalizado}.pdf"
-        doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+
+        doc = SimpleDocTemplate(
+            pdf_path,
+            pagesize=A4
+        )
+
         styles = getSampleStyleSheet()
+
         elementos = []
 
-        elementos.append(Paragraph("<b>Sabi Lider</b> - N.I.F nº 5002232529", styles["Title"]))
-        elementos.append(Spacer(1, 12))
-        elementos.append(Paragraph("<b>Recibo de Pagamento</b>", styles["Heading2"]))
-        elementos.append(Spacer(1, 20))
+        elementos.append(
+            Paragraph(
+                "<b>Sabi Lider</b> - N.I.F nº 5002232529",
+                styles["Title"]
+            )
+        )
+
+        elementos.append(
+            Spacer(1, 12)
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Recibo de Pagamento</b>",
+                styles["Heading2"]
+            )
+        )
+
+        elementos.append(
+            Spacer(1, 20)
+        )
 
         dados = [
             ["Aluno", aluno_nome],
@@ -1769,7 +1844,11 @@ async def upload_comprovativo(
             ["Comprovativo", nome_comprovativo],
         ]
 
-        tabela = Table(dados, hAlign="LEFT")
+        tabela = Table(
+            dados,
+            hAlign="LEFT"
+        )
+
         tabela.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), colors.grey),
             ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
@@ -1779,21 +1858,28 @@ async def upload_comprovativo(
         ]))
 
         elementos.append(tabela)
+
         doc.build(elementos)
 
-        # Retornar HTML com botão de download
+        # ============================
+        # HTML DE RETORNO
+        # ============================
+
         html_content = f"""
         <html>
         <head>
             <meta charset="UTF-8">
             <title>Recibo Gerado</title>
+
             <style>
+
                 body {{
                     font-family: Arial, sans-serif;
                     background: #f4f4f8;
                     padding: 20px;
                     text-align: center;
                 }}
+
                 .btn {{
                     padding: 12px 20px;
                     border-radius: 8px;
@@ -1802,29 +1888,52 @@ async def upload_comprovativo(
                     margin: 10px;
                     display: inline-block;
                 }}
+
                 .download {{
                     background: #28a745;
                     color: white;
                 }}
+
                 .perfil {{
                     background: #007bff;
                     color: white;
                 }}
+
                 @media(max-width:600px) {{
+
                     body {{
                         padding: 10px;
                     }}
+
                     .btn {{
                         width: 100%;
                         font-size: 14px;
                     }}
                 }}
+
             </style>
+
         </head>
+
         <body>
+
             <h2>✅ Recibo Gerado com Sucesso!</h2>
-            <a href="/static/recibo_{aluno_normalizado}.pdf" class="btn download" download>📄 Baixar Recibo PDF</a>
-            <a href="/perfil/{aluno_normalizado}" class="btn perfil">🔙 Voltar ao Perfil</a>
+
+            <a 
+                href="/static/recibo_{aluno_normalizado}.pdf"
+                class="btn download"
+                download
+            >
+                📄 Baixar Recibo PDF
+            </a>
+
+            <a
+                href="/perfil/{aluno_normalizado}"
+                class="btn perfil"
+            >
+                🔙 Voltar ao Perfil
+            </a>
+
         </body>
         </html>
         """
@@ -1832,8 +1941,14 @@ async def upload_comprovativo(
         return HTMLResponse(content=html_content)
 
     except Exception as e:
+
         logging.error(f"Erro inesperado: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao processar comprovativo: {str(e)}")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar comprovativo: {str(e)}"
+        )
+        
 
 
 @app.get("/enviar_comprovativo", response_class=HTMLResponse)

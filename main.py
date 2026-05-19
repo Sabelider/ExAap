@@ -573,12 +573,16 @@ async def vincular_aluno(item: VinculoIn):
             },
             'vinculado_em': datetime.now(timezone.utc).isoformat(),
             'online': True,
+
+            # Ordem solicitada
             'notificacao': False,
+            'notificacao_todos': False,
+
             'aulas_dadas': 0,
             'total_aulas': 12,
             'aulas': [],
-            'horario': {},        
-            'datas_aulas': []      
+            'horario': {},
+            'datas_aulas': []
         })
 
         # Atualiza o campo vinculado no documento do aluno
@@ -594,9 +598,47 @@ async def vincular_aluno(item: VinculoIn):
         print('Erro interno ao vincular aluno:', e)
         return JSONResponse(
             status_code=500,
-            content={'detail': 'Erro interno ao criar vínculo. Verifique os dados e tente novamente.'}
+            content={
+                'detail': 'Erro interno ao criar vínculo. Verifique os dados e tente novamente.'
+            }
         )
 
+
+# ==========================================================
+# FUNÇÃO PARA ADICIONAR "notificacao_todos" A TODOS OS VÍNCULOS
+# ==========================================================
+@app.get('/atualizar-notificacao-todos')
+async def atualizar_notificacao_todos():
+    """
+    Adiciona o campo 'notificacao_todos': False
+    em todos os documentos da coleção 'alunos_professor'
+    que ainda não possuem este campo.
+    """
+    try:
+        docs = db.collection('alunos_professor').stream()
+        total_atualizados = 0
+
+        for doc in docs:
+            dados = doc.to_dict()
+
+            # Só adiciona se o campo ainda não existir
+            if 'notificacao_todos' not in dados:
+                db.collection('alunos_professor').document(doc.id).update({
+                    'notificacao_todos': False
+                })
+                total_atualizados += 1
+
+        return {
+            "message": "Atualização concluída com sucesso.",
+            "total_atualizados": total_atualizados
+        }
+
+    except Exception as e:
+        print("Erro ao atualizar notificacao_todos:", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Erro interno ao atualizar os vínculos."
+        )
 
 @app.get("/perfil_prof", response_class=HTMLResponse)
 async def get_perfil_prof(request: Request, email: str):

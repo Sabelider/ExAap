@@ -576,7 +576,7 @@ async def vincular_aluno(item: VinculoIn):
 
             # Ordem solicitada
             'notificacao': False,
-            'notificacao_todos': true,
+            'notificacao_todos': True,
 
             'aulas_dadas': 0,
             'total_aulas': 12,
@@ -603,30 +603,22 @@ async def vincular_aluno(item: VinculoIn):
             }
         )
 
-
-# ==========================================================
-# FUNÇÃO PARA ADICIONAR "notificacao_todos" A TODOS OS VÍNCULOS
-# ==========================================================
 @app.get('/atualizar-notificacao-todos')
 async def atualizar_notificacao_todos():
     """
-    Adiciona o campo 'notificacao_todos': False
-    em todos os documentos da coleção 'alunos_professor'
-    que ainda não possuem este campo.
+    Define o campo 'notificacao_todos' como True
+    em todos os documentos da coleção 'alunos_professor',
+    independentemente de o campo já existir ou não.
     """
     try:
         docs = db.collection('alunos_professor').stream()
         total_atualizados = 0
 
         for doc in docs:
-            dados = doc.to_dict()
-
-            # Só adiciona se o campo ainda não existir
-            if 'notificacao_todos' not in dados:
-                db.collection('alunos_professor').document(doc.id).update({
-                    'notificacao_todos': true
-                })
-                total_atualizados += 1
+            db.collection('alunos_professor').document(doc.id).update({
+                'notificacao_todos': True
+            })
+            total_atualizados += 1
 
         return {
             "message": "Atualização concluída com sucesso.",
@@ -639,7 +631,7 @@ async def atualizar_notificacao_todos():
             status_code=500,
             detail="Erro interno ao atualizar os vínculos."
         )
-
+        
 @app.get("/perfil_prof", response_class=HTMLResponse)
 async def get_perfil_prof(request: Request, email: str):
     """

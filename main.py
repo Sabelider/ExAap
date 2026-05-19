@@ -624,7 +624,7 @@ async def atualizar_notificacao_todos():
             # Só adiciona se o campo ainda não existir
             if 'notificacao_todos' not in dados:
                 db.collection('alunos_professor').document(doc.id).update({
-                    'notificacao_todos': False
+                    'notificacao_todos': true
                 })
                 total_atualizados += 1
 

@@ -576,7 +576,7 @@ async def vincular_aluno(item: VinculoIn):
 
             # Ordem solicitada
             'notificacao': False,
-            'notificacao_todos': False,
+            'notificacao_todos': true,
 
             'aulas_dadas': 0,
             'total_aulas': 12,

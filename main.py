@@ -1846,16 +1846,110 @@ async def upload_comprovativo(
                     status_code=403
                 )
 
-            return HTMLResponse(
-                f"""
-                <h3 style='font-family:Arial;text-align:center;color:#ff6600;'>
-                    Comprovativo já existe.<br>
-                    Tentativas restantes:
-                    {MAX_TENTATIVAS - tentativas}
-                </h3>
-                """,
-                status_code=400
-            )
+       return HTMLResponse(
+    f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Comprovativo Duplicado</title>
+
+        <style>
+
+            body {{
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: linear-gradient(
+                    135deg,
+                    #fff7ed,
+                    #ffedd5
+                );
+                font-family: Arial, sans-serif;
+            }}
+
+            .card {{
+                background: white;
+                width: 90%;
+                max-width: 500px;
+                padding: 35px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 15px 40px rgba(0,0,0,.12);
+            }}
+
+            .icon {{
+                font-size: 70px;
+                margin-bottom: 15px;
+            }}
+
+            h2 {{
+                color: #ea580c;
+                margin-bottom: 10px;
+            }}
+
+            p {{
+                color: #555;
+                line-height: 1.6;
+                font-size: 15px;
+            }}
+
+            .tentativas {{
+                margin-top: 20px;
+                background: #fff7ed;
+                border: 1px solid #fdba74;
+                padding: 15px;
+                border-radius: 12px;
+                color: #c2410c;
+                font-weight: bold;
+                font-size: 16px;
+            }}
+
+            .btn {{
+                display: inline-block;
+                margin-top: 20px;
+                padding: 12px 25px;
+                background: #2563eb;
+                color: white;
+                text-decoration: none;
+                border-radius: 10px;
+                font-weight: bold;
+            }}
+
+        </style>
+    </head>
+
+    <body>
+
+        <div class="card">
+
+            <div class="icon">⚠️</div>
+
+            <h2>Comprovativo Já Registado</h2>
+
+            <p>
+                Detectámos que este comprovativo já foi submetido anteriormente.
+                Por favor, verifique se selecionou o ficheiro correcto antes de tentar novamente.
+            </p>
+
+            <div class="tentativas">
+                Tentativas restantes:
+                {MAX_TENTATIVAS - tentativas}
+            </div>
+
+            <a href="javascript:history.back()" class="btn">
+                Voltar
+            </a>
+
+        </div>
+
+    </body>
+    </html>
+    """,
+    status_code=400
+)
 
         registrar_comprovativo_pagamento(
             nome_comprovativo,

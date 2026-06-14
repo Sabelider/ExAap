@@ -1731,7 +1731,6 @@ from reportlab.platypus import (
 
 MAX_TENTATIVAS = 3
 
-
 @app.post("/upload_comprovativo", response_class=HTMLResponse)
 async def upload_comprovativo(
     request: Request,
@@ -1823,207 +1822,40 @@ async def upload_comprovativo(
                 "comprovativos": []
             })
 
-if verificar_pagamento_existente(
-    nome_comprovativo,
-    aluno_normalizado
-):
+        if verificar_pagamento_existente(
+            nome_comprovativo,
+            aluno_normalizado
+        ):
 
-    tentativas += 1
+            tentativas += 1
 
-    if tentativas >= MAX_TENTATIVAS:
+            if tentativas >= MAX_TENTATIVAS:
 
-        atualizar_status_conta(
-            aluno_normalizado,
-            "Desativada"
-        )
+                atualizar_status_conta(
+                    aluno_normalizado,
+                    "Desativada"
+                )
 
-        return HTMLResponse(
-            """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Conta Desativada</title>
+                return HTMLResponse(
+                    """
+                    <h3 style='font-family:Arial;text-align:center;color:red;'>
+                        Comprovativo já existe. Conta desativada.
+                    </h3>
+                    """,
+                    status_code=403
+                )
 
-                <style>
-
-                    body{
-                        margin:0;
-                        height:100vh;
-                        display:flex;
-                        justify-content:center;
-                        align-items:center;
-                        background:linear-gradient(
-                            135deg,
-                            #fee2e2,
-                            #fecaca
-                        );
-                        font-family:Arial,sans-serif;
-                    }
-
-                    .card{
-                        background:white;
-                        padding:40px;
-                        max-width:550px;
-                        border-radius:20px;
-                        text-align:center;
-                        box-shadow:0 15px 40px rgba(0,0,0,.15);
-                    }
-
-                    .icon{
-                        font-size:80px;
-                    }
-
-                    h2{
-                        color:#dc2626;
-                    }
-
-                    p{
-                        color:#555;
-                        line-height:1.7;
-                    }
-
-                </style>
-
-            </head>
-
-            <body>
-
-                <div class="card">
-
-                    <div class="icon">🚫</div>
-
-                    <h2>Conta Temporariamente Desativada</h2>
-
-                    <p>
-                        Foram detectadas múltiplas tentativas
-                        de submissão do mesmo comprovativo.
-                    </p>
-
-                    <p>
-                        Por motivos de segurança, a conta foi
-                        temporariamente desativada.
-                    </p>
-
-                </div>
-
-            </body>
-
-            </html>
-            """,
-            status_code=403
-        )
-
-    return HTMLResponse(
-        f"""
-        <!DOCTYPE html>
-        <html>
-
-        <head>
-
-            <meta charset="UTF-8">
-
-            <title>Comprovativo Já Registado</title>
-
-            <style>
-
-                body {{
-                    margin:0;
-                    height:100vh;
-                    display:flex;
-                    justify-content:center;
-                    align-items:center;
-                    background:linear-gradient(
-                        135deg,
-                        #fff7ed,
-                        #ffedd5
-                    );
-                    font-family:Arial,sans-serif;
-                }}
-
-                .card {{
-                    background:white;
-                    width:90%;
-                    max-width:500px;
-                    padding:35px;
-                    border-radius:20px;
-                    text-align:center;
-                    box-shadow:0 15px 40px rgba(0,0,0,.12);
-                }}
-
-                .icon {{
-                    font-size:70px;
-                    margin-bottom:15px;
-                }}
-
-                h2 {{
-                    color:#ea580c;
-                }}
-
-                p {{
-                    color:#555;
-                    line-height:1.6;
-                }}
-
-                .tentativas {{
-                    margin-top:20px;
-                    background:#fff7ed;
-                    border:1px solid #fdba74;
-                    padding:15px;
-                    border-radius:12px;
-                    color:#c2410c;
-                    font-weight:bold;
-                }}
-
-                .btn {{
-                    display:inline-block;
-                    margin-top:20px;
-                    padding:12px 25px;
-                    background:#2563eb;
-                    color:white;
-                    text-decoration:none;
-                    border-radius:10px;
-                    font-weight:bold;
-                }}
-
-            </style>
-
-        </head>
-
-        <body>
-
-            <div class="card">
-
-                <div class="icon">⚠️</div>
-
-                <h2>Comprovativo Já Registado</h2>
-
-                <p>
-                    Detectámos que este comprovativo já foi
-                    submetido anteriormente.
-                </p>
-
-                <div class="tentativas">
+            return HTMLResponse(
+                f"""
+                <h3 style='font-family:Arial;text-align:center;color:#ff6600;'>
+                    Comprovativo já existe.<br>
                     Tentativas restantes:
                     {MAX_TENTATIVAS - tentativas}
-                </div>
+                </h3>
+                """,
+                status_code=400
+            )
 
-                <a
-                    href="javascript:history.back()"
-                    class="btn"
-                >
-                    Voltar
-                </a>
-
-            </div>
-
-        </body>
-
-        </html>
-        """,
-        status_code=400
-    )
-        
         registrar_comprovativo_pagamento(
             nome_comprovativo,
             aluno_normalizado
